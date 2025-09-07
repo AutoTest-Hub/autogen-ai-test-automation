@@ -1,0 +1,10 @@
+
+Scenario: Enhanced Login Test
+Description: Test user login functionality with Enhanced Agent
+Steps:
+1. Navigate to login page
+2. Enter username: testuser
+3. Enter password: testpass
+4. Click login button
+5. Verify successful login
+Expected: User should be logged in successfully

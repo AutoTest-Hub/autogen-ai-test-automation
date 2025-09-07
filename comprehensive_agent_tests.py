@@ -15,7 +15,7 @@ from datetime import datetime
 from config.settings import settings, AgentRole
 from models.local_ai_provider import LocalAIProvider, ModelType
 from agents.planning_agent import PlanningAgent
-from agents.test_creation_agent import TestCreationAgent
+from agents.test_creation_agent import EnhancedTestCreationAgent as TestCreationAgent
 from parsers.unified_parser import UnifiedTestFileParser
 
 # Configure logging

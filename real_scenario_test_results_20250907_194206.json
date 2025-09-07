@@ -1,0 +1,255 @@
+{
+  "timestamp": "2025-09-07T19:42:06.740730",
+  "scenarios_tested": [
+    {
+      "test_name": "Unknown Test",
+      "description": "",
+      "priority": "Medium",
+      "tags": [],
+      "application_url": "",
+      "test_steps": [
+        "TestStep(step_number=1, action='Navigate to https://advantageonlineshopping.com', expected_result=None, notes=None)",
+        "TestStep(step_number=2, action='Test invalid login:', expected_result=None, notes=None)",
+        "TestStep(step_number=3, action='Click user menu', expected_result=None, notes=None)",
+        "TestStep(step_number=4, action='Enter invalid username: \"invaliduser\"', expected_result=None, notes=None)",
+        "TestStep(step_number=5, action='Enter invalid password: \"wrongpassword\"', expected_result=None, notes=None)",
+        "TestStep(step_number=6, action='Click SIGN IN', expected_result=None, notes=None)",
+        "TestStep(step_number=7, action='Verify error message is displayed', expected_result=None, notes=None)",
+        "TestStep(step_number=3, action='Test registration with existing email:', expected_result=None, notes=None)",
+        "TestStep(step_number=9, action='Try to register with an email that already exists', expected_result=None, notes=None)",
+        "TestStep(step_number=10, action='Verify appropriate error message', expected_result=None, notes=None)",
+        "TestStep(step_number=4, action='Test empty cart checkout:', expected_result=None, notes=None)",
+        "TestStep(step_number=12, action='Ensure cart is empty', expected_result=None, notes=None)",
+        "TestStep(step_number=13, action='Try to access checkout directly', expected_result=None, notes=None)",
+        "TestStep(step_number=14, action='Verify appropriate handling', expected_result=None, notes=None)",
+        "TestStep(step_number=5, action='Test form validation:', expected_result=None, notes=None)",
+        "TestStep(step_number=16, action='Try to submit registration form with missing required fields', expected_result=None, notes=None)",
+        "TestStep(step_number=17, action='Verify validation messages appear', expected_result=None, notes=None)",
+        "TestStep(step_number=6, action='Test search with no results:', expected_result=None, notes=None)",
+        "TestStep(step_number=19, action='Search for \"xyznonexistentproduct\"', expected_result=None, notes=None)",
+        "TestStep(step_number=20, action='Verify \"no results\" message is displayed', expected_result=None, notes=None)",
+        "TestStep(step_number=7, action='Test invalid payment information:', expected_result=None, notes=None)",
+        "TestStep(step_number=22, action='Add product to cart and proceed to checkout', expected_result=None, notes=None)",
+        "TestStep(step_number=23, action='Enter invalid payment details', expected_result=None, notes=None)",
+        "TestStep(step_number=24, action='Verify error handling', expected_result=None, notes=None)",
+        "TestStep(step_number=8, action='Test session timeout:', expected_result=None, notes=None)",
+        "TestStep(step_number=26, action='Login and wait for session to expire (or simulate)', expected_result=None, notes=None)",
+        "TestStep(step_number=27, action='Try to perform an action requiring authentication', expected_result=None, notes=None)",
+        "TestStep(step_number=28, action='Verify redirect to login page', expected_result=None, notes=None)"
+      ],
+      "expected_results": [
+        "All error messages should be clear and helpful",
+        "Form validations should prevent invalid submissions",
+        "Invalid login attempts should be handled gracefully",
+        "Search should handle no results appropriately",
+        "Payment errors should be communicated clearly",
+        "Session management should work properly",
+        "Test Data Requirements:",
+        "======================",
+        "Valid user credentials for testing",
+        "Test product data",
+        "Valid payment information for testing",
+        "Invalid data sets for negative testing",
+        "Test addresses and contact information",
+        "Environment Setup:",
+        "==================",
+        "Browser: Chrome, Firefox, Safari (cross-browser testing)",
+        "Screen resolutions: Desktop (1920x1080), Tablet (768x1024), Mobile (375x667)",
+        "Network conditions: Normal, Slow 3G (for performance testing)",
+        "Test data cleanup procedures",
+        "================",
+        "All critical user journeys work end-to-end",
+        "Error handling is robust and user-friendly",
+        "Performance is acceptable across different conditions",
+        "Cross-browser compatibility is maintained",
+        "Mobile responsiveness works properly"
+      ],
+      "test_data": {},
+      "environment": {},
+      "metadata": {
+        "total_lines": 65,
+        "total_steps": 28,
+        "has_test_data": false,
+        "has_environment_config": false,
+        "complexity_indicators": {
+          "step_count": 28,
+          "has_authentication": true,
+          "has_data_input": true,
+          "has_file_operations": false,
+          "has_api_calls": false,
+          "has_database_operations": true,
+          "estimated_complexity": "high",
+          "complexity_score": 0.95
+        }
+      }
+    }
+  ],
+  "agent_outputs": {
+    "planning": {
+      "status": "success",
+      "test_plan": {
+        "plan_id": "plan_20250907_194206",
+        "created_at": "2025-09-07T19:42:06.750181",
+        "requirements_summary": {},
+        "test_scenarios": [
+          {
+            "name": "Unknown Test",
+            "description": "",
+            "priority": "Medium",
+            "tags": [],
+            "application": "",
+            "test_steps": [],
+            "expected_results": [],
+            "complexity_score": 0.0,
+            "estimated_duration_minutes": 5,
+            "risk_factors": [],
+            "required_framework": "playwright"
+          }
+        ],
+        "risk_assessment": {
+          "overall_risk": "low",
+          "high_risk_scenarios": 0,
+          "common_risks": [],
+          "mitigation_required": false
+        },
+        "resource_estimation": {
+          "total_scenarios": 1,
+          "total_duration_minutes": 5,
+          "total_hours": 0.1,
+          "estimated_team_size": 1,
+          "parallel_execution_possible": false,
+          "resource_requirements": {
+            "test_automation_engineer": 1,
+            "qa_analyst": 0,
+            "test_environment": 1
+          }
+        },
+        "execution_strategy": {
+          "framework": "playwright",
+          "execution_mode": "sequential",
+          "environment_requirements": [
+            "test_environment",
+            "test_data"
+          ],
+          "prerequisites": [
+            "framework_setup",
+            "test_data_preparation"
+          ],
+          "recommended_schedule": "continuous_integration"
+        },
+        "quality_gates": {
+          "minimum_pass_rate": 95,
+          "maximum_execution_time_minutes": 6.0,
+          "required_coverage": {
+            "functional": 100,
+            "integration": 80,
+            "ui": 90
+          },
+          "success_criteria": [
+            "All critical tests pass",
+            "No high-severity defects",
+            "Performance within acceptable limits"
+          ],
+          "failure_criteria": [
+            "Critical test failures",
+            "Security vulnerabilities detected",
+            "Performance degradation > 20%"
+          ]
+        },
+        "timeline": {
+          "phases": {
+            "setup": {
+              "duration_minutes": 30,
+              "description": "Environment and framework setup"
+            },
+            "execution": {
+              "duration_minutes": 5,
+              "description": "Test execution"
+            },
+            "analysis": {
+              "duration_minutes": 60,
+              "description": "Results analysis and reporting"
+            },
+            "cleanup": {
+              "duration_minutes": 15,
+              "description": "Environment cleanup"
+            }
+          },
+          "total_duration_minutes": 110,
+          "estimated_completion": "Based on parallel execution capabilities"
+        }
+      },
+      "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_194206.json",
+      "summary": {
+        "total_scenarios": 1,
+        "estimated_hours": 0.1,
+        "risk_level": "low",
+        "recommended_framework": "playwright"
+      }
+    },
+    "test_creation": {
+      "status": "error",
+      "error": "Unknown task type: test_creation"
+    }
+  },
+  "generated_code": {
+    "test_suite_runner.py": {
+      "filename": "test_suite_runner.py",
+      "lines_of_code": 70,
+      "has_selectors": true,
+      "has_assertions": false,
+      "has_waits": false,
+      "has_real_urls": false,
+      "is_template": true,
+      "issues": [
+        "No test assertions found",
+        "Code appears to be template with placeholders",
+        "No real application URLs found"
+      ]
+    },
+    "test_config.py": {
+      "filename": "test_config.py",
+      "lines_of_code": 58,
+      "has_selectors": true,
+      "has_assertions": false,
+      "has_waits": true,
+      "has_real_urls": true,
+      "is_template": true,
+      "issues": [
+        "No test assertions found",
+        "Code appears to be template with placeholders"
+      ]
+    },
+    "test_unknown_test.py": {
+      "filename": "test_unknown_test.py",
+      "lines_of_code": 102,
+      "has_selectors": true,
+      "has_assertions": false,
+      "has_waits": true,
+      "has_real_urls": false,
+      "is_template": true,
+      "issues": [
+        "No test assertions found",
+        "Code appears to be template with placeholders",
+        "No real application URLs found"
+      ]
+    }
+  },
+  "issues_found": [
+    "Complete workflow error: string indices must be integers, not 'str'"
+  ],
+  "insights": [
+    "\u2705 Scenario parsing works correctly",
+    "\u2705 Planning Agent processes real scenarios",
+    "\u2705 Test Creation Agent generates output",
+    "\u2705 test_config.py contains real application URLs",
+    "\u274c test_suite_runner.py is still template-based",
+    "\u274c test_suite_runner.py lacks test assertions",
+    "\u274c test_config.py is still template-based",
+    "\u274c test_config.py lacks test assertions",
+    "\u274c test_unknown_test.py is still template-based",
+    "\u274c test_unknown_test.py lacks test assertions",
+    "\u26a0\ufe0f Minor issues found - framework mostly working"
+  ],
+  "parsing_success": true
+}

@@ -11,7 +11,7 @@ class ShoppingCartPage:
     
     def __init__(self, page: Page):
         self.page = page
-        self.url = "https://advantageonlineshopping.com/cart"
+        self.url = "https://example.com/cart"
         
         # Element selectors discovered from application analysis
 

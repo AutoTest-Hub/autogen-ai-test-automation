@@ -19,7 +19,7 @@ from parsers.unified_parser import UnifiedTestFileParser
 
 # Agent imports
 from agents.planning_agent import PlanningAgent
-from agents.test_creation_agent import TestCreationAgent
+from agents.test_creation_agent import EnhancedTestCreationAgent as TestCreationAgent
 from agents.review_agent import ReviewAgent
 from agents.execution_agent import ExecutionAgent
 from agents.reporting_agent import ReportingAgent

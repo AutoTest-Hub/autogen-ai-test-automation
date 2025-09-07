@@ -1,0 +1,321 @@
+{
+  "application_url": "https://example.com",
+  "analysis_depth": "basic",
+  "discovered_pages": [
+    {
+      "name": "Home Page",
+      "url": "https://example.com",
+      "type": "landing",
+      "priority": "high",
+      "description": "Main landing page of the application"
+    },
+    {
+      "name": "Login Page",
+      "url": "https://example.com/login",
+      "type": "authentication",
+      "priority": "high",
+      "description": "User authentication page"
+    },
+    {
+      "name": "Product Catalog",
+      "url": "https://example.com/catalog",
+      "type": "catalog",
+      "priority": "high",
+      "description": "Product browsing and search"
+    },
+    {
+      "name": "Shopping Cart",
+      "url": "https://example.com/cart",
+      "type": "transaction",
+      "priority": "high",
+      "description": "Shopping cart and checkout"
+    },
+    {
+      "name": "User Profile",
+      "url": "https://example.com/profile",
+      "type": "account",
+      "priority": "medium",
+      "description": "User account management"
+    }
+  ],
+  "application_structure": {},
+  "key_elements": {
+    "Home Page": {
+      "navigation": [
+        {
+          "name": "main_menu",
+          "selector": "#mainMenu",
+          "type": "navigation"
+        },
+        {
+          "name": "user_menu",
+          "selector": "#userMenu",
+          "type": "dropdown"
+        }
+      ],
+      "content": [
+        {
+          "name": "hero_section",
+          "selector": "#heroSection",
+          "type": "display"
+        },
+        {
+          "name": "featured_products",
+          "selector": "#featuredProducts",
+          "type": "container"
+        }
+      ],
+      "footer": [
+        {
+          "name": "footer_links",
+          "selector": "#footerLinks",
+          "type": "navigation"
+        }
+      ]
+    },
+    "Login Page": {
+      "forms": [
+        {
+          "name": "login_form",
+          "selector": "#loginForm",
+          "fields": [
+            {
+              "name": "username",
+              "selector": "#username",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "password",
+              "selector": "#password",
+              "type": "password",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "buttons": [
+        {
+          "name": "login_button",
+          "selector": "#loginBtn",
+          "action": "submit"
+        },
+        {
+          "name": "forgot_password",
+          "selector": "#forgotPassword",
+          "action": "navigate"
+        }
+      ],
+      "links": [
+        {
+          "name": "register_link",
+          "selector": "#registerLink",
+          "target": "/register"
+        }
+      ]
+    },
+    "Product Catalog": {
+      "search": [
+        {
+          "name": "search_box",
+          "selector": "#searchBox",
+          "type": "text"
+        },
+        {
+          "name": "search_button",
+          "selector": "#searchBtn",
+          "action": "search"
+        }
+      ],
+      "filters": [
+        {
+          "name": "category_filter",
+          "selector": "#categoryFilter",
+          "type": "dropdown"
+        },
+        {
+          "name": "price_filter",
+          "selector": "#priceFilter",
+          "type": "range"
+        }
+      ],
+      "products": [
+        {
+          "name": "product_grid",
+          "selector": ".product-grid",
+          "type": "container"
+        },
+        {
+          "name": "product_item",
+          "selector": ".product-item",
+          "type": "repeating"
+        },
+        {
+          "name": "add_to_cart",
+          "selector": ".add-to-cart-btn",
+          "action": "add_to_cart"
+        }
+      ]
+    }
+  },
+  "user_workflows": [
+    {
+      "name": "Complete Shopping Workflow",
+      "type": "end_to_end",
+      "priority": "high",
+      "description": "Full shopping experience from browsing to checkout",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "home_page",
+          "description": "Start at home page"
+        },
+        {
+          "action": "navigate",
+          "target": "catalog",
+          "description": "Browse product catalog"
+        },
+        {
+          "action": "search",
+          "target": "search_box",
+          "description": "Search for products"
+        },
+        {
+          "action": "click",
+          "target": "product_item",
+          "description": "Select a product"
+        },
+        {
+          "action": "click",
+          "target": "add_to_cart",
+          "description": "Add product to cart"
+        },
+        {
+          "action": "navigate",
+          "target": "cart",
+          "description": "Go to shopping cart"
+        },
+        {
+          "action": "click",
+          "target": "checkout_button",
+          "description": "Proceed to checkout"
+        }
+      ],
+      "test_scenarios": [
+        "Search and add single product to cart",
+        "Add multiple products to cart",
+        "Update quantities in cart",
+        "Remove items from cart"
+      ]
+    },
+    {
+      "name": "User Authentication Workflow",
+      "type": "authentication",
+      "priority": "high",
+      "description": "User login and account access",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "login_page",
+          "description": "Go to login page"
+        },
+        {
+          "action": "input",
+          "target": "username",
+          "description": "Enter username"
+        },
+        {
+          "action": "input",
+          "target": "password",
+          "description": "Enter password"
+        },
+        {
+          "action": "click",
+          "target": "login_button",
+          "description": "Submit login form"
+        },
+        {
+          "action": "verify",
+          "target": "user_menu",
+          "description": "Verify successful login"
+        }
+      ],
+      "test_scenarios": [
+        "Valid login credentials",
+        "Invalid login credentials",
+        "Empty form submission",
+        "Password reset flow"
+      ]
+    },
+    {
+      "name": "Product Browsing Workflow",
+      "type": "browsing",
+      "priority": "medium",
+      "description": "Product discovery and filtering",
+      "steps": [
+        {
+          "action": "navigate",
+          "target": "catalog",
+          "description": "Go to product catalog"
+        },
+        {
+          "action": "input",
+          "target": "search_box",
+          "description": "Enter search term"
+        },
+        {
+          "action": "click",
+          "target": "search_button",
+          "description": "Execute search"
+        },
+        {
+          "action": "select",
+          "target": "category_filter",
+          "description": "Apply category filter"
+        },
+        {
+          "action": "verify",
+          "target": "product_grid",
+          "description": "Verify filtered results"
+        }
+      ],
+      "test_scenarios": [
+        "Search by product name",
+        "Filter by category",
+        "Filter by price range",
+        "Sort products by price/rating"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "framework",
+      "priority": "medium",
+      "title": "Selenium WebDriver Suitable",
+      "description": "Application complexity is moderate. Selenium WebDriver should handle testing requirements.",
+      "rationale": "Detected 9 interactive elements across pages"
+    },
+    {
+      "type": "pattern",
+      "priority": "high",
+      "title": "Implement Page Object Model",
+      "description": "Multiple workflows detected. Use Page Object Model for maintainable test code.",
+      "rationale": "Found 3 distinct workflows"
+    },
+    {
+      "type": "data",
+      "priority": "medium",
+      "title": "Use Data-Driven Testing",
+      "description": "E-commerce workflows benefit from testing with multiple product data sets.",
+      "rationale": "Shopping workflows detected"
+    },
+    {
+      "type": "integration",
+      "priority": "medium",
+      "title": "Include API Testing",
+      "description": "Combine UI tests with API validation for comprehensive coverage.",
+      "rationale": "Modern web applications rely heavily on API interactions"
+    }
+  ],
+  "analysis_timestamp": "2025-09-07T19:41:23.640073"
+}

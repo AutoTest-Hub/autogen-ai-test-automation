@@ -11,7 +11,7 @@ class ProductCatalogPage:
     
     def __init__(self, page: Page):
         self.page = page
-        self.url = "https://advantageonlineshopping.com/catalog"
+        self.url = "https://example.com/catalog"
         
         # Element selectors discovered from application analysis
 

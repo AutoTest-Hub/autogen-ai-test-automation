@@ -11,7 +11,7 @@ class LoginPagePage:
     
     def __init__(self, page: Page):
         self.page = page
-        self.url = "https://advantageonlineshopping.com/login"
+        self.url = "https://example.com/login"
         
         # Element selectors discovered from application analysis
 

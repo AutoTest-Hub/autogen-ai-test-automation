@@ -16,7 +16,7 @@ from config.settings import settings, AgentRole
 from models.local_ai_provider import LocalAIProvider, ModelType
 from agents.base_agent import BaseTestAgent
 from agents.planning_agent import PlanningAgent
-from agents.test_creation_agent import TestCreationAgent
+from agents.test_creation_agent import EnhancedTestCreationAgent as TestCreationAgent
 from parsers.unified_parser import UnifiedTestFileParser
 from orchestrator.workflow_orchestrator import WorkflowOrchestrator
 from orchestrator.agent_coordinator import AgentCoordinator
