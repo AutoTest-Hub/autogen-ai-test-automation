@@ -131,7 +131,7 @@ class ComprehensiveAgentTester:
             """
             
             analysis_result = await planning_agent.process_task({
-                "task_type": "analyze_requirements",
+                "type": "analyze_requirements",
                 "requirements": test_requirement
             })
             
@@ -162,7 +162,7 @@ class ComprehensiveAgentTester:
             ]
             
             matrix_result = await planning_agent.process_task({
-                "task_type": "create_test_matrix", 
+                "type": "create_plan", 
                 "scenarios": test_scenarios
             })
             
@@ -184,23 +184,24 @@ class ComprehensiveAgentTester:
             logger.info("  ⚠️ Testing risk assessment...")
             start_time = time.time()
             
-            risk_factors = {
+            test_plan = {
                 "application_complexity": "high",
                 "test_environment": "staging",
                 "timeline": "2 weeks",
                 "team_experience": "medium",
-                "critical_business_flow": True
+                "critical_business_flow": True,
+                "scenarios": ["login", "shopping", "checkout"]
             }
             
             risk_result = await planning_agent.process_task({
-                "task_type": "assess_risk",
+                "type": "assess_risk",
                 "test_plan": test_plan
             })
             
             test_results["test_cases"]["risk_assessment"] = {
                 "status": "passed" if risk_result else "failed",
                 "execution_time": time.time() - start_time,
-                "risk_factors_analyzed": len(risk_factors),
+                "risk_factors_analyzed": len(test_plan),
                 "assessment_detail": len(str(risk_result)) if risk_result else 0
             }
             
@@ -222,7 +223,10 @@ class ComprehensiveAgentTester:
             testing across iOS and Android platforms. Timeline is 3 weeks with a team of 4 testers.
             """
             
-            nl_result = await planning_agent.process_task(natural_language_request)
+            nl_result = await planning_agent.process_task({
+                "type": "analyze_requirements",
+                "requirements": natural_language_request
+            })
             
             test_results["test_cases"]["natural_language_processing"] = {
                 "status": "passed" if nl_result else "failed",
@@ -278,7 +282,7 @@ class ComprehensiveAgentTester:
             }
             
             playwright_result = await creation_agent.process_task({
-                "task_type": "generate_playwright_test",
+                "type": "generate_tests",
                 "test_spec": playwright_spec
             })
             
@@ -316,7 +320,7 @@ class ComprehensiveAgentTester:
             }
             
             selenium_result = await creation_agent.process_task({
-                "task_type": "generate_selenium_test", 
+                "type": "generate_tests", 
                 "test_spec": selenium_spec
             })
             
@@ -360,7 +364,7 @@ class ComprehensiveAgentTester:
             }
             
             api_result = await creation_agent.process_task({
-                "task_type": "generate_api_test",
+                "type": "generate_tests",
                 "test_spec": api_spec  
             })
             
@@ -399,7 +403,10 @@ class ComprehensiveAgentTester:
                 ]
             }
             
-            page_object_result = await creation_agent.create_page_object(page_spec)
+            page_object_result = await creation_agent.process_task({
+                "type": "generate_utilities",
+                "test_spec": page_spec
+            })
             
             test_results["test_cases"]["page_object_creation"] = {
                 "status": "passed" if page_object_result else "failed",
@@ -451,7 +458,10 @@ class ComprehensiveAgentTester:
             5. Verify user can login with new credentials
             """
             
-            planning_result = await self.agents["planning"].analyze_requirements(requirement)
+            planning_result = await self.agents["planning"].process_task({
+                "type": "analyze_requirements",
+                "requirements": requirement
+            })
             
             # Step 2: Test creation agent generates tests based on planning
             if planning_result:
@@ -461,9 +471,10 @@ class ComprehensiveAgentTester:
                     "framework": "playwright"
                 }
                 
-                creation_result = await self.agents["test_creation"].process_task(
-                    f"Generate Playwright test based on these requirements: {test_spec}"
-                )
+                creation_result = await self.agents["test_creation"].process_task({
+                    "type": "generate_tests",
+                    "test_spec": test_spec
+                })
                 
                 orchestration_results["coordination_tests"]["planning_to_creation"] = {
                     "status": "passed" if creation_result else "failed",
@@ -499,13 +510,17 @@ class ComprehensiveAgentTester:
             """
             
             # Planning agent creates strategy
-            strategy = await self.agents["planning"].process_task(complex_scenario)
+            strategy = await self.agents["planning"].process_task({
+                "type": "create_plan",
+                "requirements": complex_scenario
+            })
             
             # Test creation agent implements the strategy
             if strategy:
-                implementation = await self.agents["test_creation"].process_task(
-                    f"Implement this test strategy with actual code: {strategy}"
-                )
+                implementation = await self.agents["test_creation"].process_task({
+                    "type": "generate_tests",
+                    "test_spec": {"requirements": str(strategy), "framework": "comprehensive"}
+                })
                 
                 orchestration_results["coordination_tests"]["multi_agent_collaboration"] = {
                     "status": "passed" if implementation else "failed",
@@ -549,9 +564,30 @@ class ComprehensiveAgentTester:
         
         # Test response times for different complexity levels
         test_cases = [
-            {"name": "simple_task", "complexity": "low", "task": "Analyze this simple login test requirement"},
-            {"name": "medium_task", "complexity": "medium", "task": "Create a comprehensive test plan for user registration with validation"},
-            {"name": "complex_task", "complexity": "high", "task": "Design end-to-end testing strategy for multi-tenant SaaS application with complex workflows"}
+            {
+                "name": "simple_task", 
+                "complexity": "low", 
+                "task": {
+                    "type": "analyze_requirements",
+                    "requirements": "Analyze this simple login test requirement"
+                }
+            },
+            {
+                "name": "medium_task", 
+                "complexity": "medium", 
+                "task": {
+                    "type": "create_plan",
+                    "requirements": "Create a comprehensive test plan for user registration with validation"
+                }
+            },
+            {
+                "name": "complex_task", 
+                "complexity": "high", 
+                "task": {
+                    "type": "create_plan",
+                    "requirements": "Design end-to-end testing strategy for multi-tenant SaaS application with complex workflows"
+                }
+            }
         ]
         
         for agent_name, agent in self.agents.items():

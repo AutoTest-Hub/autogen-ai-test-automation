@@ -1,0 +1,40 @@
+{
+  "overall_score": 8.5,
+  "reviews": [
+    {
+      "filename": "code_snippet",
+      "score": 8.5,
+      "issues": [
+        "Limited error handling",
+        "Missing test assertions",
+        "Limited code documentation"
+      ],
+      "strengths": [
+        "Proper imports are present",
+        "Logging is implemented",
+        "Proper async/await usage"
+      ],
+      "recommendations": [
+        "Add comprehensive error handling",
+        "Add proper test assertions",
+        "Add comprehensive code documentation"
+      ],
+      "metrics": {
+        "total_lines": 12,
+        "non_empty_lines": 9
+      }
+    }
+  ],
+  "summary": {
+    "total_files_reviewed": 1,
+    "average_score": 8.5,
+    "total_issues_found": 3,
+    "total_strengths_identified": 3,
+    "files_needing_improvement": 0
+  },
+  "recommendations": [
+    "Add comprehensive code documentation",
+    "Add comprehensive error handling",
+    "Add proper test assertions"
+  ]
+}
