@@ -1,0 +1,426 @@
+<mxfile host="app.diagrams.net" modified="2025-09-07T12:35:00.000Z" agent="5.0" etag="abc123" version="24.7.7" type="device">
+  <diagram name="AutoGen AI Test Framework E2E Workflow" id="workflow-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2336" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Title -->
+        <mxCell id="title" value="AutoGen AI Test Automation Framework - E2E Workflow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=24;fontStyle=1;fontColor=#1f4e79;" vertex="1" parent="1">
+          <mxGeometry x="327" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Phase 1: Input & Discovery -->
+        <mxCell id="phase1-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1f5fe;strokeColor=#01579b;strokeWidth=2;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="1574" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="phase1-title" value="Phase 1: Input Processing &amp; Application Discovery" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#01579b;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- User Input -->
+        <mxCell id="user-input" value="User Input&#xa;&#xa;• Test Scenarios (Text)&#xa;• Application URL&#xa;• Test Requirements" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="150" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Scenario Parser -->
+        <mxCell id="scenario-parser" value="Scenario Parser&#xa;&#xa;• Parse text scenarios&#xa;• Extract test steps&#xa;• Structure data&#xa;• Validate format" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="150" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Discovery Agent -->
+        <mxCell id="discovery-agent" value="Discovery Agent&#xa;&#xa;• Analyze application&#xa;• Map page structure&#xa;• Identify elements&#xa;• Generate selectors&#xa;• Map workflows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#2e7d32;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="150" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Discovery Output -->
+        <mxCell id="discovery-output" value="Discovery Output&#xa;&#xa;• Application map&#xa;• Element selectors&#xa;• User workflows&#xa;• Page structure&#xa;• Test recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57f17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="800" y="150" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows Phase 1 -->
+        <mxCell id="arrow1-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#1976d2;" edge="1" parent="1" source="user-input" target="scenario-parser">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#1976d2;" edge="1" parent="1" source="scenario-parser" target="discovery-agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#1976d2;" edge="1" parent="1" source="discovery-agent" target="discovery-output">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Data Labels Phase 1 -->
+        <mxCell id="data1-1" value="Raw Scenarios" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#1976d2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="270" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="data1-2" value="Parsed Data" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#1976d2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="510" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="data1-3" value="App Analysis" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#1976d2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="750" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Phase 2: Planning & Test Creation -->
+        <mxCell id="phase2-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;strokeWidth=2;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="1574" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="phase2-title" value="Phase 2: Test Planning &amp; Code Generation" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#7b1fa2;" vertex="1" parent="1">
+          <mxGeometry x="60" y="350" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Planning Agent -->
+        <mxCell id="planning-agent" value="Planning Agent&#xa;&#xa;• Analyze scenarios&#xa;• Create test strategy&#xa;• Define test cases&#xa;• Set priorities&#xa;• Plan execution order" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1976d2;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="390" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Test Creation Agent -->
+        <mxCell id="test-creation-agent" value="Test Creation Agent&#xa;&#xa;• Generate test code&#xa;• Use real selectors&#xa;• Create assertions&#xa;• Add error handling&#xa;• Generate test data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#2e7d32;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="390" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Test Plan Output -->
+        <mxCell id="test-plan-output" value="Test Plan&#xa;&#xa;• Test strategy&#xa;• Test cases&#xa;• Execution order&#xa;• Success criteria&#xa;• Risk assessment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57f17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="680" y="390" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Generated Code -->
+        <mxCell id="generated-code" value="Generated Code&#xa;&#xa;• Playwright/Selenium&#xa;• Real selectors&#xa;• API test code&#xa;• Test data&#xa;• Configuration files" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="960" y="390" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows Phase 2 -->
+        <mxCell id="arrow2-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7b1fa2;" edge="1" parent="1" source="discovery-output" target="planning-agent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="890" y="280" as="sourcePoint" />
+            <mxPoint x="210" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="890" y="320" />
+              <mxPoint x="210" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7b1fa2;" edge="1" parent="1" source="planning-agent" target="test-creation-agent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7b1fa2;" edge="1" parent="1" source="planning-agent" target="test-plan-output">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="520" />
+              <mxPoint x="770" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#7b1fa2;" edge="1" parent="1" source="test-creation-agent" target="generated-code">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="490" y="520" />
+              <mxPoint x="1050" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Discovery to Test Creation -->
+        <mxCell id="arrow2-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#2e7d32;strokeDashArray=5 5;" edge="1" parent="1" source="discovery-output" target="test-creation-agent">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="890" y="320" />
+              <mxPoint x="490" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Data Labels Phase 2 -->
+        <mxCell id="data2-1" value="App Data +&#xa;Scenarios" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#7b1fa2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="550" y="300" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data2-2" value="Test Strategy" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#7b1fa2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="310" y="420" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="data2-3" value="Selectors +&#xa;Structure" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="690" y="300" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Phase 3: Review & Quality -->
+        <mxCell id="phase3-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#f57c00;strokeWidth=2;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="1574" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="phase3-title" value="Phase 3: Code Review &amp; Quality Assurance" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#f57c00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="590" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Review Agent -->
+        <mxCell id="review-agent" value="Review Agent&#xa;&#xa;• Code quality check&#xa;• Best practices&#xa;• Security review&#xa;• Performance check&#xa;• Maintainability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c2185b;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Review Output -->
+        <mxCell id="review-output" value="Review Report&#xa;&#xa;• Quality score&#xa;• Issues found&#xa;• Recommendations&#xa;• Approved tests&#xa;• Improvement areas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57f17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="480" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Enhanced Code -->
+        <mxCell id="enhanced-code" value="Enhanced Code&#xa;&#xa;• Quality improved&#xa;• Issues fixed&#xa;• Best practices&#xa;• Ready for execution&#xa;• Optimized tests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#2e7d32;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="760" y="630" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows Phase 3 -->
+        <mxCell id="arrow3-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#f57c00;" edge="1" parent="1" source="generated-code" target="review-agent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1050" y="520" as="sourcePoint" />
+            <mxPoint x="290" y="600" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1050" y="560" />
+              <mxPoint x="290" y="560" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#f57c00;" edge="1" parent="1" source="review-agent" target="review-output">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow3-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#f57c00;" edge="1" parent="1" source="review-output" target="enhanced-code">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Data Labels Phase 3 -->
+        <mxCell id="data3-1" value="Generated&#xa;Test Code" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#f57c00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="670" y="540" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data3-2" value="Review&#xa;Feedback" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#f57c00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="390" y="650" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data3-3" value="Quality&#xa;Approved" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#f57c00;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="670" y="650" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Phase 4: Execution & Monitoring -->
+        <mxCell id="phase4-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#2e7d32;strokeWidth=2;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="820" width="1574" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="phase4-title" value="Phase 4: Test Execution &amp; Monitoring" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="60" y="830" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Execution Agent -->
+        <mxCell id="execution-agent" value="Execution Agent&#xa;&#xa;• Setup test environment&#xa;• Execute test suites&#xa;• Monitor progress&#xa;• Handle failures&#xa;• Collect results" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1976d2;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="870" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Test Environment -->
+        <mxCell id="test-environment" value="Test Environment&#xa;&#xa;• Browser automation&#xa;• API endpoints&#xa;• Test data setup&#xa;• Configuration&#xa;• Monitoring tools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57f17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="400" y="870" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Execution Results -->
+        <mxCell id="execution-results" value="Execution Results&#xa;&#xa;• Test outcomes&#xa;• Performance metrics&#xa;• Screenshots/logs&#xa;• Error details&#xa;• Coverage data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c2185b;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="680" y="870" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Real-time Monitoring -->
+        <mxCell id="monitoring" value="Real-time Monitoring&#xa;&#xa;• Live test status&#xa;• Performance tracking&#xa;• Error alerts&#xa;• Progress updates&#xa;• Resource usage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="960" y="870" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows Phase 4 -->
+        <mxCell id="arrow4-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#2e7d32;" edge="1" parent="1" source="enhanced-code" target="execution-agent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="850" y="760" as="sourcePoint" />
+            <mxPoint x="210" y="840" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="850" y="800" />
+              <mxPoint x="210" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#2e7d32;" edge="1" parent="1" source="execution-agent" target="test-environment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#2e7d32;" edge="1" parent="1" source="test-environment" target="execution-results">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow4-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#2e7d32;" edge="1" parent="1" source="execution-results" target="monitoring">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Data Labels Phase 4 -->
+        <mxCell id="data4-1" value="Quality&#xa;Approved Code" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="530" y="780" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data4-2" value="Environment&#xa;Setup" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="310" y="890" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data4-3" value="Test&#xa;Execution" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="590" y="890" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data4-4" value="Live&#xa;Monitoring" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="870" y="890" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Phase 5: Reporting & Intelligence -->
+        <mxCell id="phase5-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce4ec;strokeColor=#c2185b;strokeWidth=2;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1060" width="1574" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="phase5-title" value="Phase 5: Intelligent Reporting &amp; Insights" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#c2185b;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1070" width="400" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Reporting Agent -->
+        <mxCell id="reporting-agent" value="Reporting Agent&#xa;&#xa;• Analyze results&#xa;• Generate reports&#xa;• Create insights&#xa;• Trend analysis&#xa;• Recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1976d2;strokeWidth=2;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="1110" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Comprehensive Reports -->
+        <mxCell id="reports" value="Comprehensive Reports&#xa;&#xa;• HTML dashboards&#xa;• PDF reports&#xa;• Test metrics&#xa;• Quality scores&#xa;• Executive summary" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff8e1;strokeColor=#f57f17;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1110" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- AI Insights -->
+        <mxCell id="ai-insights" value="AI Insights&#xa;&#xa;• Pattern recognition&#xa;• Failure prediction&#xa;• Optimization tips&#xa;• Risk assessment&#xa;• Quality trends" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#2e7d32;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="680" y="1110" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Stakeholder Delivery -->
+        <mxCell id="stakeholder-delivery" value="Stakeholder Delivery&#xa;&#xa;• Team notifications&#xa;• Management reports&#xa;• Developer feedback&#xa;• CI/CD integration&#xa;• Action items" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#7b1fa2;strokeWidth=2;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="960" y="1110" width="180" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Arrows Phase 5 -->
+        <mxCell id="arrow5-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#c2185b;" edge="1" parent="1" source="execution-results" target="reporting-agent">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="1000" as="sourcePoint" />
+            <mxPoint x="210" y="1080" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="770" y="1040" />
+              <mxPoint x="210" y="1040" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow5-2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#c2185b;" edge="1" parent="1" source="reporting-agent" target="reports">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#c2185b;" edge="1" parent="1" source="reports" target="ai-insights">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow5-4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=3;strokeColor=#c2185b;" edge="1" parent="1" source="ai-insights" target="stakeholder-delivery">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Monitoring to Reporting -->
+        <mxCell id="arrow5-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#7b1fa2;strokeDashArray=5 5;" edge="1" parent="1" source="monitoring" target="reporting-agent">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="1040" />
+              <mxPoint x="210" y="1040" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Data Labels Phase 5 -->
+        <mxCell id="data5-1" value="Execution&#xa;Results" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#c2185b;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="490" y="1020" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data5-2" value="Analysis&#xa;Complete" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#c2185b;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="310" y="1130" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data5-3" value="Reports&#xa;Generated" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#c2185b;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1130" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data5-4" value="Insights&#xa;Ready" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#c2185b;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="870" y="1130" width="80" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="data5-5" value="Live Data" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontColor=#7b1fa2;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="630" y="1020" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Feedback Loop -->
+        <mxCell id="feedback-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffebee;strokeColor=#d32f2f;strokeWidth=2;opacity=20;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="100" width="400" height="1160" as="geometry" />
+        </mxCell>
+        <mxCell id="feedback-title" value="Continuous Learning &amp; Improvement" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;fontColor=#d32f2f;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="120" width="360" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Feedback Components -->
+        <mxCell id="learning-component" value="AI Learning Engine&#xa;&#xa;• Pattern recognition&#xa;• Failure analysis&#xa;• Success optimization&#xa;• Model improvement&#xa;• Knowledge base update" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#d32f2f;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="170" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="knowledge-base" value="Knowledge Base&#xa;&#xa;• Test patterns&#xa;• Best practices&#xa;• Common issues&#xa;• Solutions library&#xa;• Performance data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#d32f2f;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="170" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="improvement-engine" value="Improvement Engine&#xa;&#xa;• Code optimization&#xa;• Test enhancement&#xa;• Strategy refinement&#xa;• Agent training&#xa;• Process evolution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#d32f2f;strokeWidth=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="300" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Feedback Arrows -->
+        <mxCell id="feedback-arrow1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d32f2f;strokeDashArray=3 3;" edge="1" parent="1" source="stakeholder-delivery" target="learning-component">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="1160" />
+              <mxPoint x="1160" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="feedback-arrow2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d32f2f;" edge="1" parent="1" source="learning-component" target="knowledge-base">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feedback-arrow3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d32f2f;" edge="1" parent="1" source="knowledge-base" target="improvement-engine">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1500" y="300" />
+              <mxPoint x="1410" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="feedback-arrow4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#d32f2f;strokeDashArray=3 3;" edge="1" parent="1" source="improvement-engine" target="discovery-agent">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1410" y="450" />
+              <mxPoint x="1200" y="450" />
+              <mxPoint x="1200" y="80" />
+              <mxPoint x="650" y="80" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1300" width="1574" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-title" value="Legend &amp; Key Information" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1310" width="300" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Legend Items -->
+        <mxCell id="legend-agents" value="🤖 AI Agents: Autonomous decision-making components" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1340" width="350" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-data" value="📊 Data Flow: Information passed between agents" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="450" y="1340" width="350" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-outputs" value="📁 Outputs: Generated artifacts and reports" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="820" y="1340" width="350" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-feedback" value="🔄 Feedback: Continuous learning and improvement" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="1340" width="350" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-current" value="✅ Current Status: Discovery Agent (100%), Agent Communication (100%), Real Scenarios (75%)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#2e7d32;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1365" width="600" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-next" value="🚧 Next Phase: Enhance Test Creation Agent to generate real working code" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#f57c00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1365" width="500" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-vision" value="🎯 Vision: World's first AI-powered QA platform where teams can 'hire' AI QA agents" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#7b1fa2;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1390" width="600" height="20" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+
