@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-09-07T13:53:26.813713",
+  "overall_status": "\u2705 EXCELLENT",
+  "success_rate": 95,
+  "files_generated": 9,
+  "real_code_files": 9,
+  "template_files": 0,
+  "real_code_percentage": 100.0,
+  "discovery_integration": true,
+  "framework": "playwright",
+  "test_cases": 2,
+  "generated_files": [
+    {
+      "type": "test",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/test_user_login_test.py",
+      "name": "test_user_login_test.py",
+      "test_count": 1,
+      "elements_used": 4
+    },
+    {
+      "type": "test",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/test_product_search_test.py",
+      "name": "test_product_search_test.py",
+      "test_count": 1,
+      "elements_used": 4
+    },
+    {
+      "type": "page_object",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/home_page_page.py",
+      "name": "home_page_page.py",
+      "class_name": "HomePagePage",
+      "elements_count": 0
+    },
+    {
+      "type": "page_object",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/login_page_page.py",
+      "name": "login_page_page.py",
+      "class_name": "LoginPagePage",
+      "elements_count": 0
+    },
+    {
+      "type": "page_object",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/product_catalog_page.py",
+      "name": "product_catalog_page.py",
+      "class_name": "ProductCatalogPage",
+      "elements_count": 0
+    },
+    {
+      "type": "page_object",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/shopping_cart_page.py",
+      "name": "shopping_cart_page.py",
+      "class_name": "ShoppingCartPage",
+      "elements_count": 0
+    },
+    {
+      "type": "page_object",
+      "framework": "playwright",
+      "path": "work_dir/EnhancedTestCreationAgent/user_profile_page.py",
+      "name": "user_profile_page.py",
+      "class_name": "UserProfilePage",
+      "elements_count": 0
+    },
+    {
+      "type": "configuration",
+      "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+      "name": "conftest.py",
+      "purpose": "pytest configuration"
+    },
+    {
+      "type": "requirements",
+      "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+      "name": "requirements.txt",
+      "purpose": "test dependencies"
+    }
+  ]
+}
