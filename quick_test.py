@@ -215,17 +215,18 @@ class FrameworkQuickTest:
         print("👥 Testing Agent Creation...")
         
         try:
-            from agents.base_agent import BaseTestAgent
+            from agents.planning_agent import PlanningAgent
             from config.settings import AgentRole
-            from models.local_ai_provider import LocalAIProvider
+            from models.local_ai_provider import LocalAIProvider, ModelType
             
             # Create local AI provider
             provider = LocalAIProvider()
             
-            # Test agent creation
-            agent = BaseTestAgent(
-                role=AgentRole.PLANNING,
-                local_ai_provider=provider
+            # Test agent creation using concrete agent class
+            agent = PlanningAgent(
+                name="test_planning_agent",
+                model_type=ModelType.PLANNING,
+                use_local_ai=True
             )
             
             print(f"   ✅ Agent created: {agent.name}")
@@ -273,37 +274,50 @@ Test Steps:
             with open("test_scenario_quick.txt", "w") as f:
                 f.write(test_scenario)
             
-            from parsers.unified_parser import UnifiedParser
+            from parsers.unified_parser import UnifiedTestFileParser as UnifiedParser
             
             parser = UnifiedParser()
             result = parser.parse_file("test_scenario_quick.txt")
             
-            if result["success"]:
-                scenarios = result["scenarios"]
+            # Check if parsing was successful by examining the result
+            parsing_successful = (result.file_format != "error" and 
+                                not any("error" in error.lower() for error in result.parsing_errors))
+            
+            if parsing_successful:
                 print(f"   ✅ Scenario parsed successfully")
-                print(f"   ✅ {len(scenarios)} scenario(s) found")
-                print(f"   ✅ Test steps: {len(scenarios[0].get('test_steps', []))}")
+                print(f"   ✅ Test name: {result.test_name}")
+                print(f"   ✅ Test steps: {len(result.test_steps)}")
+                print(f"   ✅ Priority: {result.priority}")
+                print(f"   ✅ Tags: {', '.join(result.tags) if result.tags else 'None'}")
                 
                 self.results["tests"]["scenario_parsing"] = {
                     "status": "pass",
-                    "scenarios_count": len(scenarios),
-                    "test_steps": len(scenarios[0].get('test_steps', []))
+                    "test_name": result.test_name,
+                    "test_steps_count": len(result.test_steps),
+                    "priority": result.priority,
+                    "tags": result.tags
                 }
                 
                 # Cleanup
                 os.remove("test_scenario_quick.txt")
                 return True
             else:
-                print(f"   ❌ Scenario parsing failed: {result.get('error')}")
+                error_msg = f"Parsing errors: {result.parsing_errors}" if result.parsing_errors else "Unknown parsing error"
+                print(f"   ❌ Scenario parsing failed: {error_msg}")
                 self.results["tests"]["scenario_parsing"] = {
                     "status": "fail",
-                    "error": result.get('error')
+                    "error": error_msg
                 }
                 return False
                 
         except Exception as e:
             print(f"   ❌ Scenario parsing test failed: {e}")
             self.results["tests"]["scenario_parsing"] = {"status": "fail", "error": str(e)}
+            # Cleanup on error
+            try:
+                os.remove("test_scenario_quick.txt")
+            except:
+                pass
             return False
     
     def run_all_tests(self):
