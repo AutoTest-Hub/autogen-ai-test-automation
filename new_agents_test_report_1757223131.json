@@ -1,0 +1,103 @@
+{
+  "test_session": {
+    "start_time": "2025-09-07T01:31:50.170273",
+    "framework_version": "1.0.0",
+    "test_environment": "new_agents_validation"
+  },
+  "agent_tests": {
+    "review_agent": {
+      "agent_name": "ReviewAgent",
+      "test_start": "2025-09-07T01:31:50.174823",
+      "test_cases": {
+        "code_review": {
+          "status": "passed",
+          "execution_time": 0.0004360675811767578,
+          "review_score": 8.5,
+          "issues_found": 1
+        },
+        "scenario_validation": {
+          "status": "passed",
+          "execution_time": 8.869171142578125e-05,
+          "scenarios_validated": 2,
+          "valid_scenarios": 1
+        }
+      },
+      "errors": [],
+      "test_end": "2025-09-07T01:31:50.175436",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "success_rate": 100.0
+    },
+    "execution_agent": {
+      "agent_name": "ExecutionAgent",
+      "test_start": "2025-09-07T01:31:50.175487",
+      "test_cases": {
+        "environment_setup": {
+          "status": "passed",
+          "execution_time": 0.1973433494567871,
+          "setup_successful": true,
+          "steps_completed": 3
+        },
+        "test_execution": {
+          "status": "passed",
+          "execution_time": 21.217489004135132,
+          "tests_executed": 1,
+          "execution_successful": true
+        }
+      },
+      "errors": [],
+      "test_end": "2025-09-07T01:32:11.590439",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "success_rate": 100.0
+    },
+    "reporting_agent": {
+      "agent_name": "ReportingAgent",
+      "test_start": "2025-09-07T01:32:11.590500",
+      "test_cases": {
+        "report_generation": {
+          "status": "passed",
+          "execution_time": 0.0006954669952392578,
+          "report_generated": true,
+          "html_report_created": true,
+          "json_report_created": true
+        },
+        "data_export": {
+          "status": "passed",
+          "execution_time": 0.00022530555725097656,
+          "export_successful": true,
+          "files_exported": 1
+        }
+      },
+      "errors": [],
+      "test_end": "2025-09-07T01:32:11.591524",
+      "total_tests": 2,
+      "passed_tests": 2,
+      "success_rate": 100.0
+    }
+  },
+  "summary": {
+    "total_tests": 7,
+    "passed_tests": 7,
+    "success_rate": 100.0,
+    "framework_status": "production_ready",
+    "test_end_time": "2025-09-07T01:32:11.773498"
+  },
+  "integration_tests": {
+    "test_start": "2025-09-07T01:32:11.591602",
+    "integration_tests": {
+      "full_workflow": {
+        "status": "passed",
+        "execution_time": 0.1817643642425537,
+        "review_successful": true,
+        "execution_setup_successful": true,
+        "report_generated": true
+      }
+    },
+    "errors": [],
+    "test_end": "2025-09-07T01:32:11.773427",
+    "total_tests": 1,
+    "passed_tests": 1,
+    "success_rate": 100.0
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "test_results": [
+    {
+      "test": "login",
+      "status": "passed",
+      "time": 3.2
+    },
+    {
+      "test": "checkout",
+      "status": "failed",
+      "time": 8.7
+    }
+  ],
+  "summary": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1
+  }
+}

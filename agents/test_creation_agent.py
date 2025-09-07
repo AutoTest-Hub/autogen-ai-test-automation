@@ -6,6 +6,7 @@ Responsible for generating high-quality test automation code
 import json
 import os
 import logging
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
@@ -246,7 +247,7 @@ class Test{test_class_name}:
             
         except Exception as e:
             # Capture screenshot on failure
-            screenshot_path = f"screenshots/failure_{test_method_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            screenshot_path = f"screenshots/failure_{{test_method_name}}_{{timestamp}}.png"
             await page.screenshot(path=screenshot_path, full_page=True)
             logging.error(f"Test {test_method_name} failed: {{e}}")
             raise
@@ -303,7 +304,8 @@ if __name__ == "__main__":
             headless="True",  # Default to headless
             test_steps_code=test_steps_code,
             helper_methods=helper_methods,
-            verification_code=verification_code
+            verification_code=verification_code,
+            timestamp=int(time.time())
         )
     
     def _generate_playwright_steps_code(self, test_steps: List[Dict[str, Any]]) -> str:
@@ -317,10 +319,10 @@ if __name__ == "__main__":
             step_code = f'''
             # Step {i}: {action}
             logging.info("Executing step {i}: {action}")
-            {self._convert_action_to_playwright_code(action)}
+            {{self._convert_action_to_playwright_code(action)}}
             
             # Verify step result
-            {self._convert_expected_result_to_verification(expected_result)}
+            {{self._convert_expected_result_to_verification(expected_result)}}
             await page.wait_for_timeout(1000)  # Brief pause between steps
 '''
             steps_code.append(step_code)
@@ -454,7 +456,7 @@ class Test{test_class_name}(unittest.TestCase):
             
         except Exception as e:
             # Capture screenshot on failure
-            screenshot_path = f"screenshots/failure_{test_method_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            screenshot_path = f"screenshots/failure_{{test_method_name}}_{{timestamp}}.png"
             self.driver.save_screenshot(screenshot_path)
             logging.error(f"Test {test_method_name} failed: {{e}}")
             raise
@@ -501,7 +503,8 @@ if __name__ == "__main__":
             application_url=application_url,
             test_steps_code=test_steps_code,
             helper_methods=helper_methods,
-            verification_code=verification_code
+            verification_code=verification_code,
+            timestamp=int(time.time())
         )
     
     def _generate_selenium_steps_code(self, test_steps: List[Dict[str, Any]]) -> str:
@@ -514,7 +517,7 @@ if __name__ == "__main__":
             step_code = f'''
             # Step {i}: {action}
             logging.info("Executing step {i}: {action}")
-            {self._convert_action_to_selenium_code(action)}
+            {{self._convert_action_to_selenium_code(action)}}
             time.sleep(1)  # Brief pause between steps
 '''
             steps_code.append(step_code)
@@ -629,7 +632,8 @@ if __name__ == "__main__":
             priority=priority,
             base_url=base_url,
             api_test_steps=api_test_steps,
-            helper_methods=helper_methods
+            helper_methods=helper_methods,
+            timestamp=int(time.time())
         )
     
     def _generate_api_test_steps(self, test_steps: List[Dict[str, Any]]) -> str:
@@ -642,7 +646,7 @@ if __name__ == "__main__":
             step_code = f'''
             # Step {i}: {action}
             logging.info("Executing API step {i}: {action}")
-            {self._convert_action_to_api_code(action)}
+            {{self._convert_action_to_api_code(action)}}
 '''
             steps_code.append(step_code)
         
@@ -653,11 +657,11 @@ if __name__ == "__main__":
         action_lower = action.lower()
         
         if "get" in action_lower:
-            return '''response = self.session.get(f"{self.base_url}/ENDPOINT_TO_BE_UPDATED")
+            return '''response = {{self.session.get(f"{{self.base_url}}/ENDPOINT_TO_BE_UPDATED")}}
             assert response.status_code == 200'''
         elif "post" in action_lower:
             return '''data = {"key": "value"}  # Update with actual data
-            response = self.session.post(f"{self.base_url}/ENDPOINT_TO_BE_UPDATED", json=data)
+            response = {{self.session.post(f"{{self.base_url}}/ENDPOINT_TO_BE_UPDATED", json=data)}}
             assert response.status_code in [200, 201]'''
         else:
             return f'# TODO: Implement API action: {action}'
@@ -667,7 +671,7 @@ if __name__ == "__main__":
         return '''
     def _make_request(self, method, endpoint, **kwargs):
         """Make HTTP request with error handling"""
-        url = f"{self.base_url}/{endpoint.lstrip('/')}"
+        url = f"{{self.base_url}}/{endpoint.lstrip('/')}"
         response = self.session.request(method, url, **kwargs)
         return response
     
@@ -687,6 +691,7 @@ Generated by AutoGen Test Creation Agent
 import pytest
 import sys
 import os
+import time
 from datetime import datetime
 import logging
 
@@ -698,7 +703,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'test_execution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.log'),
+        logging.FileHandler(f'test_execution_{timestamp}.log'),
         logging.StreamHandler()
     ]
 )
@@ -713,7 +718,7 @@ class TestSuiteRunner:
         
     def run_all_tests(self):
         """Run all generated tests"""
-        logging.info(f"Starting test suite execution with {self.total_tests} tests")
+        logging.info(f"Starting test suite execution with {{self.total_tests}} tests")
         
         # Run pytest with generated test files
         pytest_args = [
@@ -724,29 +729,29 @@ class TestSuiteRunner:
             *self.test_files
         ]
         
-        exit_code = pytest.main(pytest_args)
+        {{exit_code}} = pytest.main(pytest_args)
         
-        if exit_code == 0:
+        if {{exit_code}} == 0:
             logging.info("All tests passed successfully!")
         else:
-            logging.error(f"Test suite failed with exit code: {exit_code}")
+            logging.error(f"Test suite failed with exit code: {{exit_code}}")
         
-        return exit_code
+        return {{exit_code}}
     
-    def run_specific_test(self, test_file: str):
+    def run_specific_test(self, {{test_file}}: str):
         """Run a specific test file"""
-        if test_file in self.test_files:
-            logging.info(f"Running specific test: {test_file}")
-            return pytest.main(["-v", test_file])
+        if {{test_file}} in self.test_files:
+            logging.info(f"Running specific test: {{test_file}}")
+            return pytest.main(["-v", {{test_file}}])
         else:
-            logging.error(f"Test file not found: {test_file}")
+            logging.error(f"Test file not found: {{test_file}}")
             return 1
 
 
 if __name__ == "__main__":
     runner = TestSuiteRunner()
-    exit_code = runner.run_all_tests()
-    sys.exit(exit_code)
+    {{exit_code}} = runner.run_all_tests()
+    sys.exit({{exit_code}})
 '''
         
         test_files = [test["test_file"] for test in generated_tests]
@@ -754,7 +759,8 @@ if __name__ == "__main__":
         
         return template.format(
             test_files=test_files,
-            total_tests=total_tests
+            total_tests=total_tests,
+            timestamp=int(time.time())
         )
     
     def _generate_test_config(self, test_plan: Dict[str, Any]) -> str:

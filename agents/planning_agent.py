@@ -428,7 +428,12 @@ Be thorough, analytical, and strategic in your planning approach.
     def _recommend_execution_strategy(self, scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Recommend execution strategy"""
         frameworks = [s.get("required_framework", "playwright") for s in scenarios]
-        primary_framework = max(set(frameworks), key=frameworks.count)
+        
+        # Handle empty frameworks list
+        if not frameworks:
+            primary_framework = "playwright"  # Default framework
+        else:
+            primary_framework = max(set(frameworks), key=frameworks.count)
         
         return {
             "framework": primary_framework,

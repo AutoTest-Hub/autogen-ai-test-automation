@@ -1,0 +1,192 @@
+{
+  "report_id": "report_1757223131",
+  "generated_at": "2025-09-07T01:32:11.772592",
+  "report_type": "comprehensive",
+  "executive_summary": {
+    "test_execution_overview": {
+      "total_tests": 1,
+      "success_rate": 100.0,
+      "execution_time": 1.5,
+      "status": "PASSED"
+    },
+    "quality_overview": {
+      "code_quality_score": 8.5,
+      "issues_found": 1,
+      "recommendations_count": 3
+    },
+    "key_findings": [
+      "Excellent test execution with high success rate",
+      "High code quality maintained"
+    ],
+    "risk_assessment": {
+      "overall_risk": "LOW",
+      "risk_factors": []
+    }
+  },
+  "test_execution": {
+    "summary": {
+      "total_tests": 1,
+      "success_rate": 100.0,
+      "total_execution_time": 1.5
+    },
+    "performance_metrics": {},
+    "test_results": [
+      {
+        "test_file": "test_example.py",
+        "status": "passed",
+        "execution_time": 1.5
+      }
+    ],
+    "environment_info": {},
+    "execution_timeline": [
+      {
+        "test_name": "test_example.py",
+        "start_time": "",
+        "end_time": "",
+        "duration": 1.5,
+        "status": "passed"
+      }
+    ]
+  },
+  "quality_analysis": {
+    "overall_score": 8.5,
+    "quality_metrics": {
+      "average_score": 8.5,
+      "total_issues": 3,
+      "total_strengths": 2,
+      "issues_per_file": 3.0,
+      "quality_trend": "improving"
+    },
+    "code_reviews": [
+      {
+        "filename": "code_snippet",
+        "score": 8.5,
+        "issues": [
+          "Limited error handling",
+          "No logging found",
+          "Limited code documentation"
+        ],
+        "strengths": [
+          "Proper imports are present",
+          "Test assertions are present"
+        ],
+        "recommendations": [
+          "Add comprehensive error handling",
+          "Add logging for better debugging",
+          "Add comprehensive code documentation"
+        ],
+        "metrics": {
+          "total_lines": 7,
+          "non_empty_lines": 4
+        }
+      }
+    ],
+    "issue_analysis": {
+      "total_issues": 3,
+      "issue_categories": {
+        "error_handling": 1,
+        "documentation": 1,
+        "testing": 0,
+        "performance": 0,
+        "security": 0,
+        "other": 1
+      },
+      "most_common_category": "error_handling"
+    },
+    "improvement_areas": [
+      "Error Handling: 1 issues found",
+      "Documentation: 1 issues found",
+      "Other: 1 issues found"
+    ]
+  },
+  "recommendations": [],
+  "appendices": {
+    "detailed_test_results": [
+      {
+        "test_file": "test_example.py",
+        "status": "passed",
+        "execution_time": 1.5
+      }
+    ],
+    "environment_details": {},
+    "code_review_details": [
+      {
+        "filename": "code_snippet",
+        "score": 8.5,
+        "issues": [
+          "Limited error handling",
+          "No logging found",
+          "Limited code documentation"
+        ],
+        "strengths": [
+          "Proper imports are present",
+          "Test assertions are present"
+        ],
+        "recommendations": [
+          "Add comprehensive error handling",
+          "Add logging for better debugging",
+          "Add comprehensive code documentation"
+        ],
+        "metrics": {
+          "total_lines": 7,
+          "non_empty_lines": 4
+        }
+      }
+    ],
+    "raw_data": {
+      "execution_data": {
+        "summary": {
+          "total_tests": 1,
+          "success_rate": 100.0,
+          "total_execution_time": 1.5
+        },
+        "test_results": [
+          {
+            "test_file": "test_example.py",
+            "status": "passed",
+            "execution_time": 1.5
+          }
+        ]
+      },
+      "review_data": {
+        "overall_score": 8.5,
+        "reviews": [
+          {
+            "filename": "code_snippet",
+            "score": 8.5,
+            "issues": [
+              "Limited error handling",
+              "No logging found",
+              "Limited code documentation"
+            ],
+            "strengths": [
+              "Proper imports are present",
+              "Test assertions are present"
+            ],
+            "recommendations": [
+              "Add comprehensive error handling",
+              "Add logging for better debugging",
+              "Add comprehensive code documentation"
+            ],
+            "metrics": {
+              "total_lines": 7,
+              "non_empty_lines": 4
+            }
+          }
+        ],
+        "summary": {
+          "total_files_reviewed": 1,
+          "average_score": 8.5,
+          "total_issues_found": 3,
+          "total_strengths_identified": 2,
+          "files_needing_improvement": 0
+        },
+        "recommendations": [
+          "Add comprehensive code documentation",
+          "Add comprehensive error handling",
+          "Add logging for better debugging"
+        ]
+      }
+    }
+  }
+}

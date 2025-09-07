@@ -1,0 +1,43 @@
+{
+  "execution_id": "exec_1757223110",
+  "start_time": "2025-09-07T01:31:50.373071",
+  "test_results": [
+    {
+      "test_file": "/tmp/simple_test.py",
+      "test_type": "single",
+      "start_time": "2025-09-07T01:32:10.564757",
+      "status": "passed",
+      "output": "Test started\nTest completed successfully\n",
+      "errors": [],
+      "metrics": {
+        "tests_run": 0,
+        "tests_passed": 0,
+        "tests_failed": 0,
+        "tests_skipped": 0,
+        "assertions": 0,
+        "coverage": 0
+      },
+      "end_time": "2025-09-07T01:32:11.589774",
+      "execution_time": 1.0247209072113037,
+      "return_code": 0,
+      "stderr": ""
+    }
+  ],
+  "summary": {
+    "total_tests": 1,
+    "passed": 1,
+    "failed": 0,
+    "errors": 0,
+    "success_rate": 100.0,
+    "total_execution_time": 1.02
+  },
+  "performance_metrics": {
+    "average_execution_time": 1.02,
+    "fastest_test": 1.02,
+    "slowest_test": 1.02,
+    "total_execution_time": 1.02,
+    "tests_per_minute": 58.55
+  },
+  "errors": [],
+  "end_time": "2025-09-07T01:32:11.589831"
+}
