@@ -1,0 +1,99 @@
+{
+  "timestamp": "2025-09-07T12:21:23.766256",
+  "scenarios_tested": [
+    {
+      "test_name": "Unknown Test",
+      "description": "",
+      "priority": "Medium",
+      "tags": [],
+      "application_url": "",
+      "test_steps": [
+        "TestStep(step_number=1, action='Navigate to https://advantageonlineshopping.com', expected_result=None, notes=None)",
+        "TestStep(step_number=2, action='Test invalid login:', expected_result=None, notes=None)",
+        "TestStep(step_number=3, action='Click user menu', expected_result=None, notes=None)",
+        "TestStep(step_number=4, action='Enter invalid username: \"invaliduser\"', expected_result=None, notes=None)",
+        "TestStep(step_number=5, action='Enter invalid password: \"wrongpassword\"', expected_result=None, notes=None)",
+        "TestStep(step_number=6, action='Click SIGN IN', expected_result=None, notes=None)",
+        "TestStep(step_number=7, action='Verify error message is displayed', expected_result=None, notes=None)",
+        "TestStep(step_number=3, action='Test registration with existing email:', expected_result=None, notes=None)",
+        "TestStep(step_number=9, action='Try to register with an email that already exists', expected_result=None, notes=None)",
+        "TestStep(step_number=10, action='Verify appropriate error message', expected_result=None, notes=None)",
+        "TestStep(step_number=4, action='Test empty cart checkout:', expected_result=None, notes=None)",
+        "TestStep(step_number=12, action='Ensure cart is empty', expected_result=None, notes=None)",
+        "TestStep(step_number=13, action='Try to access checkout directly', expected_result=None, notes=None)",
+        "TestStep(step_number=14, action='Verify appropriate handling', expected_result=None, notes=None)",
+        "TestStep(step_number=5, action='Test form validation:', expected_result=None, notes=None)",
+        "TestStep(step_number=16, action='Try to submit registration form with missing required fields', expected_result=None, notes=None)",
+        "TestStep(step_number=17, action='Verify validation messages appear', expected_result=None, notes=None)",
+        "TestStep(step_number=6, action='Test search with no results:', expected_result=None, notes=None)",
+        "TestStep(step_number=19, action='Search for \"xyznonexistentproduct\"', expected_result=None, notes=None)",
+        "TestStep(step_number=20, action='Verify \"no results\" message is displayed', expected_result=None, notes=None)",
+        "TestStep(step_number=7, action='Test invalid payment information:', expected_result=None, notes=None)",
+        "TestStep(step_number=22, action='Add product to cart and proceed to checkout', expected_result=None, notes=None)",
+        "TestStep(step_number=23, action='Enter invalid payment details', expected_result=None, notes=None)",
+        "TestStep(step_number=24, action='Verify error handling', expected_result=None, notes=None)",
+        "TestStep(step_number=8, action='Test session timeout:', expected_result=None, notes=None)",
+        "TestStep(step_number=26, action='Login and wait for session to expire (or simulate)', expected_result=None, notes=None)",
+        "TestStep(step_number=27, action='Try to perform an action requiring authentication', expected_result=None, notes=None)",
+        "TestStep(step_number=28, action='Verify redirect to login page', expected_result=None, notes=None)"
+      ],
+      "expected_results": [
+        "All error messages should be clear and helpful",
+        "Form validations should prevent invalid submissions",
+        "Invalid login attempts should be handled gracefully",
+        "Search should handle no results appropriately",
+        "Payment errors should be communicated clearly",
+        "Session management should work properly",
+        "Test Data Requirements:",
+        "======================",
+        "Valid user credentials for testing",
+        "Test product data",
+        "Valid payment information for testing",
+        "Invalid data sets for negative testing",
+        "Test addresses and contact information",
+        "Environment Setup:",
+        "==================",
+        "Browser: Chrome, Firefox, Safari (cross-browser testing)",
+        "Screen resolutions: Desktop (1920x1080), Tablet (768x1024), Mobile (375x667)",
+        "Network conditions: Normal, Slow 3G (for performance testing)",
+        "Test data cleanup procedures",
+        "================",
+        "All critical user journeys work end-to-end",
+        "Error handling is robust and user-friendly",
+        "Performance is acceptable across different conditions",
+        "Cross-browser compatibility is maintained",
+        "Mobile responsiveness works properly"
+      ],
+      "test_data": {},
+      "environment": {},
+      "metadata": {
+        "total_lines": 65,
+        "total_steps": 28,
+        "has_test_data": false,
+        "has_environment_config": false,
+        "complexity_indicators": {
+          "step_count": 28,
+          "has_authentication": true,
+          "has_data_input": true,
+          "has_file_operations": false,
+          "has_api_calls": false,
+          "has_database_operations": true,
+          "estimated_complexity": "high",
+          "complexity_score": 0.95
+        }
+      }
+    }
+  ],
+  "agent_outputs": {},
+  "generated_code": {},
+  "issues_found": [
+    "Planning Agent error: 'NoneType' object has no attribute 'process_task'",
+    "Complete workflow error: string indices must be integers, not 'str'"
+  ],
+  "insights": [
+    "\u2705 Scenario parsing works correctly",
+    "\u2705 Generated code quality is good",
+    "\u26a0\ufe0f Minor issues found - framework mostly working"
+  ],
+  "parsing_success": true
+}

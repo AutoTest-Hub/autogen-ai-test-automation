@@ -33,6 +33,7 @@ class AgentRole(str, Enum):
     REVIEW = "review"
     EXECUTION = "execution"
     REPORTING = "reporting"
+    DISCOVERY = "discovery"
 
 
 class AutoGenTestFrameworkSettings(BaseSettings):

@@ -122,7 +122,11 @@ class CompleteOrchestrator:
             
             # Step 2: Planning
             logger.info("🎯 Step 2: Creating test plan...")
-            planning_result = await self._execute_planning_step(parse_result)
+            all_scenarios = []
+            for parsed_file in parse_result.get("parsed_files", []):
+                all_scenarios.extend(parsed_file.get("scenarios", []))
+            
+            planning_result = await self._execute_planning_step(all_scenarios)
             workflow_result["steps"]["planning"] = planning_result
             self.workflow_state["workflow_data"]["test_plan"] = planning_result
             
@@ -201,18 +205,13 @@ class CompleteOrchestrator:
         
         return parse_results
         
-    async def _execute_planning_step(self, parse_result: Dict[str, Any]) -> Dict[str, Any]:
+    async def _execute_planning_step(self, scenarios: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Execute planning step"""
         planning_agent = self.agents["planning"]
         
-        # Extract scenarios from parsed files
-        all_scenarios = []
-        for parsed_file in parse_result.get("parsed_files", []):
-            all_scenarios.extend(parsed_file.get("scenarios", []))
-        
         planning_task = {
             "type": "create_plan",
-            "scenarios": all_scenarios,
+            "scenarios": scenarios,
             "requirements": {
                 "test_frameworks": ["playwright", "selenium"],
                 "coverage_requirements": ["ui", "api", "integration"],
@@ -221,6 +220,7 @@ class CompleteOrchestrator:
         }
         
         return await planning_agent.process_task(planning_task)
+
         
     async def _execute_test_creation_step(self, planning_result: Dict[str, Any]) -> Dict[str, Any]:
         """Execute test creation step"""

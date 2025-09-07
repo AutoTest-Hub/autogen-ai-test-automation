@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-07T12:11:20.399470",
+  "tests": {},
+  "data_flow": {},
+  "issues_found": [
+    "Planning \u2192 Test Creation flow error: 'PlanningAgent' object has no attribute 'create_test_plan'",
+    "Error handling failed: 'PlanningAgent' object has no attribute 'create_test_plan'"
+  ],
+  "summary": {
+    "total_tests": 5,
+    "passed_tests": 0,
+    "success_rate": 0.0,
+    "overall_success": false
+  }
+}

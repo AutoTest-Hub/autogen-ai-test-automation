@@ -1,0 +1,22 @@
+{
+  "workflow_id": "workflow_1757261946",
+  "start_time": "2025-09-07T12:19:06.309128",
+  "input_files": [
+    "advantage_shopping_scenarios.txt"
+  ],
+  "steps": {
+    "parse_files": {
+      "total_files": 1,
+      "parsed_files": [],
+      "parsing_errors": [
+        "Error parsing advantage_shopping_scenarios.txt: object ParsedTestFile can't be used in 'await' expression"
+      ],
+      "scenarios_extracted": 0
+    }
+  },
+  "final_results": {},
+  "success": false,
+  "error": "'planning'",
+  "end_time": "2025-09-07T12:19:06.311272",
+  "total_duration": 0.002144
+}

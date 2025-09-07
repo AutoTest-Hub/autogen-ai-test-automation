@@ -1,0 +1,267 @@
+Test Scenarios for Advantage Online Shopping
+===========================================
+
+Application URL: https://advantageonlineshopping.com
+Test Environment: Production
+Priority: High
+Tags: e-commerce, ui-testing, end-to-end
+
+Scenario 1: User Registration and Login
+---------------------------------------
+Test Name: Complete User Registration and Login Flow
+Description: Test the complete user registration process and subsequent login
+Priority: High
+Tags: authentication, registration, login
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Click on the user menu icon (top right)
+3. Click on "CREATE NEW ACCOUNT" link
+4. Fill in registration form:
+   - Username: testuser_$(timestamp)
+   - Email: testuser_$(timestamp)@example.com
+   - Password: TestPassword123!
+   - Confirm Password: TestPassword123!
+   - First Name: Test
+   - Last Name: User
+   - Phone Number: 1234567890
+   - Country: United States
+   - City: Test City
+   - Address: 123 Test Street
+   - State/Province: California
+   - Postal Code: 90210
+5. Check "I agree to the terms and conditions" checkbox
+6. Click "REGISTER" button
+7. Verify registration success message appears
+8. Logout if automatically logged in
+9. Click on user menu icon again
+10. Enter the registered username and password
+11. Click "SIGN IN" button
+12. Verify successful login (user menu shows username)
+
+Expected Results:
+- Registration form should accept all valid inputs
+- Registration should complete successfully
+- Success message should be displayed
+- Login should work with registered credentials
+- User should be logged in and username displayed
+
+Scenario 2: Product Search and Browse
+-------------------------------------
+Test Name: Search and Browse Products
+Description: Test product search functionality and browsing capabilities
+Priority: High
+Tags: search, products, browsing
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Click on the search icon (magnifying glass)
+3. Enter "laptop" in the search field
+4. Press Enter or click search button
+5. Verify search results are displayed
+6. Click on the first product in search results
+7. Verify product details page loads
+8. Check that product information is displayed:
+   - Product name
+   - Price
+   - Product images
+   - Description
+   - Add to cart button
+9. Navigate back to home page
+10. Click on "LAPTOPS" category from main menu
+11. Verify category page loads with laptop products
+12. Apply a filter (e.g., price range or brand)
+13. Verify filtered results are displayed
+14. Sort products by price (low to high)
+15. Verify products are sorted correctly
+
+Expected Results:
+- Search should return relevant results for "laptop"
+- Product details should be complete and accurate
+- Category browsing should work properly
+- Filters should apply correctly
+- Sorting should work as expected
+
+Scenario 3: Shopping Cart Operations
+------------------------------------
+Test Name: Add Products to Cart and Manage Cart
+Description: Test adding products to cart, updating quantities, and cart management
+Priority: High
+Tags: cart, shopping, e-commerce
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Click on "LAPTOPS" category
+3. Select the first laptop product
+4. On product details page, verify default quantity is 1
+5. Change quantity to 2
+6. Select a color if available
+7. Click "ADD TO CART" button
+8. Verify cart icon shows item count (2)
+9. Click on cart icon to view cart
+10. Verify cart contains the selected product with quantity 2
+11. Verify product details in cart (name, price, quantity)
+12. Update quantity to 3 using cart controls
+13. Verify total price updates correctly
+14. Click "Continue Shopping" or navigate back
+15. Add a different product to cart (e.g., from TABLETS category)
+16. Return to cart and verify both products are present
+17. Remove the first product from cart
+18. Verify cart updates and total recalculates
+19. Verify cart shows correct remaining items
+
+Expected Results:
+- Products should be added to cart successfully
+- Cart should display correct item count
+- Quantity updates should work properly
+- Price calculations should be accurate
+- Product removal should work correctly
+
+Scenario 4: Complete Purchase Flow
+----------------------------------
+Test Name: End-to-End Purchase Process
+Description: Test the complete purchase flow from product selection to order completion
+Priority: Critical
+Tags: checkout, payment, order, end-to-end
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Login with valid credentials (use registered user from Scenario 1)
+3. Add a product to cart (HP CHROMEBOOK 14 G1 or similar)
+4. Click on cart icon
+5. Verify cart contents and total
+6. Click "CHECKOUT" button
+7. Verify checkout page loads
+8. Fill in shipping information:
+   - First Name: Test
+   - Last Name: User
+   - Phone: 1234567890
+   - Country: United States
+   - City: Test City
+   - Address: 123 Test Street
+   - State: California
+   - Postal Code: 90210
+9. Click "NEXT" to proceed to payment
+10. Select payment method (e.g., SafePay)
+11. Fill in payment details:
+    - SafePay Username: testuser
+    - SafePay Password: testpass
+12. Click "PAY NOW" button
+13. Verify order confirmation page appears
+14. Verify order details are correct
+15. Note order number for reference
+16. Verify "Thank you for buying with Advantage" message
+17. Check that cart is now empty
+
+Expected Results:
+- Checkout process should flow smoothly
+- All form validations should work
+- Payment processing should complete
+- Order confirmation should be displayed
+- Cart should be cleared after successful order
+
+Scenario 5: User Account Management
+-----------------------------------
+Test Name: User Profile and Account Settings
+Description: Test user account management features
+Priority: Medium
+Tags: account, profile, settings
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Login with valid credentials
+3. Click on user menu and select "My Account" or profile option
+4. Verify account information is displayed
+5. Update profile information:
+   - Change first name to "Updated"
+   - Change phone number to "9876543210"
+6. Save changes
+7. Verify success message appears
+8. Logout and login again
+9. Verify updated information is persisted
+10. Navigate to order history (if available)
+11. Verify previous orders are displayed
+12. Test password change functionality:
+    - Navigate to change password section
+    - Enter current password
+    - Enter new password: NewTestPassword123!
+    - Confirm new password
+    - Save changes
+13. Logout and login with new password
+14. Verify login works with new password
+
+Expected Results:
+- Profile updates should save successfully
+- Changes should persist after logout/login
+- Order history should be accessible
+- Password change should work properly
+- New password should be effective immediately
+
+Scenario 6: Error Handling and Edge Cases
+------------------------------------------
+Test Name: Application Error Handling
+Description: Test how the application handles various error conditions
+Priority: Medium
+Tags: error-handling, validation, edge-cases
+
+Test Steps:
+1. Navigate to https://advantageonlineshopping.com
+2. Test invalid login:
+   - Click user menu
+   - Enter invalid username: "invaliduser"
+   - Enter invalid password: "wrongpassword"
+   - Click SIGN IN
+   - Verify error message is displayed
+3. Test registration with existing email:
+   - Try to register with an email that already exists
+   - Verify appropriate error message
+4. Test empty cart checkout:
+   - Ensure cart is empty
+   - Try to access checkout directly
+   - Verify appropriate handling
+5. Test form validation:
+   - Try to submit registration form with missing required fields
+   - Verify validation messages appear
+6. Test search with no results:
+   - Search for "xyznonexistentproduct"
+   - Verify "no results" message is displayed
+7. Test invalid payment information:
+   - Add product to cart and proceed to checkout
+   - Enter invalid payment details
+   - Verify error handling
+8. Test session timeout:
+   - Login and wait for session to expire (or simulate)
+   - Try to perform an action requiring authentication
+   - Verify redirect to login page
+
+Expected Results:
+- All error messages should be clear and helpful
+- Form validations should prevent invalid submissions
+- Invalid login attempts should be handled gracefully
+- Search should handle no results appropriately
+- Payment errors should be communicated clearly
+- Session management should work properly
+
+Test Data Requirements:
+======================
+- Valid user credentials for testing
+- Test product data
+- Valid payment information for testing
+- Invalid data sets for negative testing
+- Test addresses and contact information
+
+Environment Setup:
+==================
+- Browser: Chrome, Firefox, Safari (cross-browser testing)
+- Screen resolutions: Desktop (1920x1080), Tablet (768x1024), Mobile (375x667)
+- Network conditions: Normal, Slow 3G (for performance testing)
+- Test data cleanup procedures
+
+Success Criteria:
+================
+- All critical user journeys work end-to-end
+- Error handling is robust and user-friendly
+- Performance is acceptable across different conditions
+- Cross-browser compatibility is maintained
+- Mobile responsiveness works properly
+

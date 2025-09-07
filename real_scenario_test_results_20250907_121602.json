@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-07T12:16:02.606819",
+  "scenarios_tested": [],
+  "agent_outputs": {},
+  "generated_code": {},
+  "issues_found": [
+    "Scenario parsing error: object ParsedTestFile can't be used in 'await' expression",
+    "Complete workflow error: 'CompleteOrchestrator' object has no attribute 'run_complete_workflow'"
+  ],
+  "insights": [
+    "\u274c Scenario parsing needs improvement",
+    "\u2705 Generated code quality is good",
+    "\u26a0\ufe0f Minor issues found - framework mostly working"
+  ]
+}

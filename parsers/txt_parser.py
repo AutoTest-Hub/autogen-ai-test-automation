@@ -24,15 +24,7 @@ class ParsedTestFile:
     """Represents a parsed test file"""
     file_path: str
     file_format: str
-    test_name: str
-    description: str
-    priority: str
-    tags: List[str]
-    application_url: str
-    test_steps: List[TestStep]
-    expected_results: List[str]
-    test_data: Dict[str, Any]
-    environment: Dict[str, Any]
+    scenarios: List[Dict[str, Any]]
     metadata: Dict[str, Any]
     parsing_errors: List[str]
     parsed_at: datetime
@@ -101,23 +93,28 @@ class TxtTestFileParser:
         parsing_errors = []
         
         try:
-            # Initialize parsed data with defaults
-            parsed_data = {
-                "test_name": "Unknown Test",
-                "description": "",
-                "priority": "Medium",
-                "tags": [],
-                "application_url": "",
-                "test_steps": [],
-                "expected_results": [],
-                "test_data": {},
-                "environment": {},
-                "metadata": {}
-            }
+            # Split content into scenarios
+            scenarios = re.split(r"(?:Scenario|Test Scenario|Test Case) \d+:|^-{5,}$", content, flags=re.MULTILINE | re.IGNORECASE)
+            scenarios = [s.strip() for s in scenarios if s.strip()]
             
-            # Split content into lines for processing
-            lines = content.strip().split('\n')
-            
+            parsed_scenarios = []
+            for scenario_content in scenarios:
+                # Initialize parsed data with defaults for each scenario
+                parsed_data = {
+                    "test_name": "Unknown Test",
+                    "description": "",
+                    "priority": "Medium",
+                    "tags": [],
+                    "application_url": "",
+                    "test_steps": [],
+                    "expected_results": [],
+                    "test_data": {},
+                    "environment": {},
+                    "metadata": {}
+                }
+
+                # Split content into lines for processing
+                lines = scenario_content.strip().split("\n")            
             # Parse the file line by line
             current_section = None
             description_lines = []
@@ -190,24 +187,22 @@ class TxtTestFileParser:
                 "complexity_indicators": self._analyze_complexity(parsed_data)
             }
             
-            # Create and return ParsedTestFile object
+            # Add parsed scenario to the list
+            parsed_scenarios.append(parsed_data)
+
+            # Create and return ParsedTestFile object with all scenarios
             return ParsedTestFile(
                 file_path=file_path,
                 file_format="txt",
-                test_name=parsed_data["test_name"],
-                description=parsed_data["description"],
-                priority=parsed_data["priority"],
-                tags=parsed_data["tags"],
-                application_url=parsed_data["application_url"],
-                test_steps=parsed_data["test_steps"],
-                expected_results=parsed_data["expected_results"],
-                test_data=parsed_data["test_data"],
-                environment=parsed_data["environment"],
-                metadata=parsed_data["metadata"],
+                scenarios=parsed_scenarios,
+                metadata={
+                    "total_scenarios": len(parsed_scenarios),
+                    "total_lines": len(content.strip().split("\n")),
+                },
                 parsing_errors=parsing_errors,
                 parsed_at=datetime.now()
             )
-            
+
         except Exception as e:
             error_msg = f"Critical error parsing file {file_path}: {str(e)}"
             parsing_errors.append(error_msg)

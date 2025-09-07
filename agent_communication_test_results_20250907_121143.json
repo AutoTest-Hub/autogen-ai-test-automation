@@ -1,0 +1,208 @@
+{
+  "timestamp": "2025-09-07T12:11:43.716637",
+  "tests": {
+    "error_handling": {
+      "empty_input": {
+        "status": "success",
+        "test_plan": {
+          "plan_id": "plan_20250907_121143",
+          "created_at": "2025-09-07T12:11:43.725074",
+          "requirements_summary": {},
+          "test_scenarios": [],
+          "risk_assessment": {
+            "overall_risk": "low",
+            "high_risk_scenarios": 0,
+            "common_risks": [],
+            "mitigation_required": false
+          },
+          "resource_estimation": {
+            "total_scenarios": 0,
+            "total_duration_minutes": 0,
+            "total_hours": 0.0,
+            "estimated_team_size": 1,
+            "parallel_execution_possible": false,
+            "resource_requirements": {
+              "test_automation_engineer": 1,
+              "qa_analyst": 0,
+              "test_environment": 1
+            }
+          },
+          "execution_strategy": {
+            "framework": "playwright",
+            "execution_mode": "sequential",
+            "environment_requirements": [
+              "test_environment",
+              "test_data"
+            ],
+            "prerequisites": [
+              "framework_setup",
+              "test_data_preparation"
+            ],
+            "recommended_schedule": "continuous_integration"
+          },
+          "quality_gates": {
+            "minimum_pass_rate": 95,
+            "maximum_execution_time_minutes": 0.0,
+            "required_coverage": {
+              "functional": 100,
+              "integration": 80,
+              "ui": 90
+            },
+            "success_criteria": [
+              "All critical tests pass",
+              "No high-severity defects",
+              "Performance within acceptable limits"
+            ],
+            "failure_criteria": [
+              "Critical test failures",
+              "Security vulnerabilities detected",
+              "Performance degradation > 20%"
+            ]
+          },
+          "timeline": {
+            "phases": {
+              "setup": {
+                "duration_minutes": 30,
+                "description": "Environment and framework setup"
+              },
+              "execution": {
+                "duration_minutes": 0,
+                "description": "Test execution"
+              },
+              "analysis": {
+                "duration_minutes": 60,
+                "description": "Results analysis and reporting"
+              },
+              "cleanup": {
+                "duration_minutes": 15,
+                "description": "Environment cleanup"
+              }
+            },
+            "total_duration_minutes": 105,
+            "estimated_completion": "Based on parallel execution capabilities"
+          }
+        },
+        "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_121143.json",
+        "summary": {
+          "total_scenarios": 0,
+          "estimated_hours": 0.0,
+          "risk_level": "low",
+          "recommended_framework": "playwright"
+        }
+      },
+      "malformed_input": {
+        "status": "success",
+        "test_plan": {
+          "plan_id": "plan_20250907_121143",
+          "created_at": "2025-09-07T12:11:43.725617",
+          "requirements_summary": {},
+          "test_scenarios": [
+            {
+              "name": "Unknown Test",
+              "description": "",
+              "priority": "Medium",
+              "tags": [],
+              "application": "",
+              "test_steps": [],
+              "expected_results": [],
+              "complexity_score": 0.0,
+              "estimated_duration_minutes": 5,
+              "risk_factors": [],
+              "required_framework": "playwright"
+            }
+          ],
+          "risk_assessment": {
+            "overall_risk": "low",
+            "high_risk_scenarios": 0,
+            "common_risks": [],
+            "mitigation_required": false
+          },
+          "resource_estimation": {
+            "total_scenarios": 1,
+            "total_duration_minutes": 5,
+            "total_hours": 0.1,
+            "estimated_team_size": 1,
+            "parallel_execution_possible": false,
+            "resource_requirements": {
+              "test_automation_engineer": 1,
+              "qa_analyst": 0,
+              "test_environment": 1
+            }
+          },
+          "execution_strategy": {
+            "framework": "playwright",
+            "execution_mode": "sequential",
+            "environment_requirements": [
+              "test_environment",
+              "test_data"
+            ],
+            "prerequisites": [
+              "framework_setup",
+              "test_data_preparation"
+            ],
+            "recommended_schedule": "continuous_integration"
+          },
+          "quality_gates": {
+            "minimum_pass_rate": 95,
+            "maximum_execution_time_minutes": 6.0,
+            "required_coverage": {
+              "functional": 100,
+              "integration": 80,
+              "ui": 90
+            },
+            "success_criteria": [
+              "All critical tests pass",
+              "No high-severity defects",
+              "Performance within acceptable limits"
+            ],
+            "failure_criteria": [
+              "Critical test failures",
+              "Security vulnerabilities detected",
+              "Performance degradation > 20%"
+            ]
+          },
+          "timeline": {
+            "phases": {
+              "setup": {
+                "duration_minutes": 30,
+                "description": "Environment and framework setup"
+              },
+              "execution": {
+                "duration_minutes": 5,
+                "description": "Test execution"
+              },
+              "analysis": {
+                "duration_minutes": 60,
+                "description": "Results analysis and reporting"
+              },
+              "cleanup": {
+                "duration_minutes": 15,
+                "description": "Environment cleanup"
+              }
+            },
+            "total_duration_minutes": 110,
+            "estimated_completion": "Based on parallel execution capabilities"
+          }
+        },
+        "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_121143.json",
+        "summary": {
+          "total_scenarios": 1,
+          "estimated_hours": 0.1,
+          "risk_level": "low",
+          "recommended_framework": "playwright"
+        }
+      },
+      "success": true
+    }
+  },
+  "data_flow": {},
+  "issues_found": [
+    "Planning \u2192 Test Creation flow error: 'TestCreationAgent' object has no attribute 'generate_tests'"
+  ],
+  "summary": {
+    "total_tests": 5,
+    "passed_tests": 1,
+    "success_rate": 20.0,
+    "overall_success": false
+  }
+}
