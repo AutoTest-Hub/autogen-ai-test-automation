@@ -17,7 +17,7 @@ from models.local_ai_provider import LocalAIProvider, ModelType
 from agents.base_agent import BaseTestAgent
 from agents.planning_agent import PlanningAgent
 from agents.test_creation_agent import TestCreationAgent
-from parsers.unified_parser import UnifiedParser
+from parsers.unified_parser import UnifiedTestFileParser
 from orchestrator.workflow_orchestrator import WorkflowOrchestrator
 from orchestrator.agent_coordinator import AgentCoordinator
 
@@ -52,7 +52,7 @@ class EnhancedAutoGenFramework:
         self.agents = {}
         self.orchestrator = None
         self.coordinator = None
-        self.parser = UnifiedParser()
+        self.parser = UnifiedTestFileParser()
         
         # Framework state
         self.state = {
@@ -119,35 +119,30 @@ class EnhancedAutoGenFramework:
         
         # Planning Agent - Strategic test planning and analysis
         self.agents["planning"] = PlanningAgent(
-            role=AgentRole.PLANNING,
             local_ai_provider=self.local_ai_provider
         )
         
         # Test Creation Agent - Generate test automation code
         self.agents["test_creation"] = TestCreationAgent(
-            role=AgentRole.TEST_CREATION,
             local_ai_provider=self.local_ai_provider
         )
         
         # Review Agent - Code review and quality assurance
-        self.agents["review"] = BaseTestAgent(
-            role=AgentRole.REVIEW,
+        self.agents["review"] = PlanningAgent(
             local_ai_provider=self.local_ai_provider,
-            system_message="You are an expert test automation reviewer. Analyze test code for quality, completeness, and best practices."
+            name="review_agent"
         )
         
         # Execution Agent - Test execution and monitoring
-        self.agents["execution"] = BaseTestAgent(
-            role=AgentRole.EXECUTION,
+        self.agents["execution"] = TestCreationAgent(
             local_ai_provider=self.local_ai_provider,
-            system_message="You are a test execution specialist. Monitor test runs, handle failures, and provide execution insights."
+            name="execution_agent"
         )
         
         # Reporting Agent - Generate comprehensive reports
-        self.agents["reporting"] = BaseTestAgent(
-            role=AgentRole.REPORTING,
+        self.agents["reporting"] = PlanningAgent(
             local_ai_provider=self.local_ai_provider,
-            system_message="You are a test reporting expert. Create detailed, actionable test reports and quality insights."
+            name="reporting_agent"
         )
         
         self.state["agents_created"] = len(self.agents)
