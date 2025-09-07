@@ -1,0 +1,45 @@
+# AutoGen Test Automation Framework with Local AI Integration
+# Complete dependency list for production deployment
+
+# Core AutoGen dependencies
+autogen-agentchat>=0.2.0
+pyautogen>=0.2.0
+
+# Local AI integration
+requests>=2.31.0
+aiohttp>=3.8.0
+
+# Configuration and settings
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+
+# Data processing and validation
+jsonschema>=4.17.0
+pyyaml>=6.0
+
+# Web automation (for test execution)
+playwright>=1.40.0
+selenium>=4.15.0
+
+# API testing
+httpx>=0.25.0
+
+# Logging and monitoring
+structlog>=23.1.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.7.0
+flake8>=6.0.0
+
+# Optional: For enhanced features
+pandas>=2.0.0  # For test data management
+matplotlib>=3.7.0  # For reporting charts
+jinja2>=3.1.0  # For template generation
+
+# Note: Ollama installation is separate
+# Install Ollama from: https://ollama.ai/download
+# Or use: curl -fsSL https://ollama.ai/install.sh | sh
+

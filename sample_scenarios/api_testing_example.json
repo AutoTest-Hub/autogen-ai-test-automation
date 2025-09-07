@@ -1,0 +1,92 @@
+{
+  "testName": "API Integration Testing",
+  "description": "Test API endpoints for product catalog and user authentication",
+  "priority": "High",
+  "tags": ["api", "integration", "backend"],
+  "application": "https://www.advantageonlineshopping.com/",
+  "testType": "api",
+  "environment": {
+    "baseUrl": "https://www.advantageonlineshopping.com/catalog/api/v1",
+    "timeout": 30000,
+    "retries": 3
+  },
+  "testSteps": [
+    {
+      "step": 1,
+      "action": "GET /categories",
+      "description": "Retrieve all product categories",
+      "expectedResult": "Returns list of categories including LAPTOPS",
+      "validation": {
+        "statusCode": 200,
+        "responseTime": "<5000ms",
+        "bodyContains": ["LAPTOPS", "TABLETS", "HEADPHONES"]
+      }
+    },
+    {
+      "step": 2,
+      "action": "GET /products/category/1",
+      "description": "Get products in LAPTOPS category",
+      "expectedResult": "Returns laptop products with details",
+      "validation": {
+        "statusCode": 200,
+        "responseTime": "<3000ms",
+        "bodySchema": {
+          "type": "array",
+          "items": {
+            "properties": {
+              "productId": {"type": "number"},
+              "productName": {"type": "string"},
+              "price": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "step": 3,
+      "action": "POST /authenticate",
+      "description": "Authenticate user with credentials",
+      "requestBody": {
+        "username": "helios",
+        "password": "Password123"
+      },
+      "expectedResult": "Returns authentication token",
+      "validation": {
+        "statusCode": 200,
+        "responseTime": "<2000ms",
+        "bodyContains": ["token", "userId"]
+      }
+    },
+    {
+      "step": 4,
+      "action": "GET /user/profile",
+      "description": "Get user profile with authentication",
+      "headers": {
+        "Authorization": "Bearer {{authToken}}"
+      },
+      "expectedResult": "Returns user profile information",
+      "validation": {
+        "statusCode": 200,
+        "bodyContains": ["username", "email"]
+      }
+    }
+  ],
+  "testData": {
+    "credentials": {
+      "username": "helios",
+      "password": "Password123"
+    },
+    "expectedCategories": ["LAPTOPS", "TABLETS", "HEADPHONES", "MICE", "SPEAKERS"],
+    "testProduct": {
+      "categoryId": 1,
+      "expectedName": "HP EliteBook Folio"
+    }
+  },
+  "configuration": {
+    "parallel": false,
+    "generateReport": true,
+    "captureResponses": true,
+    "validateSchema": true
+  }
+}
+

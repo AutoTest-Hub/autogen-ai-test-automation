@@ -1,0 +1,35 @@
+Test Name: Simple Login Test
+Target: https://www.advantageonlineshopping.com/#/
+Priority: Medium
+Tags: login, authentication, basic
+
+Description: Test basic user login functionality to verify authentication system
+
+Test Steps:
+1. Navigate to the Advantage Online Shopping website
+2. Wait for the page to fully load
+3. Click on the user account icon in the top navigation
+4. Enter username 'helios' in the username field
+5. Enter password 'Password123' in the password field
+6. Click the Sign In button
+7. Verify successful login by checking for user account menu
+8. Verify user is redirected to account dashboard or homepage
+9. Log out to clean up test state
+
+Expected Results:
+- Website loads successfully
+- Login form is accessible
+- Credentials are accepted
+- User is successfully authenticated
+- Account features become available
+
+Test Data:
+- Username: helios
+- Password: Password123
+- Expected redirect: Account dashboard or homepage
+
+Notes:
+- This is a basic authentication test
+- Credentials are for demo purposes only
+- Test should clean up by logging out
+

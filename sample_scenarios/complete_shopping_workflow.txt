@@ -1,0 +1,65 @@
+Test Name: Complete E-commerce Shopping Workflow
+Target: https://www.advantageonlineshopping.com/#/
+Priority: High
+Tags: e-commerce, shopping, checkout, end-to-end
+
+Description: Complete end-to-end shopping workflow testing all major e-commerce functionality
+
+Test Steps:
+1. Navigate to the Advantage Online Shopping website
+2. Wait for homepage to fully load and verify main elements
+3. Click on user account icon to access login
+4. Enter username 'helios' in the login form
+5. Enter password 'Password123' in the login form
+6. Click Sign In button and verify successful login
+7. Navigate to LAPTOPS category from main menu
+8. Browse available laptop products
+9. Select HP EliteBook Folio product for detailed view
+10. Review product details, specifications, and price
+11. Select desired configuration options if available
+12. Add product to shopping cart
+13. Verify product appears in cart with correct details
+14. Proceed to checkout process
+15. Review order summary and product details
+16. Enter or verify shipping information
+17. Select shipping method and delivery options
+18. Enter payment information (use test data)
+19. Review final order details and total cost
+20. Complete the order placement
+21. Verify order confirmation page appears
+22. Capture order confirmation number
+23. Verify order appears in account order history
+24. Log out to complete the test
+
+Expected Results:
+- All navigation works smoothly
+- Product selection and configuration functions correctly
+- Shopping cart accurately reflects selected items
+- Checkout process completes without errors
+- Payment processing succeeds (with test data)
+- Order confirmation is displayed
+- Order appears in user account history
+
+Test Data:
+- Username: helios
+- Password: Password123
+- Product: HP EliteBook Folio (from LAPTOPS category)
+- Payment: Use test credit card data
+- Shipping: Standard shipping method
+
+Validation Points:
+- Login authentication works
+- Product catalog browsing functions
+- Shopping cart management works
+- Checkout process is complete
+- Payment processing succeeds
+- Order confirmation is generated
+- User account reflects new order
+
+Notes:
+- This is a comprehensive e-commerce workflow test
+- Use test payment data only
+- Verify each step before proceeding
+- Capture screenshots at key points
+- Test should complete full purchase cycle
+
