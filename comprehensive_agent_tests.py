@@ -49,7 +49,6 @@ class ComprehensiveAgentTester:
         
         # Initialize local AI provider
         self.local_ai_provider = LocalAIProvider()
-        await self.local_ai_provider.initialize()
         
         if not self.local_ai_provider.is_available():
             logger.error("❌ Local AI provider not available - tests cannot proceed")
@@ -131,7 +130,10 @@ class ComprehensiveAgentTester:
             - User receives order confirmation
             """
             
-            analysis_result = await planning_agent.analyze_requirements(test_requirement)
+            analysis_result = await planning_agent.process_task({
+                "task_type": "analyze_requirements",
+                "requirements": test_requirement
+            })
             
             test_results["test_cases"]["requirement_analysis"] = {
                 "status": "passed" if analysis_result else "failed",
@@ -159,7 +161,10 @@ class ComprehensiveAgentTester:
                 "Verify order confirmation"
             ]
             
-            matrix_result = await planning_agent.create_test_matrix(test_scenarios)
+            matrix_result = await planning_agent.process_task({
+                "task_type": "create_test_matrix", 
+                "scenarios": test_scenarios
+            })
             
             test_results["test_cases"]["test_matrix_creation"] = {
                 "status": "passed" if matrix_result else "failed",
@@ -187,7 +192,10 @@ class ComprehensiveAgentTester:
                 "critical_business_flow": True
             }
             
-            risk_result = await planning_agent.assess_risk(risk_factors)
+            risk_result = await planning_agent.process_task({
+                "task_type": "assess_risk",
+                "test_plan": test_plan
+            })
             
             test_results["test_cases"]["risk_assessment"] = {
                 "status": "passed" if risk_result else "failed",
@@ -269,7 +277,10 @@ class ComprehensiveAgentTester:
                 ]
             }
             
-            playwright_result = await creation_agent.generate_playwright_test(playwright_spec)
+            playwright_result = await creation_agent.process_task({
+                "task_type": "generate_playwright_test",
+                "test_spec": playwright_spec
+            })
             
             test_results["test_cases"]["playwright_generation"] = {
                 "status": "passed" if playwright_result else "failed",
@@ -304,7 +315,10 @@ class ComprehensiveAgentTester:
                 ]
             }
             
-            selenium_result = await creation_agent.generate_selenium_test(selenium_spec)
+            selenium_result = await creation_agent.process_task({
+                "task_type": "generate_selenium_test", 
+                "test_spec": selenium_spec
+            })
             
             test_results["test_cases"]["selenium_generation"] = {
                 "status": "passed" if selenium_result else "failed",
@@ -345,7 +359,10 @@ class ComprehensiveAgentTester:
                 ]
             }
             
-            api_result = await creation_agent.generate_api_test(api_spec)
+            api_result = await creation_agent.process_task({
+                "task_type": "generate_api_test",
+                "test_spec": api_spec  
+            })
             
             test_results["test_cases"]["api_generation"] = {
                 "status": "passed" if api_result else "failed",
