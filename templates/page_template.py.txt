@@ -1,0 +1,26 @@
+"""
+{page_name} Page Object
+======================
+Page object for {page_name} page.
+"""
+
+from pages.base_page import BasePage
+
+class {page_class}(BasePage):
+    """Page object for {page_name} page"""
+    
+    def __init__(self, page):
+        """
+        Initialize {page_name} page object
+        
+        Args:
+            page: Playwright page object
+        """
+        super().__init__(page)
+        self.url = "{page_url}"  # URL path relative to base URL
+        
+        # Element selectors
+{element_selectors}
+    
+{element_methods}
+
