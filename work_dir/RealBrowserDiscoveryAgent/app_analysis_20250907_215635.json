@@ -1,0 +1,64 @@
+{
+  "application_url": "https://the-internet.herokuapp.com/",
+  "analysis_depth": "basic",
+  "discovered_pages": [
+    {
+      "url": "https://github.com/tourdedave/the-internet",
+      "name": "the-internet",
+      "text": ""
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/abtest",
+      "name": "A/B Testing",
+      "text": "A/B Testing"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/add_remove_elements/",
+      "name": "Add/Remove Elements",
+      "text": "Add/Remove Elements"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/basic_auth",
+      "name": "Basic Auth",
+      "text": "Basic Auth"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/broken_images",
+      "name": "Broken Images",
+      "text": "Broken Images"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/challenging_dom",
+      "name": "Challenging DOM",
+      "text": "Challenging DOM"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/checkboxes",
+      "name": "Checkboxes",
+      "text": "Checkboxes"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/context_menu",
+      "name": "Context Menu",
+      "text": "Context Menu"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/digest_auth",
+      "name": "Digest Authentication",
+      "text": "Digest Authentication"
+    },
+    {
+      "url": "https://the-internet.herokuapp.com/disappearing_elements",
+      "name": "Disappearing Elements",
+      "text": "Disappearing Elements"
+    }
+  ],
+  "main_page_elements": {
+    "forms": [],
+    "inputs": [],
+    "buttons": []
+  },
+  "navigation": [],
+  "screenshot": "screenshots/app_analysis_20250907_215635.png",
+  "analysis_timestamp": "2025-09-07T21:56:35.478760"
+}

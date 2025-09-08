@@ -1,0 +1,68 @@
+{
+  "page_url": "https://the-internet.herokuapp.com/login",
+  "timestamp": "20250907_215203",
+  "elements": {
+    "inputs": [
+      {
+        "tag": "input",
+        "type": "text",
+        "id": "username",
+        "name": "username",
+        "placeholder": "",
+        "className": "",
+        "xpath": "//*[@id=\"username\"]",
+        "css": "#username"
+      },
+      {
+        "tag": "input",
+        "type": "password",
+        "id": "password",
+        "name": "password",
+        "placeholder": "",
+        "className": "",
+        "xpath": "//*[@id=\"password\"]",
+        "css": "#password"
+      }
+    ],
+    "buttons": [
+      {
+        "tag": "button",
+        "type": "submit",
+        "id": "",
+        "name": "",
+        "text": " Login",
+        "className": "radius",
+        "xpath": "//body/div[2]/div/div/form/button",
+        "css": "button:has-text(\"Login\")"
+      }
+    ],
+    "forms": [
+      {
+        "id": "login",
+        "name": "login",
+        "action": "https://the-internet.herokuapp.com/authenticate",
+        "method": "post",
+        "className": "",
+        "inputs": [
+          {
+            "name": "username",
+            "type": "text",
+            "id": "username"
+          },
+          {
+            "name": "password",
+            "type": "password",
+            "id": "password"
+          }
+        ],
+        "submitButton": {
+          "id": "",
+          "text": " Login"
+        },
+        "xpath": "//*[@id=\"login\"]",
+        "css": "#login"
+      }
+    ]
+  },
+  "screenshot": "screenshots/discovery_20250907_215203.png"
+}

@@ -1,0 +1,41 @@
+{
+  "page_url": "https://the-internet.herokuapp.com/add_remove_elements/",
+  "timestamp": "20250907_215412",
+  "elements": {
+    "inputs": [],
+    "buttons": [
+      {
+        "tag": "button",
+        "type": "submit",
+        "id": "",
+        "name": "",
+        "text": "Add Element",
+        "className": "",
+        "xpath": "//body/div[2]/div/div/button",
+        "css": "button:has-text(\"Add Element\")"
+      }
+    ],
+    "links": [
+      {
+        "tag": "a",
+        "href": "https://github.com/tourdedave/the-internet",
+        "text": "",
+        "id": "",
+        "className": "",
+        "xpath": "//body/div[2]/a",
+        "css": "a[href*=\"/tourdedave/the-internet\"]"
+      },
+      {
+        "tag": "a",
+        "href": "http://elementalselenium.com/",
+        "text": "Elemental Selenium",
+        "id": "",
+        "className": "",
+        "xpath": "//body/div[3]/div/div/a",
+        "css": "a:has-text(\"Elemental Selenium\")"
+      }
+    ],
+    "forms": []
+  },
+  "screenshot": "screenshots/discovery_20250907_215412.png"
+}
