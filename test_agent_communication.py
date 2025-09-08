@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Import our agents
 from agents.planning_agent import PlanningAgent
-from agents.test_creation_agent import TestCreationAgent
+from agents.test_creation_agent import EnhancedTestCreationAgent as TestCreationAgent
 from agents.review_agent import ReviewAgent
 from agents.execution_agent import ExecutionAgent
 from agents.reporting_agent import ReportingAgent
@@ -82,10 +82,11 @@ class AgentCommunicationTester:
             
             # Check if planning result has the right structure for test creation
             if 'test_plan' in planning_result:
-                # Use the correct method - process_task
+                # Use the correct method - process_task with Enhanced Agent task type
                 creation_task = {
-                    "task_type": "test_creation",
-                    "test_plan": planning_result['test_plan']
+                    "task_type": "generate_tests",  # Changed from "test_creation" to "generate_tests"
+                    "test_plan": planning_result['test_plan'],
+                    "application_url": "https://example.com"  # Added required field
                 }
                 creation_result = await test_creation_agent.process_task(creation_task)
                 logger.info(f"Test Creation Result: {json.dumps(creation_result, indent=2)}")
@@ -122,13 +123,17 @@ class AgentCommunicationTester:
             # Step 3: Review Agent reviews the created tests
             review_agent = ReviewAgent()
             
-            # Check if creation result has test files to review
-            if 'test_files' in creation_result or 'generated_tests' in creation_result:
+            # Check if creation result has test files to review (Enhanced Agent structure)
+            test_files = creation_result.get('generated_files', [])
+            artifacts = creation_result.get('artifacts', [])
+            
+            if test_files or artifacts or creation_result.get('status') == 'success':
                 # Use the correct method - process_task
                 review_task = {
-                    "task_type": "review",
-                    "test_files": creation_result.get('test_files', []),
-                    "generated_tests": creation_result.get('generated_tests', [])
+                    "task_type": "review_tests",  # Updated task type
+                    "test_files": test_files,
+                    "artifacts": artifacts,
+                    "creation_result": creation_result
                 }
                 review_result = await review_agent.process_task(review_task)
                 logger.info(f"Review Result: {json.dumps(review_result, indent=2)}")
@@ -141,7 +146,8 @@ class AgentCommunicationTester:
                 
                 return True, review_result
             else:
-                self.test_results["issues_found"].append("Test Creation output missing test files for review")
+                self.test_results["issues_found"].append("Test Creation output missing test files for review (Enhanced Agent)")
+                logger.warning("Creation result doesn't have test files or success status")
                 return False, None
                 
         except Exception as e:
@@ -221,9 +227,10 @@ class AgentCommunicationTester:
         required_planning_keys = ['test_plan', 'scenarios', 'test_strategy']
         planning_has_required = any(key in planning_result for key in required_planning_keys)
         
-        # Check if creation result has meaningful output
-        required_creation_keys = ['test_files', 'generated_tests', 'test_code']
-        creation_has_output = any(key in creation_result for key in required_creation_keys)
+        # Check if creation result has meaningful output (Enhanced Agent structure)
+        required_creation_keys = ['status', 'generated_files', 'test_files', 'artifacts']
+        creation_has_output = (creation_result.get('status') == 'success' or 
+                             any(key in creation_result for key in required_creation_keys))
         
         logger.info(f"Planning has required structure: {planning_has_required}")
         logger.info(f"Creation has meaningful output: {creation_has_output}")

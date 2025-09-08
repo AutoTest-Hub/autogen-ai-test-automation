@@ -1,0 +1,609 @@
+{
+  "timestamp": "2025-09-07T20:06:58.996146",
+  "tests": {
+    "planning_to_creation": {
+      "success": true,
+      "planning_output": {
+        "status": "success",
+        "test_plan": {
+          "plan_id": "plan_20250907_200658",
+          "created_at": "2025-09-07T20:06:58.999791",
+          "requirements_summary": {},
+          "test_scenarios": [
+            {
+              "name": "Unknown Test",
+              "description": "",
+              "priority": "Medium",
+              "tags": [],
+              "application": "",
+              "test_steps": [],
+              "expected_results": [],
+              "complexity_score": 0.0,
+              "estimated_duration_minutes": 5,
+              "risk_factors": [],
+              "required_framework": "playwright"
+            }
+          ],
+          "risk_assessment": {
+            "overall_risk": "low",
+            "high_risk_scenarios": 0,
+            "common_risks": [],
+            "mitigation_required": false
+          },
+          "resource_estimation": {
+            "total_scenarios": 1,
+            "total_duration_minutes": 5,
+            "total_hours": 0.1,
+            "estimated_team_size": 1,
+            "parallel_execution_possible": false,
+            "resource_requirements": {
+              "test_automation_engineer": 1,
+              "qa_analyst": 0,
+              "test_environment": 1
+            }
+          },
+          "execution_strategy": {
+            "framework": "playwright",
+            "execution_mode": "sequential",
+            "environment_requirements": [
+              "test_environment",
+              "test_data"
+            ],
+            "prerequisites": [
+              "framework_setup",
+              "test_data_preparation"
+            ],
+            "recommended_schedule": "continuous_integration"
+          },
+          "quality_gates": {
+            "minimum_pass_rate": 95,
+            "maximum_execution_time_minutes": 6.0,
+            "required_coverage": {
+              "functional": 100,
+              "integration": 80,
+              "ui": 90
+            },
+            "success_criteria": [
+              "All critical tests pass",
+              "No high-severity defects",
+              "Performance within acceptable limits"
+            ],
+            "failure_criteria": [
+              "Critical test failures",
+              "Security vulnerabilities detected",
+              "Performance degradation > 20%"
+            ]
+          },
+          "timeline": {
+            "phases": {
+              "setup": {
+                "duration_minutes": 30,
+                "description": "Environment and framework setup"
+              },
+              "execution": {
+                "duration_minutes": 5,
+                "description": "Test execution"
+              },
+              "analysis": {
+                "duration_minutes": 60,
+                "description": "Results analysis and reporting"
+              },
+              "cleanup": {
+                "duration_minutes": 15,
+                "description": "Environment cleanup"
+              }
+            },
+            "total_duration_minutes": 110,
+            "estimated_completion": "Based on parallel execution capabilities"
+          }
+        },
+        "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_200658.json",
+        "summary": {
+          "total_scenarios": 1,
+          "estimated_hours": 0.1,
+          "risk_level": "low",
+          "recommended_framework": "playwright"
+        }
+      },
+      "creation_input_valid": true,
+      "creation_output": {
+        "status": "completed",
+        "generated_files": [
+          {
+            "type": "configuration",
+            "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+            "name": "conftest.py",
+            "purpose": "pytest configuration"
+          },
+          {
+            "type": "requirements",
+            "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+            "name": "requirements.txt",
+            "purpose": "test dependencies"
+          }
+        ],
+        "framework": "playwright",
+        "total_tests": 0,
+        "base_url": "https://example.com",
+        "discovery_integration": "disabled"
+      }
+    },
+    "creation_to_review": {
+      "success": true,
+      "creation_output": {
+        "status": "completed",
+        "generated_files": [
+          {
+            "type": "configuration",
+            "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+            "name": "conftest.py",
+            "purpose": "pytest configuration"
+          },
+          {
+            "type": "requirements",
+            "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+            "name": "requirements.txt",
+            "purpose": "test dependencies"
+          }
+        ],
+        "framework": "playwright",
+        "total_tests": 0,
+        "base_url": "https://example.com",
+        "discovery_integration": "disabled"
+      },
+      "review_output": {
+        "review_results": {
+          "overall_score": 0.0,
+          "reviews": [
+            {
+              "filename": {
+                "type": "configuration",
+                "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+                "name": "conftest.py",
+                "purpose": "pytest configuration"
+              },
+              "score": 0,
+              "issues": [
+                "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+              ],
+              "recommendations": [
+                "Fix file access issues"
+              ]
+            },
+            {
+              "filename": {
+                "type": "requirements",
+                "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+                "name": "requirements.txt",
+                "purpose": "test dependencies"
+              },
+              "score": 0,
+              "issues": [
+                "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+              ],
+              "recommendations": [
+                "Fix file access issues"
+              ]
+            }
+          ],
+          "summary": {
+            "total_files_reviewed": 2,
+            "average_score": 0.0,
+            "total_issues_found": 2,
+            "total_strengths_identified": 0,
+            "files_needing_improvement": 2
+          },
+          "recommendations": [
+            "Fix file access issues"
+          ]
+        },
+        "report_path": "./work_dir/review_agent/review_report_1757290019.json",
+        "overall_score": 0.0,
+        "total_files_reviewed": 2
+      }
+    },
+    "review_to_execution": {
+      "success": true,
+      "review_output": {
+        "review_results": {
+          "overall_score": 0.0,
+          "reviews": [
+            {
+              "filename": {
+                "type": "configuration",
+                "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+                "name": "conftest.py",
+                "purpose": "pytest configuration"
+              },
+              "score": 0,
+              "issues": [
+                "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+              ],
+              "recommendations": [
+                "Fix file access issues"
+              ]
+            },
+            {
+              "filename": {
+                "type": "requirements",
+                "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+                "name": "requirements.txt",
+                "purpose": "test dependencies"
+              },
+              "score": 0,
+              "issues": [
+                "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+              ],
+              "recommendations": [
+                "Fix file access issues"
+              ]
+            }
+          ],
+          "summary": {
+            "total_files_reviewed": 2,
+            "average_score": 0.0,
+            "total_issues_found": 2,
+            "total_strengths_identified": 0,
+            "files_needing_improvement": 2
+          },
+          "recommendations": [
+            "Fix file access issues"
+          ]
+        },
+        "report_path": "./work_dir/review_agent/review_report_1757290019.json",
+        "overall_score": 0.0,
+        "total_files_reviewed": 2
+      },
+      "execution_output": {
+        "execution_results": {
+          "execution_id": "exec_1757290019",
+          "start_time": "2025-09-07T20:06:59.010894",
+          "test_results": [],
+          "summary": {
+            "total_tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "errors": 0,
+            "success_rate": 0,
+            "total_execution_time": 0
+          },
+          "performance_metrics": {},
+          "errors": [],
+          "end_time": "2025-09-07T20:07:00.254904"
+        },
+        "results_path": "./work_dir/execution_agent/execution_results_exec_1757290019.json",
+        "summary": {
+          "total_tests": 0,
+          "passed": 0,
+          "failed": 0,
+          "errors": 0,
+          "success_rate": 0,
+          "total_execution_time": 0
+        },
+        "success": false
+      }
+    },
+    "execution_to_reporting": {
+      "success": true,
+      "execution_output": {
+        "execution_results": {
+          "execution_id": "exec_1757290019",
+          "start_time": "2025-09-07T20:06:59.010894",
+          "test_results": [],
+          "summary": {
+            "total_tests": 0,
+            "passed": 0,
+            "failed": 0,
+            "errors": 0,
+            "success_rate": 0,
+            "total_execution_time": 0
+          },
+          "performance_metrics": {},
+          "errors": [],
+          "end_time": "2025-09-07T20:07:00.254904"
+        },
+        "results_path": "./work_dir/execution_agent/execution_results_exec_1757290019.json",
+        "summary": {
+          "total_tests": 0,
+          "passed": 0,
+          "failed": 0,
+          "errors": 0,
+          "success_rate": 0,
+          "total_execution_time": 0
+        },
+        "success": false
+      },
+      "reporting_output": {
+        "report": {
+          "report_id": "report_1757290020",
+          "generated_at": "2025-09-07T20:07:00.258866",
+          "report_type": "comprehensive",
+          "executive_summary": {
+            "test_execution_overview": {
+              "total_tests": 0,
+              "success_rate": 0,
+              "execution_time": 0,
+              "status": "FAILED"
+            },
+            "quality_overview": {
+              "code_quality_score": 0,
+              "issues_found": 0,
+              "recommendations_count": 0
+            },
+            "key_findings": [
+              "Test execution needs improvement - low success rate",
+              "Code quality needs significant improvement"
+            ],
+            "risk_assessment": {
+              "overall_risk": "HIGH",
+              "risk_factors": [
+                "Low test success rate indicates potential quality issues",
+                "Low code quality score indicates maintainability risks"
+              ]
+            }
+          },
+          "test_execution": {
+            "summary": {},
+            "performance_metrics": {},
+            "test_results": [],
+            "environment_info": {},
+            "execution_timeline": []
+          },
+          "quality_analysis": {
+            "overall_score": 0,
+            "quality_metrics": {},
+            "code_reviews": [],
+            "issue_analysis": {
+              "total_issues": 0,
+              "issue_categories": {
+                "error_handling": 0,
+                "documentation": 0,
+                "testing": 0,
+                "performance": 0,
+                "security": 0,
+                "other": 0
+              },
+              "most_common_category": "error_handling"
+            },
+            "improvement_areas": []
+          },
+          "recommendations": [
+            {
+              "category": "Test Reliability",
+              "priority": "High",
+              "recommendation": "Improve test reliability - success rate is below 80%",
+              "action_items": [
+                "Review and fix failing tests",
+                "Improve test data management",
+                "Enhance error handling"
+              ]
+            },
+            {
+              "category": "Code Quality",
+              "priority": "High",
+              "recommendation": "Improve code quality and maintainability",
+              "action_items": [
+                "Address code review findings",
+                "Implement coding standards",
+                "Add comprehensive documentation"
+              ]
+            }
+          ],
+          "appendices": {
+            "detailed_test_results": [],
+            "environment_details": {},
+            "code_review_details": [],
+            "raw_data": {
+              "execution_data": {},
+              "review_data": {}
+            }
+          }
+        },
+        "html_report_path": "./work_dir/reporting_agent/test_report_report_1757290020.html",
+        "json_report_path": "./work_dir/reporting_agent/test_report_report_1757290020.json",
+        "report_id": "report_1757290020"
+      }
+    },
+    "error_handling": {
+      "empty_input": {
+        "status": "success",
+        "test_plan": {
+          "plan_id": "plan_20250907_200700",
+          "created_at": "2025-09-07T20:07:00.262360",
+          "requirements_summary": {},
+          "test_scenarios": [],
+          "risk_assessment": {
+            "overall_risk": "low",
+            "high_risk_scenarios": 0,
+            "common_risks": [],
+            "mitigation_required": false
+          },
+          "resource_estimation": {
+            "total_scenarios": 0,
+            "total_duration_minutes": 0,
+            "total_hours": 0.0,
+            "estimated_team_size": 1,
+            "parallel_execution_possible": false,
+            "resource_requirements": {
+              "test_automation_engineer": 1,
+              "qa_analyst": 0,
+              "test_environment": 1
+            }
+          },
+          "execution_strategy": {
+            "framework": "playwright",
+            "execution_mode": "sequential",
+            "environment_requirements": [
+              "test_environment",
+              "test_data"
+            ],
+            "prerequisites": [
+              "framework_setup",
+              "test_data_preparation"
+            ],
+            "recommended_schedule": "continuous_integration"
+          },
+          "quality_gates": {
+            "minimum_pass_rate": 95,
+            "maximum_execution_time_minutes": 0.0,
+            "required_coverage": {
+              "functional": 100,
+              "integration": 80,
+              "ui": 90
+            },
+            "success_criteria": [
+              "All critical tests pass",
+              "No high-severity defects",
+              "Performance within acceptable limits"
+            ],
+            "failure_criteria": [
+              "Critical test failures",
+              "Security vulnerabilities detected",
+              "Performance degradation > 20%"
+            ]
+          },
+          "timeline": {
+            "phases": {
+              "setup": {
+                "duration_minutes": 30,
+                "description": "Environment and framework setup"
+              },
+              "execution": {
+                "duration_minutes": 0,
+                "description": "Test execution"
+              },
+              "analysis": {
+                "duration_minutes": 60,
+                "description": "Results analysis and reporting"
+              },
+              "cleanup": {
+                "duration_minutes": 15,
+                "description": "Environment cleanup"
+              }
+            },
+            "total_duration_minutes": 105,
+            "estimated_completion": "Based on parallel execution capabilities"
+          }
+        },
+        "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_200700.json",
+        "summary": {
+          "total_scenarios": 0,
+          "estimated_hours": 0.0,
+          "risk_level": "low",
+          "recommended_framework": "playwright"
+        }
+      },
+      "malformed_input": {
+        "status": "success",
+        "test_plan": {
+          "plan_id": "plan_20250907_200700",
+          "created_at": "2025-09-07T20:07:00.262896",
+          "requirements_summary": {},
+          "test_scenarios": [
+            {
+              "name": "Unknown Test",
+              "description": "",
+              "priority": "Medium",
+              "tags": [],
+              "application": "",
+              "test_steps": [],
+              "expected_results": [],
+              "complexity_score": 0.0,
+              "estimated_duration_minutes": 5,
+              "risk_factors": [],
+              "required_framework": "playwright"
+            }
+          ],
+          "risk_assessment": {
+            "overall_risk": "low",
+            "high_risk_scenarios": 0,
+            "common_risks": [],
+            "mitigation_required": false
+          },
+          "resource_estimation": {
+            "total_scenarios": 1,
+            "total_duration_minutes": 5,
+            "total_hours": 0.1,
+            "estimated_team_size": 1,
+            "parallel_execution_possible": false,
+            "resource_requirements": {
+              "test_automation_engineer": 1,
+              "qa_analyst": 0,
+              "test_environment": 1
+            }
+          },
+          "execution_strategy": {
+            "framework": "playwright",
+            "execution_mode": "sequential",
+            "environment_requirements": [
+              "test_environment",
+              "test_data"
+            ],
+            "prerequisites": [
+              "framework_setup",
+              "test_data_preparation"
+            ],
+            "recommended_schedule": "continuous_integration"
+          },
+          "quality_gates": {
+            "minimum_pass_rate": 95,
+            "maximum_execution_time_minutes": 6.0,
+            "required_coverage": {
+              "functional": 100,
+              "integration": 80,
+              "ui": 90
+            },
+            "success_criteria": [
+              "All critical tests pass",
+              "No high-severity defects",
+              "Performance within acceptable limits"
+            ],
+            "failure_criteria": [
+              "Critical test failures",
+              "Security vulnerabilities detected",
+              "Performance degradation > 20%"
+            ]
+          },
+          "timeline": {
+            "phases": {
+              "setup": {
+                "duration_minutes": 30,
+                "description": "Environment and framework setup"
+              },
+              "execution": {
+                "duration_minutes": 5,
+                "description": "Test execution"
+              },
+              "analysis": {
+                "duration_minutes": 60,
+                "description": "Results analysis and reporting"
+              },
+              "cleanup": {
+                "duration_minutes": 15,
+                "description": "Environment cleanup"
+              }
+            },
+            "total_duration_minutes": 110,
+            "estimated_completion": "Based on parallel execution capabilities"
+          }
+        },
+        "plan_file": "./work_dir/planning_agent/test_plan_plan_20250907_200700.json",
+        "summary": {
+          "total_scenarios": 1,
+          "estimated_hours": 0.1,
+          "risk_level": "low",
+          "recommended_framework": "playwright"
+        }
+      },
+      "success": true
+    }
+  },
+  "data_flow": {},
+  "issues_found": [],
+  "summary": {
+    "total_tests": 5,
+    "passed_tests": 5,
+    "success_rate": 100.0,
+    "overall_success": true
+  }
+}

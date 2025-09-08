@@ -1,0 +1,45 @@
+{
+  "overall_score": 0.0,
+  "reviews": [
+    {
+      "filename": {
+        "type": "configuration",
+        "path": "work_dir/EnhancedTestCreationAgent/conftest.py",
+        "name": "conftest.py",
+        "purpose": "pytest configuration"
+      },
+      "score": 0,
+      "issues": [
+        "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+      ],
+      "recommendations": [
+        "Fix file access issues"
+      ]
+    },
+    {
+      "filename": {
+        "type": "requirements",
+        "path": "work_dir/EnhancedTestCreationAgent/requirements.txt",
+        "name": "requirements.txt",
+        "purpose": "test dependencies"
+      },
+      "score": 0,
+      "issues": [
+        "Failed to review file: stat: path should be string, bytes, os.PathLike or integer, not dict"
+      ],
+      "recommendations": [
+        "Fix file access issues"
+      ]
+    }
+  ],
+  "summary": {
+    "total_files_reviewed": 2,
+    "average_score": 0.0,
+    "total_issues_found": 2,
+    "total_strengths_identified": 0,
+    "files_needing_improvement": 2
+  },
+  "recommendations": [
+    "Fix file access issues"
+  ]
+}
