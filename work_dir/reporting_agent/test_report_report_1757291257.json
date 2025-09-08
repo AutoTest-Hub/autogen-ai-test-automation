@@ -1,0 +1,95 @@
+{
+  "report_id": "report_1757291257",
+  "generated_at": "2025-09-07T20:27:37.518705",
+  "report_type": "comprehensive",
+  "executive_summary": {
+    "test_execution_overview": {
+      "total_tests": 0,
+      "success_rate": 0,
+      "execution_time": 0,
+      "status": "FAILED"
+    },
+    "quality_overview": {
+      "code_quality_score": 0,
+      "issues_found": 0,
+      "recommendations_count": 0
+    },
+    "key_findings": [
+      "Test execution needs improvement - low success rate",
+      "Code quality needs significant improvement"
+    ],
+    "risk_assessment": {
+      "overall_risk": "HIGH",
+      "risk_factors": [
+        "Low test success rate indicates potential quality issues",
+        "Low code quality score indicates maintainability risks"
+      ]
+    }
+  },
+  "test_execution": {
+    "summary": {},
+    "performance_metrics": {},
+    "test_results": [],
+    "environment_info": {},
+    "execution_timeline": []
+  },
+  "quality_analysis": {
+    "overall_score": 0,
+    "quality_metrics": {},
+    "code_reviews": [],
+    "issue_analysis": {
+      "total_issues": 0,
+      "issue_categories": {
+        "error_handling": 0,
+        "documentation": 0,
+        "testing": 0,
+        "performance": 0,
+        "security": 0,
+        "other": 0
+      },
+      "most_common_category": "error_handling"
+    },
+    "improvement_areas": []
+  },
+  "recommendations": [
+    {
+      "category": "Test Reliability",
+      "priority": "High",
+      "recommendation": "Improve test reliability - success rate is below 80%",
+      "action_items": [
+        "Review and fix failing tests",
+        "Improve test data management",
+        "Enhance error handling"
+      ]
+    },
+    {
+      "category": "Code Quality",
+      "priority": "High",
+      "recommendation": "Improve code quality and maintainability",
+      "action_items": [
+        "Address code review findings",
+        "Implement coding standards",
+        "Add comprehensive documentation"
+      ]
+    }
+  ],
+  "appendices": {
+    "detailed_test_results": [],
+    "environment_details": {},
+    "code_review_details": [],
+    "raw_data": {
+      "execution_data": {},
+      "review_data": {
+        "review_results": {
+          "overall_score": 0,
+          "reviews": [],
+          "summary": {},
+          "recommendations": []
+        },
+        "report_path": "./work_dir/review_agent/review_report_1757291257.json",
+        "overall_score": 0,
+        "total_files_reviewed": 0
+      }
+    }
+  }
+}
