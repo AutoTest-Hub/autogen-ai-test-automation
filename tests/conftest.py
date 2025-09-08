@@ -47,7 +47,7 @@ def test_config() -> Dict[str, Any]:
         "browser_config": BROWSER_CONFIG
     }
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def browser_setup(test_config):
     """
     Setup browser for tests
@@ -55,7 +55,7 @@ async def browser_setup(test_config):
     Args:
         test_config: Test configuration
         
-    Yields:
+    Returns:
         Tuple: (page, browser, context, playwright)
     """
     from playwright.async_api import async_playwright
@@ -92,13 +92,33 @@ async def browser_setup(test_config):
     # Set default timeout
     page.default_timeout = test_config.get("timeout", 30000)
     
-    # Yield browser setup
-    yield page, browser, context, playwright
+    try:
+        # Return browser setup
+        return page, browser, context, playwright
+    finally:
+        # Cleanup will be handled by the test
+        pass
+
+@pytest.fixture
+async def browser_with_cleanup(browser_setup):
+    """
+    Browser setup with automatic cleanup
     
-    # Cleanup
-    await context.close()
-    await browser.close()
-    await playwright.stop()
+    Args:
+        browser_setup: Browser setup fixture
+        
+    Yields:
+        Tuple: (page, browser, context, playwright)
+    """
+    page, browser, context, playwright = browser_setup
+    
+    try:
+        yield page, browser, context, playwright
+    finally:
+        # Cleanup
+        await context.close()
+        await browser.close()
+        await playwright.stop()
 
 @pytest.fixture(scope="function")
 def selenium_setup(test_config):
