@@ -1,32 +1,52 @@
+#!/usr/bin/env python3
 """
 Pytest Configuration
-================
-Configuration for pytest.
+===================
+This module contains pytest configuration.
 """
 
 import pytest
-import asyncio
-from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
+
+# Skip adding the option if it's already defined
+try:
+    def pytest_addoption(parser):
+        """
+        Add command line options
+        """
+        try:
+            parser.addoption("--headless", action="store_true", default=True, help="Run browser in headless mode")
+        except ValueError:
+            # Option already exists, ignore
+            pass
+except Exception as e:
+    print(f"Warning: Could not add headless option: {e}")
 
 @pytest.fixture
-def browser_setup():
+def browser_setup(request):
     """
-    Fixture for browser setup that works with pytest-asyncio
+    Set up browser
     
     Returns:
-        tuple: (page, browser, context, playwright)
+        tuple: (page, browser, context)
     """
-    # Create a new event loop
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    # Get headless option
+    try:
+        headless = request.config.getoption("--headless")
+    except:
+        headless = True
     
-    async def setup():
-        playwright = await async_playwright().start()
-        browser = await playwright.chromium.launch(headless=True)
-        context = await browser.new_context()
-        page = await context.new_page()
-        return page, browser, context, playwright
+    # Start playwright
+    playwright = sync_playwright().start()
+    browser = playwright.chromium.launch(headless=headless)
+    context = browser.new_context()
+    page = context.new_page()
     
-    # Run the setup in the event loop
-    return loop.run_until_complete(setup())
+    # Return page, browser, and context
+    yield page, browser, context
+    
+    # Cleanup
+    context.close()
+    browser.close()
+    playwright.stop()
 
