@@ -8,19 +8,12 @@ This module contains pytest configuration.
 import pytest
 from playwright.sync_api import sync_playwright
 
-# Skip adding the option if it's already defined
-try:
-    def pytest_addoption(parser):
-        """
-        Add command line options
-        """
-        try:
-            parser.addoption("--headless", action="store_true", default=True, help="Run browser in headless mode")
-        except ValueError:
-            # Option already exists, ignore
-            pass
-except Exception as e:
-    print(f"Warning: Could not add headless option: {e}")
+def pytest_addoption(parser):
+    """
+    Add command line options
+    """
+    parser.addoption("--headless", action="store_true", default=True, help="Run browser in headless mode")
+    parser.addoption("--no-headless", action="store_false", dest="headless", help="Run browser with UI visible")
 
 @pytest.fixture
 def browser_setup(request):
@@ -49,4 +42,3 @@ def browser_setup(request):
     context.close()
     browser.close()
     playwright.stop()
-
