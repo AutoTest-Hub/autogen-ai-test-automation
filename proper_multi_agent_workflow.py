@@ -84,7 +84,7 @@ class ProperMultiAgentWorkflow:
             
             # Step 3: Create tests
             self.logger.info("Step 3: Creating tests")
-            created_tests = await self._create_tests(test_plan, discovery_results)
+            created_tests = await self._create_tests(test_plan, discovery_results, url, name)
             
             # Step 4: Review tests
             self.logger.info("Step 4: Reviewing tests")
@@ -286,13 +286,15 @@ class ProperMultiAgentWorkflow:
                 "elements": []
             }
     
-    async def _create_tests(self, test_plan: Dict[str, Any], discovery_results: Dict[str, Any]) -> Dict[str, Any]:
+    async def _create_tests(self, test_plan: Dict[str, Any], discovery_results: Dict[str, Any], url: str, name: str) -> Dict[str, Any]:
         """
         Create tests using the Test Creation Agent
         
         Args:
             test_plan: Test plan
             discovery_results: Discovery results
+            url: URL of the website
+            name: Name of the website
             
         Returns:
             Dict[str, Any]: Created tests
@@ -303,9 +305,10 @@ class ProperMultiAgentWorkflow:
                 "task_type": "generate_tests",
                 "test_plan": test_plan,
                 "application_data": {
-                    "base_url": test_plan.get("url", "https://example.com"),
-                    "name": test_plan.get("name", "Example"),
-                    "discovered_pages": [{"url": test_plan.get("url", "https://example.com"), "title": test_plan.get("name", "Example")}],
+                    "base_url": url,
+                    "url": url,
+                    "name": name,
+                    "discovered_pages": [{"url": url, "title": name}],
                     "discovered_elements": discovery_results.get("elements", []),
                     "user_workflows": []
                 }

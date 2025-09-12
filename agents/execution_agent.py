@@ -251,7 +251,7 @@ You are the Execution Agent, an expert in test execution and test environment ma
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=os.path.dirname(suite_path) if os.path.dirname(suite_path) else "."
+                cwd="."  # Always run from project root directory
             )
             
             stdout, stderr = await process.communicate()
@@ -312,7 +312,7 @@ You are the Execution Agent, an expert in test execution and test environment ma
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd=os.path.dirname(test_file) if os.path.dirname(test_file) else "."
+                cwd="."  # Always run from project root directory
             )
             
             stdout, stderr = await process.communicate()
