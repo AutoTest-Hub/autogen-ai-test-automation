@@ -115,7 +115,7 @@ You are the Execution Agent, an expert in test execution and test environment ma
         try:
             self.update_state("processing")
             
-            task_type = task_data.get("type", "execute_tests")
+            task_type = task_data.get("task_type", task_data.get("type", "execute_tests"))
             
             if task_type == "execute_tests":
                 result = await self._execute_tests(task_data)
@@ -140,9 +140,28 @@ You are the Execution Agent, an expert in test execution and test environment ma
     
     async def _execute_tests(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute tests based on task data"""
+        # Handle both old format (test_files) and new format (review_results)
         test_files = task_data.get("test_files", [])
         test_suite_path = task_data.get("test_suite_path", "")
         execution_config = task_data.get("execution_config", {})
+        review_results = task_data.get("review_results", {})
+        
+        # Extract test files from review_results if available
+        if review_results and not test_files:
+            # Look for generated_test_files
+            generated_files = review_results.get("generated_test_files", [])
+            if generated_files:
+                test_files = generated_files
+            else:
+                # Look for login_test or other test files
+                if review_results.get("login_test"):
+                    test_files.append(review_results["login_test"])
+        
+        # If still no test files, look for all test files in tests directory
+        if not test_files:
+            tests_dir = Path("tests")
+            if tests_dir.exists():
+                test_files = [str(f) for f in tests_dir.glob("test_*.py") if f.is_file()]
         
         self.logger.info(f"Executing tests: {len(test_files)} files")
         
@@ -196,7 +215,8 @@ You are the Execution Agent, an expert in test execution and test environment ma
             "execution_results": execution_results,
             "results_path": results_path,
             "summary": execution_results["summary"],
-            "success": execution_results["summary"].get("success_rate", 0) > 0
+            "success": execution_results["summary"].get("success_rate", 0) > 0,
+            "test_files": test_files
         }
     
     async def _execute_test_suite_file(self, suite_path: str, config: Dict[str, Any]) -> Dict[str, Any]:

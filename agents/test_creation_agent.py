@@ -221,8 +221,14 @@ class Test{test_name.title().replace("_", "")}:
             raise
 '''
         
-        # Save the test file
-        test_file_path = self.work_dir / f"test_{test_name}.py"
+        # Save the test file to the correct tests directory
+        tests_dir = Path("./tests")
+        tests_dir.mkdir(exist_ok=True)
+        
+        # Clean test name to remove spaces and special characters
+        clean_test_name = test_name.replace(" ", "_").replace("-", "_").lower()
+        test_file_path = tests_dir / f"test_{clean_test_name}.py"
+        
         with open(test_file_path, 'w') as f:
             f.write(test_code)
         
@@ -232,7 +238,7 @@ class Test{test_name.title().replace("_", "")}:
             "type": "test",
             "framework": "playwright",
             "path": str(test_file_path),
-            "name": f"test_{test_name}.py",
+            "name": f"test_{clean_test_name}.py",
             "test_count": 1,
             "elements_used": len(relevant_elements)
         }
@@ -408,8 +414,17 @@ class {class_name}:
         logging.info(f"Filled {element_name} with: {{value}}")
 '''
         
-        # Save page object file
-        page_object_path = self.work_dir / f"{page_name.lower().replace(' ', '_')}_page.py"
+        # Save page object file to the correct pages directory
+        pages_dir = Path("./pages")
+        pages_dir.mkdir(exist_ok=True)
+        
+        # Clean page name to remove spaces and special characters
+        clean_page_name = page_name.lower().replace(' ', '_').replace('-', '_')
+        if clean_page_name == "unknown" or clean_page_name == "unknownpage":
+            clean_page_name = "main_page"  # Use a more meaningful name
+            
+        page_object_path = pages_dir / f"{clean_page_name}_page.py"
+        
         with open(page_object_path, 'w') as f:
             f.write(page_object_code)
         
@@ -419,7 +434,7 @@ class {class_name}:
             "type": "page_object",
             "framework": "playwright",
             "path": str(page_object_path),
-            "name": f"{page_name.lower().replace(' ', '_')}_page.py",
+            "name": f"{clean_page_name}_page.py",
             "class_name": class_name,
             "elements_count": len(elements)
         }

@@ -101,9 +101,9 @@ You are the Review Agent, an expert in test automation code review and quality a
         try:
             self.update_state("processing")
             
-            task_type = task_data.get("type", "review_code")
+            task_type = task_data.get("task_type", task_data.get("type", "review_code"))
             
-            if task_type == "review_code":
+            if task_type == "review_tests" or task_type == "review_code":
                 result = await self._review_tests(task_data)
             elif task_type == "validate_scenarios":
                 result = await self._validate_scenarios(task_data)
@@ -126,8 +126,20 @@ You are the Review Agent, an expert in test automation code review and quality a
     
     async def _review_tests(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Review generated test code"""
+        # Handle both old format (test_files) and new format (created_tests)
         test_files = task_data.get("test_files", [])
         test_code = task_data.get("test_code", "")
+        created_tests = task_data.get("created_tests", {})
+        
+        # Extract test files from created_tests if available
+        if created_tests and not test_files:
+            generated_files = created_tests.get("generated_test_files", [])
+            if generated_files:
+                test_files = generated_files
+            else:
+                # Look for login_test or other test files
+                if created_tests.get("login_test"):
+                    test_files.append(created_tests["login_test"])
         
         self.logger.info(f"Reviewing {len(test_files)} test files")
         
@@ -146,6 +158,16 @@ You are the Review Agent, an expert in test automation code review and quality a
         elif test_code:
             code_review = await self._review_code_snippet(test_code)
             review_results["reviews"].append(code_review)
+        else:
+            # If no test files found, create a default review
+            self.logger.warning("No test files found to review")
+            review_results["reviews"].append({
+                "filename": "no_tests_found",
+                "score": 0,
+                "issues": ["No test files were provided for review"],
+                "recommendations": ["Ensure test files are generated before review"],
+                "metrics": {"total_lines": 0}
+            })
         
         # Calculate overall score and generate summary
         review_results["overall_score"] = self._calculate_overall_score(review_results["reviews"])

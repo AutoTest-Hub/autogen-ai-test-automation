@@ -319,6 +319,21 @@ class ProperMultiAgentWorkflow:
                 self.logger.warning("Test creation agent failed or created 0 tests, creating default tests")
                 created_tests = self._create_default_tests(test_plan, discovery_results)
             else:
+                # Extract test files from generated_files
+                generated_files = created_tests.get("generated_files", [])
+                test_files = []
+                page_files = []
+                
+                for file_info in generated_files:
+                    if file_info.get("type") == "test":
+                        test_files.append(file_info.get("path"))
+                    elif file_info.get("type") == "page_object":
+                        page_files.append(file_info.get("path"))
+                
+                # Add extracted files to created_tests
+                created_tests["generated_test_files"] = test_files
+                created_tests["generated_page_files"] = page_files
+                
                 # Ensure proper test counting
                 if "total_tests" not in created_tests or created_tests["total_tests"] == 0:
                     # Count test cases from test plan
@@ -902,9 +917,13 @@ def browser_setup(request):
             # Process task with execution agent
             execution_results = await self.execution_agent.process_task(task_data)
             
-            # Always use direct execution for better reliability
-            self.logger.info("Using direct execution for better reliability")
-            execution_results = await self._execute_tests_directly(review_results, headless)
+            # Use execution agent result if successful, otherwise fall back to direct execution
+            if execution_results and not execution_results.get("error") and execution_results.get("test_files"):
+                self.logger.info("Using execution agent results")
+                return execution_results
+            else:
+                self.logger.info("Execution agent failed or found no test files, using direct execution for better reliability")
+                execution_results = await self._execute_tests_directly(review_results, headless)
             
             return execution_results
             
