@@ -1035,7 +1035,8 @@ def browser_setup(request):
         try:
             # Create task data for the reporting agent
             task_data = {
-                "task_type": "generate_report",
+                "type": "generate_report",
+                "execution_data": execution_results,
                 "execution_results": execution_results
             }
             
