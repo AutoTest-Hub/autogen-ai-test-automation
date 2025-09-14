@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-07T21:52:01.241291",
+  "tests": {
+    "page_element_discovery": {
+      "status": "passed",
+      "total_elements": 4,
+      "element_types": [
+        "inputs",
+        "buttons",
+        "forms"
+      ],
+      "screenshot": "screenshots/discovery_20250907_215203.png"
+    },
+    "element_selector_generation": {
+      "status": "passed",
+      "total_selectors": 4,
+      "selectors": [
+        "username input",
+        "password input",
+        "login button",
+        "forgot password link"
+      ],
+      "screenshot": "screenshots/selector_gen_20250907_215205.png"
+    },
+    "application_analysis": {
+      "status": "passed",
+      "discovered_pages": 10,
+      "navigation_links": 0,
+      "screenshot": "screenshots/app_analysis_20250907_215206.png"
+    },
+    "workflow_mapping": {
+      "status": "passed",
+      "total_workflows": 0,
+      "workflow_types": [],
+      "screenshot": "screenshots/workflow_map_20250907_215207.png"
+    }
+  },
+  "summary": {
+    "total_tests": 4,
+    "passed_tests": 4,
+    "failed_tests": 0,
+    "success_rate": 100.0
+  }
+}

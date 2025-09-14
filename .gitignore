@@ -211,3 +211,13 @@ local_dev/
 sandbox/
 playground/
 
+
+# Generated artifacts - should not be committed
+work_dir/
+
+# Test results - should not be committed
+test_results/
+
+# Old log files - should not be committed
+test_execution_*.log
+test_evidence_*.png

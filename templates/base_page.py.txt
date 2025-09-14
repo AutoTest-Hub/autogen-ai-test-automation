@@ -1,0 +1,155 @@
+"""
+Base Page Object
+===============
+Base class for all page objects.
+"""
+
+import logging
+from typing import Any, Dict, Optional
+
+class BasePage:
+    """Base class for all page objects"""
+    
+    def __init__(self, page):
+        """
+        Initialize base page object
+        
+        Args:
+            page: Playwright page object
+        """
+        self.page = page
+        self.url = ""  # URL path relative to base URL
+        self.logger = logging.getLogger(self.__class__.__name__)
+    
+    async def navigate(self):
+        """Navigate to the page"""
+        self.logger.info("Navigating to {}".format(self.url))
+        await self.page.goto(self.url)
+        await self.page.wait_for_load_state("networkidle")
+    
+    async def get_title(self) -> str:
+        """Get page title"""
+        return await self.page.title()
+    
+    async def get_url(self) -> str:
+        """Get current URL"""
+        return self.page.url
+    
+    async def wait_for_selector(self, selector: str, timeout: int = 30000) -> Any:
+        """
+        Wait for selector to be visible
+        
+        Args:
+            selector: Element selector
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            Element handle
+        """
+        self.logger.debug("Waiting for selector: {}".format(selector))
+        return await self.page.wait_for_selector(selector, timeout=timeout)
+    
+    async def click(self, selector: str, timeout: int = 30000):
+        """
+        Click an element
+        
+        Args:
+            selector: Element selector
+            timeout: Timeout in milliseconds
+        """
+        self.logger.debug("Clicking element: {}".format(selector))
+        await self.wait_for_selector(selector, timeout)
+        await self.page.click(selector)
+    
+    async def fill(self, selector: str, value: str, timeout: int = 30000):
+        """
+        Fill an input field
+        
+        Args:
+            selector: Element selector
+            value: Value to fill
+            timeout: Timeout in milliseconds
+        """
+        self.logger.debug("Filling element {} with value: {}".format(selector, value))
+        await self.wait_for_selector(selector, timeout)
+        await self.page.fill(selector, value)
+    
+    async def select_option(self, selector: str, value: str, timeout: int = 30000):
+        """
+        Select an option from a dropdown
+        
+        Args:
+            selector: Element selector
+            value: Option value
+            timeout: Timeout in milliseconds
+        """
+        self.logger.debug("Selecting option {} in dropdown {}".format(value, selector))
+        await self.wait_for_selector(selector, timeout)
+        await self.page.select_option(selector, value)
+    
+    async def is_visible(self, selector: str, timeout: int = 5000) -> bool:
+        """
+        Check if element is visible
+        
+        Args:
+            selector: Element selector
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            True if element is visible, False otherwise
+        """
+        try:
+            await self.page.wait_for_selector(selector, timeout=timeout, state="visible")
+            return True
+        except Exception:
+            return False
+    
+    async def get_text(self, selector: str, timeout: int = 30000) -> str:
+        """
+        Get text content of an element
+        
+        Args:
+            selector: Element selector
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            Text content
+        """
+        element = await self.wait_for_selector(selector, timeout)
+        return await element.text_content()
+    
+    async def get_attribute(self, selector: str, attribute: str, timeout: int = 30000) -> Optional[str]:
+        """
+        Get attribute value of an element
+        
+        Args:
+            selector: Element selector
+            attribute: Attribute name
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            Attribute value
+        """
+        element = await self.wait_for_selector(selector, timeout)
+        return await element.get_attribute(attribute)
+    
+    async def take_screenshot(self, path: str):
+        """
+        Take a screenshot
+        
+        Args:
+            path: Path to save screenshot
+        """
+        self.logger.info("Taking screenshot: {}".format(path))
+        await self.page.screenshot(path=path)
+    
+    async def wait_for_navigation(self, timeout: int = 30000):
+        """
+        Wait for navigation to complete
+        
+        Args:
+            timeout: Timeout in milliseconds
+        """
+        self.logger.debug("Waiting for navigation")
+        await self.page.wait_for_load_state("networkidle", timeout=timeout)
+

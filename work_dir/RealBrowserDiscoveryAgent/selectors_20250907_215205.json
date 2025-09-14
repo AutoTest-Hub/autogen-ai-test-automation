@@ -1,0 +1,129 @@
+{
+  "page_url": "https://the-internet.herokuapp.com/login",
+  "timestamp": "20250907_215205",
+  "generated_selectors": [
+    {
+      "description": "username input",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "[data-testid='username-input']",
+          "priority": "high"
+        },
+        {
+          "type": "css",
+          "value": ".username-input",
+          "priority": "medium"
+        },
+        {
+          "type": "xpath",
+          "value": "//*[contains(text(), 'username input')]",
+          "priority": "low"
+        }
+      ],
+      "recommended": {
+        "type": "css",
+        "value": "[data-testid='username-input']",
+        "priority": "high"
+      },
+      "note": "Element not found, using generic selectors"
+    },
+    {
+      "description": "password input",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "[data-testid='password-input']",
+          "priority": "high"
+        },
+        {
+          "type": "css",
+          "value": ".password-input",
+          "priority": "medium"
+        },
+        {
+          "type": "xpath",
+          "value": "//*[contains(text(), 'password input')]",
+          "priority": "low"
+        }
+      ],
+      "recommended": {
+        "type": "css",
+        "value": "[data-testid='password-input']",
+        "priority": "high"
+      },
+      "note": "Element not found, using generic selectors"
+    },
+    {
+      "description": "login button",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "#login",
+          "priority": "highest",
+          "matches": 1
+        },
+        {
+          "type": "css",
+          "value": "#login, .login-btn, .signin-btn",
+          "priority": "high",
+          "matches": 1,
+          "elements": [
+            {
+              "tag": "form",
+              "id": "login",
+              "name": "login",
+              "type": null,
+              "text": "Username\nPassword\n Login"
+            }
+          ]
+        },
+        {
+          "type": "css",
+          "value": "[name='login']",
+          "priority": "high",
+          "matches": 1
+        },
+        {
+          "type": "xpath",
+          "value": "//form[contains(text(), 'Username\nPassword\n Login')]",
+          "priority": "medium",
+          "matches": 1
+        }
+      ],
+      "recommended": {
+        "type": "css",
+        "value": "#login",
+        "priority": "highest",
+        "matches": 1
+      }
+    },
+    {
+      "description": "forgot password link",
+      "selectors": [
+        {
+          "type": "css",
+          "value": "[data-testid='forgot-password-link']",
+          "priority": "high"
+        },
+        {
+          "type": "css",
+          "value": ".forgot-password-link",
+          "priority": "medium"
+        },
+        {
+          "type": "xpath",
+          "value": "//*[contains(text(), 'forgot password link')]",
+          "priority": "low"
+        }
+      ],
+      "recommended": {
+        "type": "css",
+        "value": "[data-testid='forgot-password-link']",
+        "priority": "high"
+      },
+      "note": "Element not found, using generic selectors"
+    }
+  ],
+  "screenshot": "screenshots/selector_gen_20250907_215205.png"
+}

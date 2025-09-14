@@ -1,0 +1,30 @@
+{
+  "page_url": "https://the-internet.herokuapp.com/abtest",
+  "timestamp": "20250907_215338",
+  "elements": {
+    "inputs": [],
+    "buttons": [],
+    "links": [
+      {
+        "tag": "a",
+        "href": "https://github.com/tourdedave/the-internet",
+        "text": "",
+        "id": "",
+        "className": "",
+        "xpath": "//body/div[2]/a",
+        "css": "a[href*=\"/tourdedave/the-internet\"]"
+      },
+      {
+        "tag": "a",
+        "href": "http://elementalselenium.com/",
+        "text": "Elemental Selenium",
+        "id": "",
+        "className": "",
+        "xpath": "//body/div[3]/div/div/a",
+        "css": "a:has-text(\"Elemental Selenium\")"
+      }
+    ],
+    "forms": []
+  },
+  "screenshot": "screenshots/discovery_20250907_215338.png"
+}

@@ -1,0 +1,56 @@
+"""
+{test_name} Test
+==============
+{test_description}
+"""
+
+import pytest
+import logging
+from datetime import datetime
+
+from pages.{page_module} import {page_class}
+
+class {test_class}:
+    """Test class for {test_name}"""
+    
+    @pytest.mark.asyncio
+    async def test_{test_function}(self, browser_setup):
+        """
+        Test {test_name}
+        
+        Args:
+            browser_setup: Browser setup fixture
+        """
+        page, browser, context, playwright = browser_setup
+        
+        try:
+            # Initialize page object
+            {page_var} = {page_class}(page)
+            
+            # Navigate to page
+            await {page_var}.navigate()
+            
+            # Take screenshot before actions
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            await page.screenshot(path="screenshots/{test_function}_before_{timestamp}.png")
+            
+{test_steps}
+            
+            # Take screenshot after actions
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            await page.screenshot(path="screenshots/{test_function}_after_{timestamp}.png")
+            
+{assertions}
+            
+        except Exception as e:
+            # Take screenshot on failure
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            await page.screenshot(path="screenshots/{test_function}_failure_{timestamp}.png")
+            
+            logging.error("Test failed: {str(e)}")
+            raise
+
+# Run test if executed directly
+if __name__ == "__main__":
+    pytest.main(["-xvs", __file__])
+
