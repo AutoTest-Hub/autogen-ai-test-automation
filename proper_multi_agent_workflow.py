@@ -146,6 +146,23 @@ class ProperMultiAgentWorkflow:
                     import shutil
                     shutil.rmtree(dir_path)
                     self.logger.info(f"Cleaned up old generated files in {dir_path}")
+            
+            # Also clean up any old generated test files and page objects that might conflict
+            cleanup_patterns = [
+                "tests/test_*.py",
+                "pages/*_page.py"
+            ]
+            
+            import glob
+            for pattern in cleanup_patterns:
+                for file_path in glob.glob(pattern):
+                    # Only remove files that look like generated files (not our main conftest.py)
+                    if not file_path.endswith('conftest.py'):
+                        try:
+                            Path(file_path).unlink()
+                            self.logger.info(f"Cleaned up old generated file: {file_path}")
+                        except Exception as e:
+                            self.logger.warning(f"Could not remove {file_path}: {e}")
                     
         except Exception as e:
             self.logger.warning(f"Error cleaning work_dir: {str(e)}")
