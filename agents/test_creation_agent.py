@@ -468,23 +468,6 @@ Pytest Configuration for AutoGen Generated Tests
 """
 
 import pytest
-import logging
-import os
-from datetime import datetime
-
-# Configure logging
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_dir = f"test_results/{{timestamp}}"
-os.makedirs(log_dir, exist_ok=True)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(f'{{log_dir}}/test_execution_{{timestamp}}.log'),
-        logging.StreamHandler()
-    ]
-)
 
 # Test configuration
 BASE_URL = "{base_url}"
