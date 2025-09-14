@@ -698,12 +698,16 @@ import logging
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Configure logging
+# Configure logging with organized directory structure
+import os
+log_dir = f"test_results/{timestamp}"
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'test_execution_{timestamp}.log'),
+        logging.FileHandler(f'{log_dir}/test_execution_{timestamp}.log'),
         logging.StreamHandler()
     ]
 )
