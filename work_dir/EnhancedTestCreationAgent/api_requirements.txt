@@ -1,2 +1,0 @@
-# API testing requirements
-requests>=2.31.0

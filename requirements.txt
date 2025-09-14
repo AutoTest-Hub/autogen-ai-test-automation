@@ -1,52 +1,44 @@
-# AutoGen Test Automation Framework with Local AI Integration
-# Complete dependency list for production deployment
+Test Requirements for OrangeHRM
 
-# Core AutoGen dependencies (UPDATED - Working versions)
-autogen-agentchat>=0.7.4
-autogen-core>=0.7.4
+1. Login Functionality
+   - Test valid login with correct credentials
+   - Test invalid login with incorrect credentials
+   - Test empty username and password validation
+   - Test password reset functionality
 
-# Local AI integration
-requests>=2.31.0
-aiohttp>=3.8.0
+2. Navigation
+   - Test main menu navigation
+   - Test sidebar navigation
+   - Test breadcrumb navigation
+   - Test page transitions
 
-# Configuration and settings (UPDATED - Working versions)
-pydantic>=2.0.0
-pydantic-settings>=2.10.0
-python-dotenv>=1.0.0
+3. User Management
+   - Test user creation
+   - Test user editing
+   - Test user deletion
+   - Test user role assignment
 
-# Data processing and validation (UPDATED - Working versions)
-jsonschema>=4.17.0
-protobuf>=5.29.0
-pyyaml>=6.0
+4. Employee Management
+   - Test employee profile viewing
+   - Test employee information editing
+   - Test employee search functionality
+   - Test employee reports generation
 
-# Web automation (for test execution)
-playwright>=1.40.0
-selenium>=4.15.0
+5. Time and Attendance
+   - Test time sheet submission
+   - Test attendance recording
+   - Test leave request submission
+   - Test holiday calendar viewing
 
-# API testing
-httpx>=0.25.0
+6. Performance Management
+   - Test performance review creation
+   - Test goal setting and tracking
+   - Test feedback submission
+   - Test performance metrics viewing
 
-# Logging and monitoring
-structlog>=23.1.0
-
-# Development and testing
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-black>=23.7.0
-flake8>=6.0.0
-
-# Optional: For enhanced features
-pandas>=2.0.0  # For test data management
-matplotlib>=3.7.0  # For reporting charts
-jinja2>=3.1.0  # For template generation
-
-# Note: Ollama installation is separate
-# Install Ollama from: https://ollama.ai/download
-# Or use: curl -fsSL https://ollama.ai/install.sh | sh
-
-# TESTED AND WORKING DEPENDENCIES:
-# - autogen-agentchat==0.7.4 ✅
-# - autogen-core==0.7.4 ✅  
-# - pydantic-settings==2.10.1 ✅
-# - protobuf==5.29.5 ✅
+7. Security
+   - Test session timeout
+   - Test access control based on user roles
+   - Test audit logging
+   - Test password policy enforcement
 

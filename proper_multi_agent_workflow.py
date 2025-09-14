@@ -74,6 +74,10 @@ class ProperMultiAgentWorkflow:
         self.logger.info(f"Running workflow for {name} at {url}")
         
         try:
+            # Step 0: Clean up old generated files
+            self.logger.info("Step 0: Cleaning up old generated files")
+            self._cleanup_work_dir()
+            
             # Step 1: Create test plan
             self.logger.info("Step 1: Creating test plan")
             test_plan = await self._create_test_plan(url, name)
@@ -126,9 +130,29 @@ class ProperMultiAgentWorkflow:
                 "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S")
             }
     
+    def _cleanup_work_dir(self):
+        """
+        Clean up old generated files in work_dir before execution
+        """
+        try:
+            # Remove problematic subdirectories that might contain hardcoded paths
+            problematic_dirs = [
+                "work_dir/test_creation_agent",
+                "work_dir/EnhancedTestCreationAgent"
+            ]
+            
+            for dir_path in problematic_dirs:
+                if Path(dir_path).exists():
+                    import shutil
+                    shutil.rmtree(dir_path)
+                    self.logger.info(f"Cleaned up old generated files in {dir_path}")
+                    
+        except Exception as e:
+            self.logger.warning(f"Error cleaning work_dir: {str(e)}")
+
     async def _create_test_plan(self, url: str, name: str) -> Dict[str, Any]:
         """
-        Create test plan using the Planning Agent
+        Create a test plan using the planning agent
         
         Args:
             url: URL of the website
@@ -138,9 +162,9 @@ class ProperMultiAgentWorkflow:
             Dict[str, Any]: Test plan
         """
         try:
-            # Check if requirements files exist
-            requirements_txt_path = Path("work_dir/planning_agent/requirements.txt")
-            requirements_json_path = Path("work_dir/planning_agent/requirements.json")
+            # Check if requirements files exist in root directory
+            requirements_txt_path = Path("requirements.txt")
+            requirements_json_path = Path("requirements.json")
             
             requirements_text = ""
             requirements_json = {}
@@ -148,11 +172,12 @@ class ProperMultiAgentWorkflow:
             if requirements_txt_path.exists():
                 with open(requirements_txt_path, 'r') as f:
                     requirements_text = f.read()
-            
+                    self.logger.info("Using custom requirements.txt from root directory")
+                    
             if requirements_json_path.exists():
                 with open(requirements_json_path, 'r') as f:
                     requirements_json = json.load(f)
-            
+                    self.logger.info("Using custom requirements.json from root directory")          
             # Create task data for the planning agent
             task_data = {
                 "type": "create_plan",

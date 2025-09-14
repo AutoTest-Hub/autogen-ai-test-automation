@@ -1,44 +1,43 @@
-#!/usr/bin/env python3
 """
-Pytest Configuration
-===================
-This module contains pytest configuration.
+Pytest Configuration for AutoGen Generated Tests
 """
 
 import pytest
-from playwright.sync_api import sync_playwright
+import logging
+import os
+from datetime import datetime
 
-def pytest_addoption(parser):
-    """
-    Add command line options
-    """
-    parser.addoption("--headless", action="store_true", default=True, help="Run browser in headless mode")
-    parser.addoption("--no-headless", action="store_false", dest="headless", help="Run browser with UI visible")
+# Configure logging
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+log_dir = f"test_results/{timestamp}"
+os.makedirs(log_dir, exist_ok=True)
 
-@pytest.fixture
-def browser_setup(request):
-    """
-    Set up browser
-    
-    Returns:
-        tuple: (page, browser, context)
-    """
-    # Get headless option
-    try:
-        headless = request.config.getoption("--headless")
-    except:
-        headless = True
-    
-    # Start playwright
-    playwright = sync_playwright().start()
-    browser = playwright.chromium.launch(headless=headless)
-    context = browser.new_context()
-    page = context.new_page()
-    
-    # Return page, browser, and context
-    yield page, browser, context
-    
-    # Cleanup
-    context.close()
-    browser.close()
-    playwright.stop()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(f'{log_dir}/test_execution_{timestamp}.log'),
+        logging.StreamHandler()
+    ]
+)
+
+# Test configuration
+BASE_URL = "https://example.com"
+HEADLESS = True
+TIMEOUT = 30000
+
+# Browser configuration
+BROWSER_CONFIG = {
+    "headless": HEADLESS,
+    "viewport": {"width": 1920, "height": 1080},
+    "ignore_https_errors": True
+}
+
+@pytest.fixture(scope="session")
+def test_config():
+    """Test configuration fixture"""
+    return {
+        "base_url": BASE_URL,
+        "timeout": TIMEOUT,
+        "browser_config": BROWSER_CONFIG
+    }

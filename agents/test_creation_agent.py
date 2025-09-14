@@ -500,7 +500,7 @@ def test_config():
     }}
 '''
         
-        config_path = self.work_dir / "conftest.py"
+        config_path = Path("tests/conftest.py")
         with open(config_path, 'w') as f:
             f.write(pytest_config)
         
@@ -527,9 +527,11 @@ webdriver-manager==4.0.1
 pytest-html==3.2.0
 '''
         
-        requirements_path = self.work_dir / "requirements.txt"
-        with open(requirements_path, 'w') as f:
-            f.write(requirements)
+        # Use root directory requirements.txt instead of work_dir
+        requirements_path = Path("requirements.txt")
+        if not requirements_path.exists():
+            with open(requirements_path, 'w') as f:
+                f.write(requirements)
         
         config_files.append({
             "type": "requirements",
@@ -597,11 +599,13 @@ pytest-html==3.2.0
                 f.write(config_content)
             generated_files.append(config_file_path)
             
-            # Create requirements for Selenium
+            # Create requirements for Selenium (use root directory)
             selenium_requirements = self._create_selenium_requirements()
-            req_file_path = f"{self.work_dir}/selenium_requirements.txt"
-            with open(req_file_path, 'w') as f:
-                f.write(selenium_requirements)
+            req_file_path = "requirements.txt"
+            # Only create if it doesn't exist to avoid overwriting
+            if not Path(req_file_path).exists():
+                with open(req_file_path, 'w') as f:
+                    f.write(selenium_requirements)
             generated_files.append(req_file_path)
             
             logger.info(f"✅ Generated {len(generated_files)} Selenium test files")
@@ -647,11 +651,13 @@ pytest-html==3.2.0
                 f.write(api_client)
             generated_files.append(client_file_path)
             
-            # Create API requirements
+            # Create API requirements (use root directory)
             api_requirements = self._create_api_requirements()
-            req_file_path = f"{self.work_dir}/api_requirements.txt"
-            with open(req_file_path, 'w') as f:
-                f.write(api_requirements)
+            req_file_path = "requirements.txt"
+            # Only create if it doesn't exist to avoid overwriting
+            if not Path(req_file_path).exists():
+                with open(req_file_path, 'w') as f:
+                    f.write(api_requirements)
             generated_files.append(req_file_path)
             
             logger.info(f"✅ Generated {len(generated_files)} API test files")
