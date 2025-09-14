@@ -6,6 +6,7 @@ import pytest
 import logging
 import os
 from datetime import datetime
+from playwright.sync_api import sync_playwright
 
 # Configure logging
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -22,7 +23,7 @@ logging.basicConfig(
 )
 
 # Test configuration
-BASE_URL = "https://example.com"
+BASE_URL = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
 HEADLESS = True
 TIMEOUT = 30000
 
@@ -41,3 +42,25 @@ def test_config():
         "timeout": TIMEOUT,
         "browser_config": BROWSER_CONFIG
     }
+
+@pytest.fixture(scope="function")
+def browser_setup():
+    """Browser setup fixture for Playwright tests"""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=BROWSER_CONFIG["headless"],
+            args=['--no-sandbox', '--disable-dev-shm-usage']
+        )
+        context = browser.new_context(
+            viewport=BROWSER_CONFIG["viewport"],
+            ignore_https_errors=BROWSER_CONFIG["ignore_https_errors"]
+        )
+        page = context.new_page()
+        page.set_default_timeout(TIMEOUT)
+        
+        yield page, browser, context
+        
+        # Cleanup
+        context.close()
+        browser.close()
+

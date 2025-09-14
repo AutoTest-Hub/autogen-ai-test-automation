@@ -501,8 +501,10 @@ def test_config():
 '''
         
         config_path = Path("tests/conftest.py")
-        with open(config_path, 'w') as f:
-            f.write(pytest_config)
+        # Only create conftest.py if it doesn't exist, don't overwrite existing one
+        if not config_path.exists():
+            with open(config_path, 'w') as f:
+                f.write(pytest_config)
         
         config_files.append({
             "type": "configuration",

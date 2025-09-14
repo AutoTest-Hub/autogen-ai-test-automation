@@ -362,12 +362,8 @@ You are the Execution Agent, an expert in test execution and test environment ma
                 if config.get("html_report", False):
                     cmd.extend(["--html", f"report_{file_path.stem}.html"])
                 
-                # Add headless flags
-                headless = config.get("headless", True)
-                if headless:
-                    cmd.append("--headless")
-                else:
-                    cmd.append("--no-headless")
+                # Note: Headless mode should be handled by test fixtures/conftest.py, 
+                # not as pytest command line arguments
             else:
                 # Regular Python test
                 cmd = ["python", test_file]
