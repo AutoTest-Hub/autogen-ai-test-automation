@@ -24,7 +24,8 @@ logging.basicConfig(
 
 # Test configuration
 BASE_URL = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
-HEADLESS = True
+# Read headless mode from environment variable, default to True
+HEADLESS = os.getenv("PYTEST_HEADLESS", "true").lower() == "true"
 TIMEOUT = 30000
 
 # Browser configuration

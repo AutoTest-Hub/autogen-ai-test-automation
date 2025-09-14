@@ -312,11 +312,18 @@ You are the Execution Agent, an expert in test execution and test environment ma
             
             # Execute the test
             start_time = time.time()
+            
+            # Set up environment variables for test configuration
+            env = os.environ.copy()
+            headless = config.get("headless", True)
+            env["PYTEST_HEADLESS"] = "true" if headless else "false"
+            
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                cwd="."  # Always run from project root directory
+                cwd=".",  # Always run from project root directory
+                env=env
             )
             
             stdout, stderr = await process.communicate()
@@ -362,8 +369,8 @@ You are the Execution Agent, an expert in test execution and test environment ma
                 if config.get("html_report", False):
                     cmd.extend(["--html", f"report_{file_path.stem}.html"])
                 
-                # Note: Headless mode should be handled by test fixtures/conftest.py, 
-                # not as pytest command line arguments
+                # Set headless mode via environment variable for conftest.py to read
+                # This way conftest.py can configure the browser appropriately
             else:
                 # Regular Python test
                 cmd = ["python", test_file]
