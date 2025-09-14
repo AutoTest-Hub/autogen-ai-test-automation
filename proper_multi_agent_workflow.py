@@ -96,7 +96,7 @@ class ProperMultiAgentWorkflow:
             
             # Step 6: Generate report
             self.logger.info("Step 6: Generating report")
-            report = await self._generate_report(execution_results)
+            report = await self._generate_report(execution_results, review_results)
             
             # Create workflow results
             workflow_results = {
@@ -1022,12 +1022,13 @@ def browser_setup(request):
                 "return_code": -1
             }
     
-    async def _generate_report(self, execution_results: Dict[str, Any]) -> Dict[str, Any]:
+    async def _generate_report(self, execution_results: Dict[str, Any], review_results: Dict[str, Any]) -> Dict[str, Any]:
         """
         Generate report using the Reporting Agent
         
         Args:
             execution_results: Execution results
+            review_results: Review results
             
         Returns:
             Dict[str, Any]: Report
@@ -1037,6 +1038,7 @@ def browser_setup(request):
             task_data = {
                 "type": "generate_report",
                 "execution_data": execution_results,
+                "review_data": review_results,
                 "execution_results": execution_results
             }
             
@@ -1218,16 +1220,32 @@ async def main():
                 print(f"- {key}: {value}")
         
         print("\nReview Results:")
-        print(f"- Improvements: {', '.join(workflow_results['review_results'].get('improvements', []))}")
+        review_data = workflow_results['review_results']
+        if 'recommendations' in review_data and review_data['recommendations']:
+            recommendations = [rec.get('title', rec) if isinstance(rec, dict) else str(rec) for rec in review_data['recommendations']]
+            print(f"- Recommendations: {', '.join(recommendations)}")
+        else:
+            print(f"- Overall Score: {review_data.get('overall_score', 'N/A')}")
+            print(f"- Files Reviewed: {review_data.get('summary', {}).get('total_files_reviewed', 0)}")
+            print(f"- Average Score: {review_data.get('summary', {}).get('average_score', 'N/A')}")
         
         print("\nExecution Results:")
-        print(f"- Success: {workflow_results['execution_results'].get('success', False)}")
-        print(f"- Return Code: {workflow_results['execution_results'].get('return_code', -1)}")
+        exec_data = workflow_results['execution_results']
+        exec_summary = exec_data.get('summary', {})
+        print(f"- Total Tests: {exec_summary.get('total_tests', 0)}")
+        print(f"- Passed: {exec_summary.get('passed', 0)}")
+        print(f"- Failed: {exec_summary.get('failed', 0)}")
+        print(f"- Success Rate: {exec_summary.get('success_rate', 0)}%")
+        print(f"- Execution Time: {exec_summary.get('total_execution_time', 0)}s")
         
         print("\nReport:")
-        print(f"- Summary: {workflow_results['report'].get('summary', '')}")
-        print(f"- HTML Report: {workflow_results['report'].get('html_report', '')}")
-        print(f"- Text Report: {workflow_results['report'].get('text_report', '')}")
+        report_data = workflow_results['report']
+        if 'report' in report_data:
+            report_summary = report_data['report'].get('executive_summary', {})
+            print(f"- Total Tests: {report_summary.get('total_tests', 'N/A')}")
+            print(f"- Success Rate: {report_summary.get('success_rate', 'N/A')}")
+        print(f"- HTML Report: {report_data.get('html_report_path', report_data.get('html_report', ''))}")
+        print(f"- JSON Report: {report_data.get('json_report_path', '')}")
     
     print("\nWorkflow completed!")
 

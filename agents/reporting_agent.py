@@ -201,10 +201,22 @@ You are the Reporting Agent, an expert in test reporting and analytics. Your res
     
     def _generate_execution_section(self, execution_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate test execution section"""
+        # Handle nested execution_results structure
+        if "execution_results" in execution_data:
+            exec_results = execution_data["execution_results"]
+            test_results = exec_results.get("test_results", [])
+            summary = exec_results.get("summary", {})
+            performance_metrics = exec_results.get("performance_metrics", {})
+        else:
+            # Handle direct structure
+            test_results = execution_data.get("test_results", [])
+            summary = execution_data.get("summary", {})
+            performance_metrics = execution_data.get("performance_metrics", {})
+            
         return {
-            "summary": execution_data.get("summary", {}),
-            "performance_metrics": execution_data.get("performance_metrics", {}),
-            "test_results": execution_data.get("test_results", []),
+            "summary": summary,
+            "performance_metrics": performance_metrics,
+            "test_results": test_results,
             "environment_info": execution_data.get("environment_info", {}),
             "execution_timeline": self._create_execution_timeline(execution_data)
         }
