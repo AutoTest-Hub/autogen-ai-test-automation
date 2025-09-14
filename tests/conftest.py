@@ -35,15 +35,22 @@ def pytest_sessionstart(session):
     test_results_dir = Path(f"test_results/{test_session_timestamp}")
     test_results_dir.mkdir(parents=True, exist_ok=True)
     
-    # Setup logging for this test session
+    # Setup logging for this test session - clear any existing handlers first
     log_file = test_results_dir / f"test_execution_{test_session_timestamp}.log"
+    
+    # Clear existing handlers to prevent conflicts
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    
+    # Configure logging with proper file location
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.FileHandler(log_file),
             logging.StreamHandler()
-        ]
+        ],
+        force=True  # Force reconfiguration
     )
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -81,9 +88,11 @@ def browser_setup(request):
     """
     Browser setup fixture with automatic cleanup
     """
-    # Get headless setting from environment variable (set by execution agent) or command line
+    # Get headless setting - prioritize environment variable (set by execution agent) over command line
     headless = os.environ.get('PYTEST_HEADLESS', 'true').lower() == 'true'
-    if hasattr(request.config.option, 'headless'):
+    
+    # Only use command line option if environment variable is not set
+    if 'PYTEST_HEADLESS' not in os.environ and hasattr(request.config.option, 'headless'):
         headless = request.config.option.headless
     
     playwright = sync_playwright().start()
@@ -103,7 +112,7 @@ def browser_setup(request):
     
     # Log test start
     test_name = request.node.name
-    logging.info(f"🚀 Starting test: {test_name}")
+    logging.info(f"🚀 Starting test: {test_name} (headless: {headless})")
     
     yield page, browser, context
     
