@@ -61,7 +61,7 @@ if [ $? -eq 0 ]; then
   echo "Workflow completed successfully!"
   
   # Open the HTML report if it exists
-  REPORT=$(find reports -name "report_*.html" | sort -r | head -n 1)
+  REPORT=$(find work_dir/reporting_agent -name "test_report_*.html" | sort -r | head -n 1)
   if [ -n "$REPORT" ]; then
     echo "Opening HTML report: $REPORT"
     if command -v xdg-open &> /dev/null; then
@@ -69,8 +69,10 @@ if [ $? -eq 0 ]; then
     elif command -v open &> /dev/null; then
       open "$REPORT"
     else
-      echo "Could not open HTML report automatically. Please open it manually."
+      echo "Could not open HTML report automatically. Please open it manually: $REPORT"
     fi
+  else
+    echo "No HTML report found in work_dir/reporting_agent/"
   fi
 else
   echo "Workflow failed!"

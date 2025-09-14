@@ -145,6 +145,10 @@ You are the Execution Agent, an expert in test execution and test environment ma
         test_suite_path = task_data.get("test_suite_path", "")
         execution_config = task_data.get("execution_config", {})
         review_results = task_data.get("review_results", {})
+        headless = task_data.get("headless", True)  # Extract headless parameter
+        
+        # Add headless to execution config
+        execution_config["headless"] = headless
         
         # Extract test files from review_results if available
         if review_results and not test_files:
@@ -357,6 +361,13 @@ You are the Execution Agent, an expert in test execution and test environment ma
                     cmd.append("-v")
                 if config.get("html_report", False):
                     cmd.extend(["--html", f"report_{file_path.stem}.html"])
+                
+                # Add headless flags
+                headless = config.get("headless", True)
+                if headless:
+                    cmd.append("--headless")
+                else:
+                    cmd.append("--no-headless")
             else:
                 # Regular Python test
                 cmd = ["python", test_file]
