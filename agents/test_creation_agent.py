@@ -201,13 +201,23 @@ class Test{clean_class_name}:
             page.wait_for_timeout(1000)  # Allow UI to settle
             
             # Take screenshot for evidence
-            page.screenshot(path=f"test_evidence_{clean_test_name}_{{datetime.now().strftime('%Y%m%d_%H%M%S')}}.png")
+            import os
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            evidence_dir = f"test_results/{{timestamp}}"
+            os.makedirs(evidence_dir, exist_ok=True)
+            page.screenshot(path=f"{{evidence_dir}}/test_evidence_{clean_test_name}_{{timestamp}}.png")
             
             logging.info(f"Test {clean_test_name} completed successfully")
             
         except Exception as e:
             # Take screenshot on failure
-            page.screenshot(path=f"test_failure_{clean_test_name}_{{datetime.now().strftime('%Y%m%d_%H%M%S')}}.png")
+            import os
+            from datetime import datetime
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            evidence_dir = f"test_results/{{timestamp}}"
+            os.makedirs(evidence_dir, exist_ok=True)
+            page.screenshot(path=f"{{evidence_dir}}/test_failure_{clean_test_name}_{{timestamp}}.png")
             logging.error(f"Test {clean_test_name} failed: {{str(e)}}")
             raise
 '''
@@ -451,14 +461,19 @@ Pytest Configuration for AutoGen Generated Tests
 
 import pytest
 import logging
+import os
 from datetime import datetime
 
 # Configure logging
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+log_dir = f"test_results/{timestamp}"
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'test_execution_{{datetime.now().strftime("%Y%m%d_%H%M%S")}}.log'),
+        logging.FileHandler(f'{log_dir}/test_execution_{timestamp}.log'),
         logging.StreamHandler()
     ]
 )
