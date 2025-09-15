@@ -342,6 +342,11 @@ class ProperMultiAgentWorkflow:
             Dict[str, Any]: Created tests
         """
         try:
+            # Enhanced: Load requirements.json for global test data and environment
+            requirements_json = self._load_requirements_json()
+            global_test_data = requirements_json.get("test_environment", {}).get("test_data", {})
+            global_environment = requirements_json.get("test_environment", {})
+            
             # Create task data for the test creation agent
             task_data = {
                 "task_type": "generate_tests",
@@ -352,7 +357,11 @@ class ProperMultiAgentWorkflow:
                     "name": name,
                     "discovered_pages": [{"url": url, "title": name}],
                     "discovered_elements": discovery_results.get("elements", []),
-                    "user_workflows": []
+                    "user_workflows": [],
+                    # Enhanced: Pass global test data and environment
+                    "global_test_data": global_test_data,
+                    "global_environment": global_environment,
+                    "requirements_json": requirements_json
                 }
             }
             
@@ -1096,148 +1105,38 @@ def browser_setup(request):
             
         except Exception as e:
             self.logger.error(f"Error generating report: {str(e)}")
-            return self._generate_default_report(execution_results)
+            return self._create_default_report(execution_results)
     
-    def _generate_default_report(self, execution_results: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Generate a default report
-        
-        Args:
-            execution_results: Execution results
-            
-        Returns:
-            Dict[str, Any]: Default report
-        """
-        # Create reports directory
-        reports_dir = Path("reports")
-        reports_dir.mkdir(exist_ok=True)
-        
-        # Get stdout
-        stdout = execution_results.get("stdout", "")
-        stderr = execution_results.get("stderr", "")
-        
-        # Extract summary
-        summary = ""
-        
-        # Check if tests passed
-        if execution_results.get("success", False):
-            # Count passed tests
-            passed_count = stdout.count("PASSED")
-            summary = f"All {passed_count} tests passed successfully."
-        else:
-            # Count failed tests
-            failed_count = stdout.count("FAILED")
-            passed_count = stdout.count("PASSED")
-            summary = f"{failed_count} tests failed, {passed_count} tests passed."
-        
-        # Create HTML report
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        html_report_path = reports_dir / f"report_{timestamp}.html"
-        
-        with open(html_report_path, 'w') as f:
-            f.write(f"""<!DOCTYPE html>
-<html>
-<head>
-    <title>Test Report - {execution_results.get("name", "Unknown")}</title>
-    <style>
-        body {{
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }}
-        h1 {{
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }}
-        .summary {{
-            background-color: {('#dff0d8' if execution_results.get("success", False) else '#f2dede')};
-            color: {('#3c763d' if execution_results.get("success", False) else '#a94442')};
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }}
-        pre {{
-            background-color: #f5f5f5;
-            padding: 15px;
-            border-radius: 4px;
-            overflow-x: auto;
-        }}
-        .section {{
-            margin-bottom: 30px;
-        }}
-        .section h2 {{
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }}
-    </style>
-</head>
-<body>
-    <h1>Test Report - {execution_results.get("name", "Unknown")}</h1>
-    
-    <div class="summary">
-        <h2>Summary</h2>
-        <p>{summary}</p>
-    </div>
-    
-    <div class="section">
-        <h2>Standard Output</h2>
-        <pre>{stdout}</pre>
-    </div>
-    
-    <div class="section">
-        <h2>Standard Error</h2>
-        <pre>{stderr}</pre>
-    </div>
-</body>
-</html>
-""")
-        
-        # Create text report
-        text_report_path = reports_dir / f"report_{timestamp}.txt"
-        
-        with open(text_report_path, 'w') as f:
-            f.write(f"""Test Report - {execution_results.get("name", "Unknown")}
-===================
+    def _load_requirements_json(self) -> Dict[str, Any]:
+        """Load and return requirements.json for data passing"""
+        try:
+            requirements_json_path = Path("requirements.json")
+            if requirements_json_path.exists():
+                with open(requirements_json_path, 'r') as f:
+                    return json.load(f)
+            else:
+                self.logger.warning("requirements.json not found, using empty configuration")
+                return {}
+        except Exception as e:
+            self.logger.error(f"Error loading requirements.json: {e}")
+            return {}
 
-Summary
--------
-{summary}
-
-Standard Output
---------------
-{stdout}
-
-Standard Error
--------------
-{stderr}
-""")
-        
-        # Create report
-        report = {
-            "name": execution_results.get("name", "Unknown"),
-            "timestamp": timestamp,
-            "success": execution_results.get("success", False),
-            "summary": summary,
-            "html_report": str(html_report_path),
-            "text_report": str(text_report_path)
-        }
-        
-        return report
 
 async def main():
-    """Main function"""
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Proper Multi-Agent Workflow")
-    parser.add_argument("--url", "-u", required=True, help="URL of the website to test")
-    parser.add_argument("--name", "-n", required=True, help="Name of the website")
-    parser.add_argument("--headless", action="store_true", default=True, help="Run browser in headless mode")
-    parser.add_argument("--no-headless", action="store_false", dest="headless", help="Run browser with UI visible")
+    """Main function to run the workflow"""
+    parser = argparse.ArgumentParser(description="Run AI Test Automation Workflow")
+    parser.add_argument("--url", required=True, help="URL of the website to test")
+    parser.add_argument("--name", required=True, help="Name of the website")
+    parser.add_argument("--headless", action="store_true", default=True, help="Run in headless mode")
+    parser.add_argument("--no-headless", action="store_true", help="Run in non-headless mode")
+    
     args = parser.parse_args()
     
-    # Create workflow
+    # Handle headless flag
+    if args.no_headless:
+        args.headless = False
+    
+    # Create workflow instance
     workflow = ProperMultiAgentWorkflow()
     
     # Run workflow
@@ -1291,6 +1190,6 @@ async def main():
     
     print("\nWorkflow completed!")
 
+
 if __name__ == "__main__":
     asyncio.run(main())
-

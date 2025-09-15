@@ -1,53 +1,93 @@
 {
-  "project": "OrangeHRM Test Automation",
-  "version": "1.0.0",
-  "description": "Automated testing for OrangeHRM web application",
+  "project": "OrangeHRM Enhanced Test Automation - Option 2 Testing",
+  "version": "2.0.0",
+  "description": "Comprehensive testing with validations, test_data, and environment configuration",
   "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
   "test_requirements": [
     {
       "id": "REQ-001",
-      "name": "Login Functionality",
+      "name": "Enhanced Login Functionality",
       "priority": "High",
       "test_cases": [
         {
           "id": "TC-001",
-          "name": "Valid Login",
-          "description": "Test login with valid credentials",
+          "name": "Valid Login with Comprehensive Validations",
+          "description": "Test login with valid credentials and verify all expected elements",
           "steps": [
             "Navigate to login page",
             "Enter valid username",
             "Enter valid password",
-            "Click login button",
-            "Verify successful login"
+            "Click login button"
           ],
-          "expected_result": "User should be logged in and redirected to dashboard",
+          "validations": [
+            "Verify URL contains '/dashboard'",
+            "Verify user name displayed",
+            "Verify logout option available",
+            "Verify dashboard widgets loaded"
+          ],
+          "test_data": {
+            "valid_username": "Admin",
+            "valid_password": "admin123"
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "desktop",
+            "headless": true
+          },
+          "expected_result": "User should be logged in and redirected to dashboard with all navigation elements visible",
           "priority": "Critical"
         },
         {
           "id": "TC-002",
-          "name": "Invalid Login",
-          "description": "Test login with invalid credentials",
+          "name": "Invalid Login with Error Validation",
+          "description": "Test login with invalid credentials and verify error handling",
           "steps": [
             "Navigate to login page",
             "Enter invalid username",
             "Enter invalid password",
-            "Click login button",
-            "Verify error message"
+            "Click login button"
           ],
+          "validations": [
+            "Verify error message displayed",
+            "Verify URL contains '/login'",
+            "Verify user remains on login page"
+          ],
+          "test_data": {
+            "invalid_username": "InvalidUser",
+            "invalid_password": "WrongPassword123"
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "desktop",
+            "headless": true
+          },
           "expected_result": "Error message should be displayed and user remains on login page",
           "priority": "High"
         },
         {
           "id": "TC-003",
-          "name": "Empty Credentials",
-          "description": "Test login with empty credentials",
+          "name": "Empty Credentials Validation",
+          "description": "Test login with empty credentials and verify validation messages",
           "steps": [
             "Navigate to login page",
             "Leave username empty",
             "Leave password empty",
-            "Click login button",
-            "Verify validation messages"
+            "Click login button"
           ],
+          "validations": [
+            "Verify validation messages displayed",
+            "Verify required field errors shown",
+            "Verify URL contains '/login'"
+          ],
+          "test_data": {
+            "empty_username": "",
+            "empty_password": ""
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "tablet",
+            "headless": true
+          },
           "expected_result": "Validation messages should be displayed for required fields",
           "priority": "Medium"
         }
@@ -55,32 +95,61 @@
     },
     {
       "id": "REQ-002",
-      "name": "Navigation",
+      "name": "Enhanced Navigation Testing",
       "priority": "Medium",
       "test_cases": [
         {
           "id": "TC-004",
-          "name": "Main Menu Navigation",
-          "description": "Test navigation through main menu items",
+          "name": "Dashboard Navigation with Validations",
+          "description": "Test navigation through dashboard with comprehensive validations",
           "steps": [
             "Login with valid credentials",
-            "Click on each main menu item",
-            "Verify correct page loads",
+            "Verify dashboard loads",
+            "Check navigation menu items",
             "Verify page title and content"
           ],
-          "expected_result": "Each menu item should navigate to the correct page",
+          "validations": [
+            "Verify URL contains '/dashboard'",
+            "Verify page title contains expected text",
+            "Verify navigation menu visible",
+            "Verify dashboard widgets loaded"
+          ],
+          "test_data": {
+            "valid_username": "Admin",
+            "valid_password": "admin123"
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "mobile",
+            "headless": true
+          },
+          "expected_result": "Dashboard should load with all navigation elements and widgets visible",
           "priority": "High"
         },
         {
           "id": "TC-005",
-          "name": "Logout",
-          "description": "Test logout functionality",
+          "name": "Logout with Redirect Validation",
+          "description": "Test logout functionality with redirect verification",
           "steps": [
             "Login with valid credentials",
             "Click on user dropdown",
-            "Click logout",
+            "Click logout option",
             "Verify redirect to login page"
           ],
+          "validations": [
+            "Verify redirect to login page",
+            "Verify URL contains '/login'",
+            "Verify login form visible"
+          ],
+          "test_data": {
+            "valid_username": "Admin",
+            "valid_password": "admin123"
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "desktop",
+            "headless": true
+          },
           "expected_result": "User should be logged out and redirected to login page",
           "priority": "High"
         }
@@ -88,13 +157,24 @@
     }
   ],
   "test_environment": {
-    "browsers": ["Chrome", "Firefox", "Safari"],
+    "browsers": ["Chrome", "Firefox"],
     "viewport_sizes": ["Desktop", "Tablet", "Mobile"],
     "test_data": {
       "valid_username": "Admin",
       "valid_password": "admin123",
-      "invalid_username": "invalid_user",
-      "invalid_password": "invalid_password"
+      "invalid_username": "InvalidUser",
+      "invalid_password": "WrongPassword123",
+      "base_url": "https://opensource-demo.orangehrmlive.com"
+    },
+    "timeouts": {
+      "page_load": 30000,
+      "element_wait": 10000,
+      "action_delay": 500
+    },
+    "screenshots": {
+      "on_failure": true,
+      "on_success": true,
+      "directory": "test_results"
     }
   }
 }

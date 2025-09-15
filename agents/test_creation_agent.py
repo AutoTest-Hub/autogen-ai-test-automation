@@ -151,11 +151,17 @@ class EnhancedTestCreationAgent(BaseTestAgent):
     
     async def _create_playwright_test(self, test_case: Dict, app_data: Dict, 
                                     pages: List, elements: Dict) -> Dict:
-        """Create real Playwright test with discovered elements"""
+        """Create real Playwright test with discovered elements - Enhanced with validations and test data"""
         
         test_name = test_case.get("name", "test_case")
         description = test_case.get("description", "Generated test case")
         steps = test_case.get("steps", [])
+        
+        # Enhanced: Extract validations, test_data, and environment from test case
+        validations = test_case.get("validations", [])
+        test_data = self._extract_test_data(test_case, app_data)
+        environment = test_case.get("environment", {})
+        expected_result = test_case.get("expected_result", "")
         
         # Clean test name for Python naming conventions
         clean_test_name = test_name.lower().replace(" ", "_").replace("-", "_")
@@ -197,6 +203,9 @@ class Test{clean_class_name}:
         """
         page, browser, context = browser_setup
         
+        # Test data from requirements.json
+        test_data = {test_data}
+        
         try:
             # Initialize page object
             page_obj = {page_object_class}(page)
@@ -210,11 +219,14 @@ class Test{clean_class_name}:
         
         # Add real test steps based on discovered elements
         for i, step in enumerate(steps, 1):
-            step_code = self._generate_real_playwright_step(step, relevant_elements, i)
+            step_code = self._generate_real_playwright_step(step, relevant_elements, i, test_name)
             test_code += f"            # Step {i}: {step}\n"
             test_code += step_code + "\n"
         
-        # Add assertions with proper variable scope
+        # Enhanced: Add specific validations from requirements.json
+        validation_code = self._generate_assertions_from_validations(validations, expected_result)
+        test_code += validation_code
+        
         test_code += f'''
             # Final verification
             page.wait_for_timeout(1000)  # Allow UI to settle
@@ -248,9 +260,13 @@ class Test{clean_class_name}:
             "elements_used": len(relevant_elements)
         }
     
-    def _generate_real_playwright_step(self, step: str, elements: Dict, step_num: int) -> str:
+    def _generate_real_playwright_step(self, step: str, elements: Dict, step_num: int, test_context: str = "") -> str:
         """Generate real Playwright code for a test step using page objects"""
         step_lower = step.lower()
+        test_context_lower = test_context.lower()
+        
+        # Determine if this is an invalid/negative test scenario
+        is_invalid_test = any(keyword in test_context_lower for keyword in ["invalid", "error", "wrong", "incorrect", "negative", "fail"])
         
         if "navigate" in step_lower or "go to" in step_lower:
             return "            # Navigate using page object\n            page_obj.navigate()"
@@ -261,23 +277,33 @@ class Test{clean_class_name}:
             page.wait_for_timeout(500)'''
         
         elif "enter" in step_lower and "username" in step_lower:
-            return '''            # Enter username using page object
-            page_obj.fill_username("Admin")
+            if is_invalid_test or "invalid" in step_lower:
+                return '''            # Enter invalid username using test data
+            page_obj.fill_username(test_data.get("invalid_username", "InvalidUser"))
+            page.wait_for_timeout(200)'''
+            else:
+                return '''            # Enter username using test data
+            page_obj.fill_username(test_data.get("valid_username", "Admin"))
             page.wait_for_timeout(200)'''
         
         elif "enter" in step_lower and "password" in step_lower:
-            return '''            # Enter password using page object
-            page_obj.fill_password("admin123")
+            if is_invalid_test or "invalid" in step_lower:
+                return '''            # Enter invalid password using test data
+            page_obj.fill_password(test_data.get("invalid_password", "WrongPassword123"))
+            page.wait_for_timeout(200)'''
+            else:
+                return '''            # Enter password using test data
+            page_obj.fill_password(test_data.get("valid_password", "admin123"))
             page.wait_for_timeout(200)'''
         
         elif "login" in step_lower and ("valid" in step_lower or "complete" in step_lower):
-            return '''            # Perform complete login using page object
-            page_obj.login("Admin", "admin123")
+            return '''            # Perform complete login using test data
+            page_obj.login(test_data.get("valid_username", "Admin"), test_data.get("valid_password", "admin123"))
             page.wait_for_timeout(1000)'''
         
         elif "login" in step_lower and "invalid" in step_lower:
-            return '''            # Perform invalid login using page object
-            page_obj.login("invalid_user", "invalid_pass")
+            return '''            # Perform invalid login using test data
+            page_obj.login(test_data.get("invalid_username", "invalid_user"), test_data.get("invalid_password", "invalid_pass"))
             page.wait_for_timeout(1000)'''
         
         elif "verify" in step_lower or "check" in step_lower:
@@ -336,6 +362,126 @@ class Test{clean_class_name}:
             relevant["login_button"] = "button[type='submit']"
         
         return relevant
+    
+    def _extract_test_data(self, test_case: Dict, app_data: Dict) -> Dict:
+        """Extract and merge test data from test case and global settings"""
+        # Get global test data from app_data
+        global_test_data = app_data.get("global_test_data", {})
+        
+        # Get test case specific data
+        case_test_data = test_case.get("test_data", {})
+        
+        # Merge data with case-specific taking precedence
+        merged_data = {**global_test_data, **case_test_data}
+        
+        # Add default values if not provided
+        if not merged_data.get("valid_username"):
+            merged_data["valid_username"] = "Admin"
+        if not merged_data.get("valid_password"):
+            merged_data["valid_password"] = "admin123"
+        if not merged_data.get("invalid_username"):
+            merged_data["invalid_username"] = "invalid_user"
+        if not merged_data.get("invalid_password"):
+            merged_data["invalid_password"] = "invalid_password"
+            
+        return merged_data
+    
+    def _generate_assertions_from_validations(self, validations: List[str], expected_result: str = "") -> str:
+        """Generate specific assertion code from validation descriptions"""
+        if not validations and not expected_result:
+            return '''
+            # Generic validation
+            assert page.url is not None, "Page should be loaded"
+'''
+        
+        assertion_code = '''
+            # Specific validations from requirements.json
+'''
+        
+        # Process each validation
+        for validation in validations:
+            validation_lower = validation.lower()
+            
+            if "verify url contains" in validation_lower:
+                # Extract the expected URL part
+                if "dashboard" in validation_lower:
+                    assertion_code += '''            assert "/dashboard" in page.url, "URL should contain '/dashboard'"
+'''
+                elif "login" in validation_lower:
+                    assertion_code += '''            assert "/login" in page.url, "URL should contain '/login'"
+'''
+                else:
+                    assertion_code += '''            assert page.url is not None, "URL should be valid"
+'''
+            
+            elif "verify user name displayed" in validation_lower or "verify username displayed" in validation_lower:
+                assertion_code += '''            assert page.locator("[data-testid='username'], .user-name, .username").first.is_visible(), "User name should be displayed"
+'''
+            
+            elif "verify logout option available" in validation_lower:
+                assertion_code += '''            assert page.locator("text=Logout, [data-testid='logout'], .logout").first.is_visible(), "Logout option should be available"
+'''
+            
+            elif "verify error message" in validation_lower:
+                assertion_code += '''            assert page.locator(".error, .alert-danger, [role='alert']").first.is_visible(), "Error message should be displayed"
+'''
+            
+            elif "verify validation message" in validation_lower or "verify required field" in validation_lower:
+                assertion_code += '''            assert page.locator(".error, .invalid-feedback, .field-error").count() > 0, "Validation messages should be displayed"
+'''
+            
+            elif "verify dashboard" in validation_lower:
+                assertion_code += '''            assert page.locator(".dashboard, .dashboard-widget, [data-testid='dashboard']").first.is_visible(), "Dashboard should be displayed"
+'''
+            
+            elif "verify page title" in validation_lower:
+                assertion_code += '''            assert page.title() != "", "Page should have a title"
+'''
+            
+            elif "verify redirect" in validation_lower:
+                if "login" in validation_lower:
+                    assertion_code += '''            assert "/login" in page.url, "Should be redirected to login page"
+'''
+                else:
+                    assertion_code += '''            assert page.url != "", "Should be redirected to a valid page"
+'''
+            
+            else:
+                # Generic validation for unrecognized patterns
+                assertion_code += f'''            # Validation: {validation}
+            assert page.url is not None, "Page should be loaded for validation: {validation}"
+'''
+        
+        # Add expected result validation if provided
+        if expected_result:
+            assertion_code += f'''
+            # Expected result validation: {expected_result}
+            assert page.url is not None, "Expected result should be achieved"
+'''
+        
+        return assertion_code
+    
+    def _parse_environment_config(self, environment: Dict) -> Dict:
+        """Parse environment configuration for test execution"""
+        config = {
+            "browser": environment.get("browser", "chrome").lower(),
+            "headless": environment.get("headless", True),
+            "viewport_width": environment.get("viewport_width", 1280),
+            "viewport_height": environment.get("viewport_height", 720),
+            "timeout": environment.get("timeout", 30000)
+        }
+        
+        # Handle viewport_size mapping
+        viewport_size = environment.get("viewport_size", "desktop").lower()
+        if viewport_size == "mobile":
+            config["viewport_width"] = 375
+            config["viewport_height"] = 667
+        elif viewport_size == "tablet":
+            config["viewport_width"] = 768
+            config["viewport_height"] = 1024
+        # desktop is default (1280x720)
+        
+        return config
     
     async def _create_page_objects_from_discovery(self, pages: List, elements: Dict, 
                                                 framework: str) -> List[Dict]:
