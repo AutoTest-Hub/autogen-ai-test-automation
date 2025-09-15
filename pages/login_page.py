@@ -16,37 +16,30 @@ class LoginPage:
         self.locator_strategy = LocatorStrategy(page)
         
         # Element selectors discovered from application analysis
-        # Using LocatorStrategy for robust element finding
-        # Fallback selectors are handled automatically by LocatorStrategy
+        # Application-agnostic page object using LocatorStrategy
+        # No hardcoded method assumptions - use LocatorStrategy directly
         
     def navigate(self):
-        """Navigate to Login"""
+        """Navigate to this page"""
         self.page.goto(self.url)
         self.page.wait_for_load_state("networkidle")
         
-    def fill_username(self, username: str):
-        """Fill username field using LocatorStrategy"""
-        success = self.locator_strategy.fill("username_field", username)
-        if not success:
-            # Fallback to direct selector if LocatorStrategy fails
-            self.page.fill("input[name='username']", username)
+    def fill_field(self, semantic_type: str, value: str) -> bool:
+        """Fill any field using semantic type and LocatorStrategy"""
+        return self.locator_strategy.fill(semantic_type, value)
         
-    def fill_password(self, password: str):
-        """Fill password field using LocatorStrategy"""
-        success = self.locator_strategy.fill("password_field", password)
-        if not success:
-            # Fallback to direct selector if LocatorStrategy fails
-            self.page.fill("input[name='password']", password)
+    def click_element(self, semantic_type: str) -> bool:
+        """Click any element using semantic type and LocatorStrategy"""
+        return self.locator_strategy.click(semantic_type)
         
-    def click_login(self):
-        """Click login button using LocatorStrategy"""
-        success = self.locator_strategy.click("login_button")
-        if not success:
-            # Fallback to direct selector if LocatorStrategy fails
-            self.page.click("button[type='submit']")
+    def is_element_visible(self, semantic_type: str) -> bool:
+        """Check if element is visible using semantic type and LocatorStrategy"""
+        return self.locator_strategy.is_visible(semantic_type)
         
-    def login(self, username: str, password: str):
-        """Perform complete login using LocatorStrategy"""
-        self.fill_username(username)
-        self.fill_password(password)
-        self.click_login()
+    def get_element_text(self, semantic_type: str) -> str:
+        """Get text from element using semantic type and LocatorStrategy"""
+        return self.locator_strategy.get_text(semantic_type)
+        
+    def wait_for_element(self, semantic_type: str, timeout: int = 10000) -> bool:
+        """Wait for element to appear using semantic type and LocatorStrategy"""
+        return self.locator_strategy.wait_for_element(semantic_type, timeout)
