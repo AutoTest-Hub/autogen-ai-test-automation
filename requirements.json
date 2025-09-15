@@ -100,30 +100,77 @@
       "test_cases": [
         {
           "id": "TC-004",
-          "name": "Dashboard Navigation with Validations",
-          "description": "Test navigation through dashboard with comprehensive validations",
+          "name": "Dashboard Navigation with Comprehensive Validations",
+          "description": "Test complete navigation through dashboard with detailed validation of all menu items and their functionality",
           "steps": [
             "Login with valid credentials",
-            "Verify dashboard loads",
-            "Check navigation menu items",
-            "Verify page title and content"
+            "Verify dashboard loads successfully",
+            "Verify main navigation menu is visible",
+            "Click Admin menu item",
+            "Verify Admin page loads",
+            "Verify Admin page URL and content",
+            "Click PIM menu item", 
+            "Verify PIM page loads",
+            "Verify PIM page URL and content",
+            "Click Leave menu item",
+            "Verify Leave page loads", 
+            "Verify Leave page URL and content",
+            "Click Time menu item",
+            "Verify Time page loads",
+            "Verify Time page URL and content",
+            "Click Recruitment menu item",
+            "Verify Recruitment page loads",
+            "Verify Recruitment page URL and content",
+            "Click My Info menu item",
+            "Verify My Info page loads",
+            "Verify My Info page URL and content",
+            "Click Performance menu item",
+            "Verify Performance page loads",
+            "Verify Performance page URL and content",
+            "Click Dashboard menu item",
+            "Verify return to dashboard",
+            "Click user name",
+            "Verify user dropdown appears",
+            "Verify About option visible",
+            "Verify Support option visible", 
+            "Verify Change Password option visible",
+            "Verify Logout option visible"
           ],
           "validations": [
-            "Verify URL contains '/dashboard'",
-            "Verify page title contains expected text",
-            "Verify navigation menu visible",
-            "Verify dashboard widgets loaded"
+            "Verify URL contains '/dashboard' after login",
+            "Verify page title contains 'OrangeHRM'",
+            "Verify main navigation menu visible",
+            "Verify all navigation items are clickable",
+            "Verify Admin URL contains '/admin'",
+            "Verify PIM URL contains '/pim'", 
+            "Verify Leave URL contains '/leave'",
+            "Verify Time URL contains '/time'",
+            "Verify Recruitment URL contains '/recruitment'",
+            "Verify My Info URL contains '/myinfo'",
+            "Verify Performance URL contains '/performance'",
+            "Verify dashboard breadcrumb navigation",
+            "Verify user dropdown functionality",
+            "Verify all dropdown options are accessible",
+            "Verify page headers load correctly for each section",
+            "Verify no broken navigation links",
+            "Verify responsive navigation behavior"
           ],
           "test_data": {
             "valid_username": "Admin",
-            "valid_password": "admin123"
+            "valid_password": "admin123",
+            "expected_navigation_items": [
+              "Admin", "PIM", "Leave", "Time", "Recruitment", "My Info", "Performance", "Dashboard"
+            ],
+            "expected_user_dropdown_items": [
+              "About", "Support", "Change Password", "Logout"
+            ]
           },
           "environment": {
             "browser": "chrome",
-            "viewport_size": "mobile",
+            "viewport_size": "desktop",
             "headless": true
           },
-          "expected_result": "Dashboard should load with all navigation elements and widgets visible",
+          "expected_result": "All navigation items should be functional, load correct pages, and display proper content with working user dropdown menu",
           "priority": "High"
         },
         {

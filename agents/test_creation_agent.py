@@ -332,8 +332,78 @@ class Test{clean_class_name}:
                 raise AssertionError("Could not find or click {click_target} on this application")
             page.wait_for_timeout(500)  # Wait for UI changes'''
         
+        # Login with credentials steps - handle "Login with valid credentials"
+        elif "login" in step_lower and "with" in step_lower and ("valid" in step_lower or "credential" in step_lower):
+            return '''            # Login with valid credentials using LocatorStrategy
+            username_value = test_data.get("valid_username") or test_data.get("username") or test_data.get("valid_email") or test_data.get("email")
+            password_value = test_data.get("valid_password") or test_data.get("password")
+            if not username_value or not password_value:
+                raise ValueError("Valid credentials not provided in test data")
+            
+            # Fill username/email
+            success = locator_strategy.fill("username_field", username_value)
+            if not success:
+                raise AssertionError("Could not find username field on this application")
+            page.wait_for_timeout(200)
+            
+            # Fill password
+            success = locator_strategy.fill("password_field", password_value)
+            if not success:
+                raise AssertionError("Could not find password field on this application")
+            page.wait_for_timeout(200)
+            
+            # Click login button
+            success = locator_strategy.click("login_button")
+            if not success:
+                raise AssertionError("Could not find login button on this application")
+            page.wait_for_timeout(1000)  # Wait for login processing'''
+        
         # Complete login steps
         elif "login" in step_lower and ("complete" in step_lower or "perform" in step_lower):
+            if is_invalid_test or "invalid" in step_lower:
+                return '''            # Perform complete invalid login using LocatorStrategy
+            username_value = test_data.get("invalid_username") or test_data.get("invalid_email")
+            password_value = test_data.get("invalid_password")
+            if not username_value or not password_value:
+                raise ValueError("Invalid credentials not provided in test data")
+            
+            # Fill username/email
+            success = locator_strategy.fill("username_field", username_value)
+            if not success:
+                raise AssertionError("Could not find username field on this application")
+            
+            # Fill password
+            success = locator_strategy.fill("password_field", password_value)
+            if not success:
+                raise AssertionError("Could not find password field on this application")
+            
+            # Click login button
+            success = locator_strategy.click("login_button")
+            if not success:
+                raise AssertionError("Could not find login button on this application")
+            page.wait_for_timeout(1000)  # Wait for login processing'''
+            else:
+                return '''            # Perform complete valid login using LocatorStrategy
+            username_value = test_data.get("valid_username") or test_data.get("username") or test_data.get("valid_email") or test_data.get("email")
+            password_value = test_data.get("valid_password") or test_data.get("password")
+            if not username_value or not password_value:
+                raise ValueError("Valid credentials not provided in test data")
+            
+            # Fill username/email
+            success = locator_strategy.fill("username_field", username_value)
+            if not success:
+                raise AssertionError("Could not find username field on this application")
+            
+            # Fill password
+            success = locator_strategy.fill("password_field", password_value)
+            if not success:
+                raise AssertionError("Could not find password field on this application")
+            
+            # Click login button
+            success = locator_strategy.click("login_button")
+            if not success:
+                raise AssertionError("Could not find login button on this application")
+            page.wait_for_timeout(1000)  # Wait for login processing'''
             if is_invalid_test or "invalid" in step_lower:
                 return '''            # Perform complete invalid login using LocatorStrategy
             username_value = test_data.get("invalid_username") or test_data.get("invalid_email")
