@@ -321,6 +321,17 @@ class Test{clean_class_name}:
                 raise AssertionError("Could not find or click login button on this application")
             page.wait_for_timeout(1000)  # Wait for login processing'''
         
+        # Generic click steps - handle any click action
+        elif "click" in step_lower:
+            # Extract what to click from the step
+            click_target = self._extract_click_target(step_lower)
+            semantic_type = self._map_to_semantic_type(click_target)
+            return f'''            # Click {click_target} using LocatorStrategy
+            success = locator_strategy.click("{semantic_type}")
+            if not success:
+                raise AssertionError("Could not find or click {click_target} on this application")
+            page.wait_for_timeout(500)  # Wait for UI changes'''
+        
         # Complete login steps
         elif "login" in step_lower and ("complete" in step_lower or "perform" in step_lower):
             if is_invalid_test or "invalid" in step_lower:
@@ -394,6 +405,51 @@ class Test{clean_class_name}:
             # Wait for any UI changes to complete
             page.wait_for_timeout(500)
             logging.info("Executed generic step: {step}")'''
+    
+    def _extract_click_target(self, step_lower: str) -> str:
+        """Extract what element to click from the step description"""
+        # Remove "click" and common words to get the target
+        target = step_lower.replace("click", "").replace("on", "").replace("the", "").strip()
+        
+        # Handle common patterns
+        if "user" in target and ("name" in target or "profile" in target or "dropdown" in target):
+            return "user name"
+        elif "logout" in target or "sign out" in target:
+            return "logout"
+        elif "menu" in target:
+            return "menu"
+        elif "button" in target:
+            return target.replace("button", "").strip()
+        else:
+            return target
+    
+    def _map_to_semantic_type(self, click_target: str) -> str:
+        """Map click target to semantic element type for LocatorStrategy"""
+        target_lower = click_target.lower()
+        
+        # Map common targets to semantic types
+        if "user" in target_lower and ("name" in target_lower or "profile" in target_lower):
+            return "user_display"
+        elif "logout" in target_lower or "sign out" in target_lower:
+            return "logout_button"
+        elif "menu" in target_lower:
+            return "menu_button"
+        elif "dashboard" in target_lower:
+            return "dashboard_content"
+        elif "home" in target_lower:
+            return "home_button"
+        elif "profile" in target_lower:
+            return "profile_button"
+        elif "settings" in target_lower:
+            return "settings_button"
+        elif "search" in target_lower:
+            return "search_button"
+        else:
+            # Generic mapping - convert spaces to underscores and add appropriate suffix
+            semantic_name = target_lower.replace(" ", "_")
+            if not semantic_name.endswith(("_button", "_link", "_field", "_menu")):
+                semantic_name += "_button"  # Default to button for click actions
+            return semantic_name
     
     def _find_relevant_elements(self, test_name: str, elements: Dict, pages: List) -> Dict:
         """Find elements relevant to the test case"""
