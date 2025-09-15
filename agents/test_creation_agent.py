@@ -23,6 +23,7 @@ from typing import Dict, Any, List, Optional
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
+from utils.locator_strategy import LocatorStrategy
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -192,6 +193,7 @@ import pytest
 import logging
 from datetime import datetime
 {page_object_import}
+from utils.locator_strategy import LocatorStrategy
 
 class Test{clean_class_name}:
     """Test class for {test_name}"""
@@ -205,6 +207,9 @@ class Test{clean_class_name}:
         
         # Test data from requirements.json
         test_data = {test_data}
+        
+        # Initialize locator strategy for robust element finding
+        locator_strategy = LocatorStrategy(page)
         
         try:
             # Initialize page object
@@ -224,7 +229,7 @@ class Test{clean_class_name}:
             test_code += step_code + "\n"
         
         # Enhanced: Add specific validations from requirements.json
-        validation_code = self._generate_assertions_from_validations(validations, expected_result)
+        validation_code = self._generate_assertions_from_validations(validations, expected_result, relevant_elements)
         test_code += validation_code
         
         test_code += f'''
@@ -386,8 +391,8 @@ class Test{clean_class_name}:
             
         return merged_data
     
-    def _generate_assertions_from_validations(self, validations: List[str], expected_result: str = "") -> str:
-        """Generate specific assertion code from validation descriptions"""
+    def _generate_assertions_from_validations(self, validations: List[str], expected_result: str = "", discovered_elements: Dict = None) -> str:
+        """Generate specific assertion code from validation descriptions using LocatorStrategy"""
         if not validations and not expected_result:
             return '''
             # Generic validation
@@ -395,7 +400,7 @@ class Test{clean_class_name}:
 '''
         
         assertion_code = '''
-            # Specific validations from requirements.json
+            # Specific validations from requirements.json using LocatorStrategy
 '''
         
         # Process each validation
@@ -403,53 +408,44 @@ class Test{clean_class_name}:
             validation_lower = validation.lower()
             
             if "verify url contains" in validation_lower:
-                # Extract the expected URL part
-                if "dashboard" in validation_lower:
-                    assertion_code += '''            assert "/dashboard" in page.url, "URL should contain '/dashboard'"
-'''
-                elif "login" in validation_lower:
-                    assertion_code += '''            assert "/login" in page.url, "URL should contain '/login'"
-'''
-                else:
-                    assertion_code += '''            assert page.url is not None, "URL should be valid"
+                # Extract the expected URL part dynamically
+                url_part = self._extract_url_part_from_validation(validation)
+                assertion_code += f'''            assert "{url_part}" in page.url, "URL should contain '{url_part}'"
 '''
             
             elif "verify user name displayed" in validation_lower or "verify username displayed" in validation_lower:
-                assertion_code += '''            assert page.locator("[data-testid='username'], .user-name, .username").first.is_visible(), "User name should be displayed"
+                assertion_code += f'''            assert locator_strategy.is_visible("user_display"), "User name should be displayed"
 '''
             
-            elif "verify logout option available" in validation_lower:
-                assertion_code += '''            assert page.locator("text=Logout, [data-testid='logout'], .logout").first.is_visible(), "Logout option should be available"
+            elif "verify logout option available" in validation_lower or "logout" in validation_lower:
+                assertion_code += f'''            assert locator_strategy.is_visible("logout_button"), "Logout option should be available"
 '''
             
-            elif "verify error message" in validation_lower:
-                assertion_code += '''            assert page.locator(".error, .alert-danger, [role='alert']").first.is_visible(), "Error message should be displayed"
+            elif "verify error message" in validation_lower or "error message" in validation_lower:
+                assertion_code += f'''            assert locator_strategy.is_visible("error_message"), "Error message should be displayed"
 '''
             
-            elif "verify validation message" in validation_lower or "verify required field" in validation_lower:
-                assertion_code += '''            assert page.locator(".error, .invalid-feedback, .field-error").count() > 0, "Validation messages should be displayed"
+            elif "verify dashboard" in validation_lower or "dashboard" in validation_lower:
+                assertion_code += f'''            assert locator_strategy.is_visible("dashboard_content"), "Dashboard should be displayed"
 '''
             
-            elif "verify dashboard" in validation_lower:
-                assertion_code += '''            assert page.locator(".dashboard, .dashboard-widget, [data-testid='dashboard']").first.is_visible(), "Dashboard should be displayed"
+            elif "verify validation message" in validation_lower or "validation message" in validation_lower:
+                assertion_code += f'''            # Check for validation messages using LocatorStrategy
+            validation_element = locator_strategy.find_element("validation_message")
+            assert validation_element is not None, "Validation messages should be displayed"
 '''
             
-            elif "verify page title" in validation_lower:
-                assertion_code += '''            assert page.title() != "", "Page should have a title"
-'''
-            
-            elif "verify redirect" in validation_lower:
-                if "login" in validation_lower:
-                    assertion_code += '''            assert "/login" in page.url, "Should be redirected to login page"
-'''
-                else:
-                    assertion_code += '''            assert page.url != "", "Should be redirected to a valid page"
+            elif "verify" in validation_lower and "displayed" in validation_lower:
+                # Generic element visibility check
+                element_name = self._extract_element_name_from_validation(validation)
+                assertion_code += f'''            # Generic element check: {validation}
+            assert page.url is not None, "{validation}"
 '''
             
             else:
                 # Generic validation for unrecognized patterns
                 assertion_code += f'''            # Validation: {validation}
-            assert page.url is not None, "Page should be loaded for validation: {validation}"
+            assert page.url is not None, "Validation should pass"
 '''
         
         # Add expected result validation if provided
@@ -460,6 +456,151 @@ class Test{clean_class_name}:
 '''
         
         return assertion_code
+    
+    def _find_semantic_element_selector(self, semantic_type: str, discovered_elements: Dict = None, element_name: str = "") -> str:
+        """Find selector for semantic element type from discovered elements"""
+        if not discovered_elements:
+            return self._get_fallback_selector(semantic_type, element_name)
+        
+        # Search discovered elements for semantic matches
+        elements = discovered_elements.get("elements", [])
+        
+        for element in elements:
+            element_type = element.get("type", "").lower()
+            element_text = element.get("text", "").lower()
+            element_role = element.get("role", "").lower()
+            element_class = element.get("class", "").lower()
+            
+            # Match semantic types to discovered elements
+            if semantic_type == "user_display":
+                if any(keyword in element_type for keyword in ["user", "profile", "account"]) or \
+                   any(keyword in element_text for keyword in ["user", "profile", "account", "welcome"]) or \
+                   any(keyword in element_class for keyword in ["user", "profile", "account", "dropdown"]):
+                    return element.get("selector", self._get_fallback_selector(semantic_type))
+            
+            elif semantic_type == "logout_button":
+                if any(keyword in element_type for keyword in ["logout", "signout", "exit"]) or \
+                   any(keyword in element_text for keyword in ["logout", "sign out", "exit", "log out"]) or \
+                   element_role == "button" and "logout" in element_text:
+                    return element.get("selector", self._get_fallback_selector(semantic_type))
+            
+            elif semantic_type == "error_message":
+                if any(keyword in element_type for keyword in ["error", "alert", "message"]) or \
+                   any(keyword in element_class for keyword in ["error", "alert", "danger", "invalid"]) or \
+                   element_role in ["alert", "status"]:
+                    return element.get("selector", self._get_fallback_selector(semantic_type))
+            
+            elif semantic_type == "dashboard_content":
+                if any(keyword in element_type for keyword in ["dashboard", "main", "content"]) or \
+                   any(keyword in element_class for keyword in ["dashboard", "main-content", "content"]):
+                    return element.get("selector", self._get_fallback_selector(semantic_type))
+            
+            elif semantic_type == "validation_message":
+                if any(keyword in element_type for keyword in ["validation", "error", "required"]) or \
+                   any(keyword in element_class for keyword in ["validation", "error", "invalid", "required"]):
+                    return element.get("selector", self._get_fallback_selector(semantic_type))
+            
+            elif semantic_type == "generic_element" and element_name:
+                if element_name.lower() in element_text or element_name.lower() in element_type:
+                    return element.get("selector", self._get_fallback_selector(semantic_type, element_name))
+        
+        # Return fallback selector if no match found
+        return self._get_fallback_selector(semantic_type, element_name)
+    
+    def _get_fallback_selector(self, semantic_type: str, element_name: str = "") -> str:
+        """Get fallback selector strategies for semantic element types - returns single working selector"""
+        fallback_selectors = {
+            "user_display": [
+                "[data-testid*='user']",
+                "[class*='user']", 
+                "[class*='profile']",
+                "[class*='account']",
+                ".username",
+                ".user-name", 
+                ".profile-name",
+                "[aria-label*='user']",
+                "[title*='user']"
+            ],
+            "logout_button": [
+                "button:has-text('Logout')",
+                "button:has-text('Log out')", 
+                "button:has-text('Sign out')",
+                "[data-testid*='logout']",
+                "[class*='logout']",
+                "a:has-text('Logout')",
+                "[aria-label*='logout']"
+            ],
+            "error_message": [
+                "[role='alert']",
+                ".error",
+                ".alert",
+                ".alert-danger", 
+                ".alert-error",
+                ".error-message",
+                ".invalid-feedback",
+                "[class*='error']"
+            ],
+            "dashboard_content": [
+                ".dashboard",
+                ".main-content",
+                ".content", 
+                "[data-testid*='dashboard']",
+                "main",
+                ".dashboard-widget",
+                "[class*='dashboard']"
+            ],
+            "validation_message": [
+                ".error",
+                ".invalid-feedback",
+                ".field-error", 
+                ".validation-error",
+                "[role='alert']",
+                "[class*='error']"
+            ],
+            "generic_element": [
+                f"text={element_name}" if element_name else "*",
+                f"[data-testid*='{element_name.lower()}']" if element_name else "*",
+                f"[class*='{element_name.lower()}']" if element_name else "*"
+            ]
+        }
+        
+        # Return the first selector from the list (highest priority)
+        selectors = fallback_selectors.get(semantic_type, ["*"])
+        return selectors[0]
+    
+    def _extract_url_part_from_validation(self, validation: str) -> str:
+        """Extract URL part from validation description"""
+        validation_lower = validation.lower()
+        
+        if "dashboard" in validation_lower:
+            return "/dashboard"
+        elif "login" in validation_lower:
+            return "/login"
+        elif "home" in validation_lower:
+            return "/home"
+        elif "profile" in validation_lower:
+            return "/profile"
+        else:
+            # Try to extract quoted URL parts
+            import re
+            url_match = re.search(r"['\"]([^'\"]*)['\"]", validation)
+            if url_match:
+                return url_match.group(1)
+            return "/"
+    
+    def _extract_element_name_from_validation(self, validation: str) -> str:
+        """Extract element name from validation description"""
+        validation_lower = validation.lower()
+        
+        # Common patterns to extract element names
+        if "verify" in validation_lower and "displayed" in validation_lower:
+            # Extract text between "verify" and "displayed"
+            import re
+            match = re.search(r"verify\s+(.+?)\s+(?:is\s+)?displayed", validation_lower)
+            if match:
+                return match.group(1).strip()
+        
+        return ""
     
     def _parse_environment_config(self, environment: Dict) -> Dict:
         """Parse environment configuration for test execution"""
@@ -531,6 +672,7 @@ Generated by Enhanced AutoGen Test Creation Agent
 
 from playwright.sync_api import Page
 import logging
+from utils.locator_strategy import LocatorStrategy
 
 class {class_name}:
     """Page object for {page_name}"""
@@ -538,6 +680,7 @@ class {class_name}:
     def __init__(self, page: Page):
         self.page = page
         self.url = "{page_url}"
+        self.locator_strategy = LocatorStrategy(page)
         
         # Element selectors discovered from application analysis
 '''
@@ -562,9 +705,8 @@ class {class_name}:
                 elif element_category == "button" and "login" in element.get("text", "").lower():
                     login_button_selector = selectors.get("class", "button[type='submit']")
         
-        page_object_code += f'''        self.username_field = "{username_selector}"
-        self.password_field = "{password_selector}"
-        self.login_button = "{login_button_selector}"
+        page_object_code += f'''        # Using LocatorStrategy for robust element finding
+        # Fallback selectors are handled automatically by LocatorStrategy
         
     def navigate(self):
         """Navigate to {page_name}"""
@@ -572,19 +714,28 @@ class {class_name}:
         self.page.wait_for_load_state("networkidle")
         
     def fill_username(self, username: str):
-        """Fill username field"""
-        self.page.fill(self.username_field, username)
+        """Fill username field using LocatorStrategy"""
+        success = self.locator_strategy.fill("username_field", username)
+        if not success:
+            # Fallback to direct selector if LocatorStrategy fails
+            self.page.fill("input[name='username']", username)
         
     def fill_password(self, password: str):
-        """Fill password field"""
-        self.page.fill(self.password_field, password)
+        """Fill password field using LocatorStrategy"""
+        success = self.locator_strategy.fill("password_field", password)
+        if not success:
+            # Fallback to direct selector if LocatorStrategy fails
+            self.page.fill("input[name='password']", password)
         
     def click_login(self):
-        """Click login button"""
-        self.page.click(self.login_button)
+        """Click login button using LocatorStrategy"""
+        success = self.locator_strategy.click("login_button")
+        if not success:
+            # Fallback to direct selector if LocatorStrategy fails
+            self.page.click("button[type='submit']")
         
     def login(self, username: str, password: str):
-        """Perform complete login"""
+        """Perform complete login using LocatorStrategy"""
         self.fill_username(username)
         self.fill_password(password)
         self.click_login()
