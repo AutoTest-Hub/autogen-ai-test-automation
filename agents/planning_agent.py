@@ -116,14 +116,29 @@ Be thorough, analytical, and strategic in your planning approach.
     async def _create_test_plan(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a comprehensive test plan"""
         requirements = task_data.get("requirements", {})
+        requirements_json = task_data.get("requirements_json", {})
         test_files = task_data.get("test_files", [])
         
-        self.logger.info(f"Creating test plan for {len(test_files)} test files")
+        # Extract test cases from requirements_json if available
+        test_cases = []
+        if requirements_json and "test_requirements" in requirements_json:
+            for req in requirements_json["test_requirements"]:
+                if "test_cases" in req:
+                    test_cases.extend(req["test_cases"])
+        
+        # Log the correct count
+        total_items = len(test_files) + len(test_cases)
+        self.logger.info(f"Creating test plan for {len(test_files)} test files and {len(test_cases)} test cases from requirements")
         
         # Analyze each test file
         test_scenarios = []
         for test_file in test_files:
             scenario = await self._analyze_test_file(test_file)
+            test_scenarios.append(scenario)
+            
+        # Analyze test cases from requirements_json
+        for test_case in test_cases:
+            scenario = await self._analyze_test_case(test_case)
             test_scenarios.append(scenario)
         
         # Create comprehensive test plan
@@ -168,6 +183,24 @@ Be thorough, analytical, and strategic in your planning approach.
             return self._analyze_json_test_file(file_content)
         else:
             return self._analyze_txt_test_file(file_content)
+    
+    async def _analyze_test_case(self, test_case: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze a single test case from requirements_json and create scenario details"""
+        return {
+            "name": test_case.get("name", "Unknown Test"),
+            "description": test_case.get("description", ""),
+            "priority": test_case.get("priority", "Medium"),
+            "tags": [],
+            "application": "Web Application",
+            "test_steps": test_case.get("steps", []),
+            "test_data": {},
+            "environment": {"browser": "Chrome", "headless": True},
+            "expected_result": test_case.get("expected_result", ""),
+            "complexity": "Medium",
+            "estimated_duration": "5 minutes",
+            "dependencies": [],
+            "risk_level": "Medium"
+        }
     
     def _analyze_json_test_file(self, content: str) -> Dict[str, Any]:
         """Analyze JSON format test file"""
