@@ -17,13 +17,17 @@
             "Navigate to login page",
             "Enter valid username",
             "Enter valid password",
-            "Click login button"
+            "Click login button",
+            "Click user name",
+            "Verify logout option available",
+            "Click outside the user name"
           ],
           "validations": [
             "Verify URL contains '/dashboard'",
-            "Verify user name displayed",
-            "Verify logout option available",
-            "Verify dashboard widgets loaded"
+            "Verify Time at Work widget loaded",
+            "Verify My Actions widget loaded",
+            "Verify Quick Launch widget loaded",
+            "Verify Buzz Latest Posts widget loaded"
           ],
           "test_data": {
             "valid_username": "Admin",

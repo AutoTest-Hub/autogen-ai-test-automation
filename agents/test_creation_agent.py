@@ -313,6 +313,14 @@ class Test{clean_class_name}:
                 raise AssertionError("Could not find or fill password field on this application")
             page.wait_for_timeout(200)'''
         
+        # Click outside actions (to close dropdowns/menus) - CHECK FIRST!
+        elif "click outside" in step_lower:
+            return '''            # Click outside to close any open dropdowns/menus
+            # Click on a neutral area (body element) to close dropdowns
+            page.locator("body").click(position={"x": 100, "y": 100})
+            page.wait_for_timeout(500)  # Wait for UI changes
+            logging.info("Clicked outside to close dropdowns/menus")'''
+        
         # Login button click steps
         elif "click" in step_lower and ("login" in step_lower or "submit" in step_lower or "sign in" in step_lower):
             return '''            # Click login/submit button using LocatorStrategy
@@ -649,7 +657,27 @@ class Test{clean_class_name}:
 '''
             
             elif "verify dashboard" in validation_lower or "dashboard" in validation_lower:
-                assertion_code += f'''            assert locator_strategy.is_visible("dashboard_content"), "Dashboard should be displayed"
+                # Extract specific widget name if mentioned
+                if "widget" in validation_lower:
+                    # Extract widget name from validation text
+                    widget_name = self._extract_widget_name_from_validation(validation)
+                    assertion_code += f'''            # Verify specific widget using text-based targeting
+            widget_visible = (
+                locator_strategy.is_visible_by_text("heading_generic", "{widget_name}") or
+                locator_strategy.is_visible_by_text("text_generic", "{widget_name}") or
+                locator_strategy.is_visible_by_text("label_generic", "{widget_name}")
+            )
+            assert widget_visible, "Widget '{widget_name}' should be loaded and visible"
+'''
+                else:
+                    # Generic dashboard verification
+                    assertion_code += f'''            # Verify dashboard is loaded using text-based targeting
+            dashboard_visible = (
+                locator_strategy.is_visible_by_text("heading_generic", "dashboard") or
+                locator_strategy.is_visible_by_text("text_generic", "dashboard") or
+                page.url.lower().find("dashboard") != -1
+            )
+            assert dashboard_visible, "Dashboard should be displayed"
 '''
             
             elif "verify validation message" in validation_lower or "validation message" in validation_lower:
@@ -666,9 +694,18 @@ class Test{clean_class_name}:
 '''
             
             else:
-                # Generic validation for unrecognized patterns
+                # Generic validation using text-based targeting (application-agnostic)
+                validation_target = self._extract_validation_target_from_text(validation)
                 assertion_code += f'''            # Validation: {validation}
-            assert page.url is not None, "Validation should pass"
+            # Generic text-based validation for any application
+            validation_passed = (
+                locator_strategy.is_visible_by_text("heading_generic", "{validation_target}") or
+                locator_strategy.is_visible_by_text("text_generic", "{validation_target}") or
+                locator_strategy.is_visible_by_text("label_generic", "{validation_target}") or
+                locator_strategy.is_visible_by_text("button_generic", "{validation_target}") or
+                locator_strategy.is_visible_by_text("link_generic", "{validation_target}")
+            )
+            assert validation_passed, "Could not find '{validation_target}' on this application"
 '''
         
         # Add expected result validation if provided
@@ -1892,6 +1929,44 @@ requests>=2.31.0
             page.wait_for_timeout(1000)
             assert page.url is not None and len(page.url) > 0, "Page should be loaded and responsive"
             logging.info("Generic verification completed: {step}")'''
+
+    def _extract_validation_target_from_text(self, validation: str) -> str:
+        """Extract validation target from any validation text (completely generic)"""
+        validation_lower = validation.lower()
+        
+        # Remove common validation prefixes
+        validation_clean = validation_lower
+        prefixes_to_remove = ["verify ", "check ", "validate ", "ensure ", "confirm "]
+        for prefix in prefixes_to_remove:
+            if validation_clean.startswith(prefix):
+                validation_clean = validation_clean[len(prefix):]
+                break
+        
+        # Remove common validation suffixes
+        suffixes_to_remove = [" loaded", " displayed", " visible", " available", " present", " exists", " widget"]
+        for suffix in suffixes_to_remove:
+            if validation_clean.endswith(suffix):
+                validation_clean = validation_clean[:-len(suffix)]
+                break
+        
+        # Extract the main content (first few meaningful words)
+        words = validation_clean.split()
+        if len(words) >= 2:
+            # Take first 2-3 words as the target
+            target = " ".join(words[:3]).strip()
+        elif len(words) == 1:
+            target = words[0].strip()
+        else:
+            target = "element"
+        
+        # Capitalize for better matching
+        return target.title()
+
+    def _extract_widget_name_from_validation(self, validation: str) -> str:
+        """Extract widget name from validation text (completely generic)"""
+        # Use the same generic extraction logic as validation target
+        return self._extract_validation_target_from_text(validation)
+
 
     def _extract_verification_target(self, step: str) -> str:
         """Extract what needs to be verified from natural language step"""
