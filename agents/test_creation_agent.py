@@ -321,12 +321,24 @@ class Test{clean_class_name}:
                 raise AssertionError("Could not find or click login button on this application")
             page.wait_for_timeout(1000)  # Wait for login processing'''
         
-        # Generic click steps - handle any click action
+        # Generic click steps with text-based targeting
         elif "click" in step_lower:
-            # Extract what to click from the step
-            click_target = self._extract_click_target(step_lower)
+            click_target = self._extract_click_target(step)
             semantic_type = self._map_to_semantic_type(click_target)
-            return f'''            # Click {click_target} using LocatorStrategy
+            
+            # Use text-based targeting for navigation items
+            if semantic_type == "navigation_item":
+                return f'''            # Click {click_target} using LocatorStrategy with text-based targeting
+            success = locator_strategy.click_by_text("navigation_item", "{click_target}")
+            if not success:
+                # Fallback to generic button/link targeting
+                success = locator_strategy.click_by_text("button_generic", "{click_target}") or \\
+                         locator_strategy.click_by_text("link_generic", "{click_target}")
+                if not success:
+                    raise AssertionError("Could not find or click {click_target} on this application")
+            page.wait_for_timeout(500)  # Wait for UI changes'''
+            else:
+                return f'''            # Click {click_target} using LocatorStrategy
             success = locator_strategy.click("{semantic_type}")
             if not success:
                 raise AssertionError("Could not find or click {click_target} on this application")
@@ -497,29 +509,58 @@ class Test{clean_class_name}:
         """Map click target to semantic element type for LocatorStrategy"""
         target_lower = click_target.lower()
         
-        # Map common targets to semantic types
-        if "user" in target_lower and ("name" in target_lower or "profile" in target_lower):
+        # Map common targets to generic semantic types (application-agnostic)
+        if "user" in target_lower and ("name" in target_lower or "profile" in target_lower or "dropdown" in target_lower):
             return "user_display"
         elif "logout" in target_lower or "sign out" in target_lower:
             return "logout_button"
-        elif "menu" in target_lower:
-            return "menu_button"
+        elif "menu" in target_lower and ("item" in target_lower or "option" in target_lower):
+            # Generic navigation item - will use text-based targeting
+            return "navigation_item"
+        elif "navigation" in target_lower or "nav" in target_lower:
+            return "navigation_menu"
+        elif "tab" in target_lower:
+            return "tab_item"
+        elif "breadcrumb" in target_lower:
+            return "breadcrumb_item"
+        elif "dropdown" in target_lower:
+            return "dropdown_item"
         elif "dashboard" in target_lower:
             return "dashboard_content"
         elif "home" in target_lower:
-            return "home_button"
+            return "navigation_item"  # Use generic navigation for home
         elif "profile" in target_lower:
-            return "profile_button"
+            return "navigation_item"  # Use generic navigation for profile
         elif "settings" in target_lower:
-            return "settings_button"
+            return "navigation_item"  # Use generic navigation for settings
         elif "search" in target_lower:
             return "search_button"
+        elif "button" in target_lower or "btn" in target_lower:
+            return "button_generic"
+        elif "link" in target_lower:
+            return "link_generic"
         else:
-            # Generic mapping - convert spaces to underscores and add appropriate suffix
-            semantic_name = target_lower.replace(" ", "_")
-            if not semantic_name.endswith(("_button", "_link", "_field", "_menu")):
-                semantic_name += "_button"  # Default to button for click actions
-            return semantic_name
+            # For navigation items like "Admin", "PIM", "Leave", etc.
+            # Use generic navigation_item and rely on text-based targeting
+            return "navigation_item"
+    
+    def _extract_click_target(self, step: str) -> str:
+        """Extract the target element from a click step description"""
+        step_lower = step.lower()
+        
+        # Remove common prefixes to get the actual target
+        if step_lower.startswith("click "):
+            target = step[6:].strip()  # Remove "click "
+        elif step_lower.startswith("click on "):
+            target = step[9:].strip()  # Remove "click on "
+        else:
+            target = step.strip()
+        
+        # Clean up common suffixes
+        target = target.replace(" menu item", "").replace(" button", "").replace(" link", "")
+        target = target.replace(" option", "").replace(" tab", "")
+        
+        return target.strip()
     
     def _find_relevant_elements(self, test_name: str, elements: Dict, pages: List) -> Dict:
         """Find elements relevant to the test case"""
