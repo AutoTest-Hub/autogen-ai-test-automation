@@ -463,6 +463,10 @@ class Test{clean_class_name}:
             
             page.wait_for_timeout(1000)'''
         
+        # Verification steps - Smart text-based verification (application-agnostic) - CHECK FIRST!
+        elif "verify" in step_lower or "check" in step_lower:
+            return self._generate_smart_verification_step(step, step_num)
+        
         # Logout steps
         elif "logout" in step_lower or "sign out" in step_lower:
             return '''            # Perform logout using LocatorStrategy
@@ -470,16 +474,6 @@ class Test{clean_class_name}:
             if not success:
                 raise AssertionError("Could not find or click logout button on this application")
             page.wait_for_timeout(1000)'''
-        
-        # Verification steps
-        elif "verify" in step_lower or "check" in step_lower:
-            return f'''            # Verification step {step_num}
-            # Wait for page to stabilize after previous actions
-            page.wait_for_timeout(1000)
-            
-            # Basic verification that page is loaded and responsive
-            assert page.url is not None, "Page should be loaded"
-            logging.info("Step {step_num} verification completed: {step}")'''
         
         # Generic steps
         else:
@@ -1854,6 +1848,99 @@ requests>=2.31.0
             "discovery_type": "enhanced_mock",
             "timestamp": int(time.time())
         }
+
+    def _generate_smart_verification_step(self, step: str, step_num: int) -> str:
+        """Generate truly generic verification code that works with ANY application"""
+        step_lower = step.lower()
+        
+        # Extract what needs to be verified from the step text
+        verification_target = self._extract_verification_target(step)
+        
+        if "available" in step_lower or "visible" in step_lower:
+            return f'''            # Verification step {step_num}: {step}
+            # Generic visibility check using text-based targeting
+            verification_passed = (
+                locator_strategy.is_visible_by_text("button_generic", "{verification_target}") or
+                locator_strategy.is_visible_by_text("link_generic", "{verification_target}") or
+                locator_strategy.is_visible_by_text("navigation_item", "{verification_target}")
+            )
+            assert verification_passed, "{step} - Could not find '{verification_target}' on this application"
+            logging.info("Verification completed: {verification_target} is available")'''
+        
+        elif "displayed" in step_lower:
+            return f'''            # Verification step {step_num}: {step}
+            # Generic element presence check
+            verification_passed = (
+                locator_strategy.is_visible_by_text("text_generic", "{verification_target}") or
+                locator_strategy.is_visible_by_text("heading_generic", "{verification_target}") or
+                locator_strategy.is_visible_by_text("label_generic", "{verification_target}")
+            )
+            assert verification_passed, "{step} - Could not find '{verification_target}' displayed on this application"
+            logging.info("Verification completed: {verification_target} is displayed")'''
+        
+        elif "contains" in step_lower and "url" in step_lower:
+            url_part = self._extract_url_part_from_step(step)
+            return f'''            # Verification step {step_num}: {step}
+            # Generic URL verification
+            assert "{url_part}" in page.url.lower(), "URL should contain '{url_part}'"
+            logging.info("Verification completed: URL contains '{url_part}'")'''
+        
+        else:
+            # Completely generic verification
+            return f'''            # Verification step {step_num}: {step}
+            # Generic verification - ensure page is responsive and loaded
+            page.wait_for_timeout(1000)
+            assert page.url is not None and len(page.url) > 0, "Page should be loaded and responsive"
+            logging.info("Generic verification completed: {step}")'''
+
+    def _extract_verification_target(self, step: str) -> str:
+        """Extract what needs to be verified from natural language step"""
+        step_lower = step.lower()
+        
+        # Common patterns to extract verification targets
+        if "logout" in step_lower:
+            return "logout"  # Could be "Logout", "Sign Out", "Exit", etc.
+        elif "user" in step_lower and ("name" in step_lower or "profile" in step_lower):
+            return "user"   # Could be username, email, profile name, etc.
+        elif "dashboard" in step_lower:
+            return "dashboard"  # Could be "Dashboard", "Home", "Main", etc.
+        elif "admin" in step_lower:
+            return "admin"
+        elif "menu" in step_lower:
+            return "menu"
+        elif "error" in step_lower:
+            return "error"
+        
+        # Fallback: extract text between "verify" and action words
+        import re
+        match = re.search(r"verify\s+(.+?)\s+(?:option\s+)?(?:available|displayed|visible)", step_lower)
+        if match:
+            return match.group(1).strip()
+        
+        return "element"  # Generic fallback
+
+    def _extract_url_part_from_step(self, step: str) -> str:
+        """Extract URL part to check from verification step"""
+        step_lower = step.lower()
+        
+        # Common URL patterns
+        if "dashboard" in step_lower:
+            return "dashboard"
+        elif "admin" in step_lower:
+            return "admin"
+        elif "login" in step_lower:
+            return "login"
+        elif "home" in step_lower:
+            return "home"
+        
+        # Try to extract URL part with regex
+        import re
+        match = re.search(r"url\s+contains\s+['\"]?([^'\"]+)['\"]?", step_lower)
+        if match:
+            return match.group(1).strip()
+        
+        return "/"  # Fallback
+
 
     def get_capabilities(self) -> List[str]:
         """Get enhanced capabilities including Selenium and API"""
