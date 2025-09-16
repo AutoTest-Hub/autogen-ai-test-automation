@@ -316,8 +316,8 @@ class Test{clean_class_name}:
         # Click outside actions (to close dropdowns/menus) - CHECK FIRST!
         elif "click outside" in step_lower:
             return '''            # Click outside to close any open dropdowns/menus
-            # Click on a neutral area (body element) to close dropdowns
-            page.locator("body").click(position={"x": 100, "y": 100})
+            # Click on a safe neutral area (main content area, away from navigation)
+            page.locator("body").click(position={"x": 500, "y": 200})
             page.wait_for_timeout(500)  # Wait for UI changes
             logging.info("Clicked outside to close dropdowns/menus")'''
         
@@ -528,7 +528,7 @@ class Test{clean_class_name}:
         elif "dropdown" in target_lower:
             return "dropdown_item"
         elif "dashboard" in target_lower:
-            return "dashboard_content"
+            return "navigation_item"  # Use text-based navigation for dashboard menu items
         elif "home" in target_lower:
             return "navigation_item"  # Use generic navigation for home
         elif "profile" in target_lower:
