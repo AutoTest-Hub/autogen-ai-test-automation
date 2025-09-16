@@ -143,6 +143,38 @@ class LocatorStrategy:
                 "main"
             ],
             
+            # Generic Text Elements - Application Agnostic
+            "heading_generic": [
+                # High priority - semantic headings
+                "h1", "h2", "h3", "h4", "h5", "h6",
+                "[role='heading']",
+                ".heading", ".title", ".header-text",
+                # Medium priority
+                ".page-title", ".section-title", ".card-title",
+                # Low priority
+                "[class*='heading']", "[class*='title']"
+            ],
+            
+            "text_generic": [
+                # High priority - text content
+                "p", "span", "div[class*='text']",
+                ".text", ".content", ".description",
+                # Medium priority
+                "[role='text']", ".message", ".info",
+                # Low priority
+                "div:not([class]):not([id])", "span:not([class]):not([id])"
+            ],
+            
+            "label_generic": [
+                # High priority - labels and captions
+                "label", "[role='label']",
+                ".label", ".caption", ".field-label",
+                # Medium priority
+                ".form-label", ".input-label",
+                # Low priority
+                "[class*='label']", "[for]"
+            ],
+            
             # Generic Navigation Patterns - Application Agnostic
             "navigation_item": [
                 # High priority - semantic navigation
@@ -397,7 +429,13 @@ class LocatorStrategy:
             try:
                 logger.debug(f"Trying text-based selector {i+1}/{len(selectors)} for {semantic_type} with text '{text}': {selector}")
                 
-                # Try exact text match first
+                # Try case-insensitive text match first (most reliable)
+                locator = self.page.locator(selector).filter(has_text=re.compile(re.escape(text), re.IGNORECASE))
+                if locator.count() > 0 and locator.first.is_visible(timeout=timeout):
+                    logger.info(f"Found {semantic_type} with case-insensitive text '{text}' using selector: {selector}")
+                    return locator.first
+                
+                # Try exact text match (case-sensitive fallback)
                 locator = self.page.locator(f"{selector}:has-text('{text}')")
                 if locator.count() > 0 and locator.first.is_visible(timeout=timeout):
                     logger.info(f"Found {semantic_type} with exact text '{text}' using selector: {selector}")
@@ -407,12 +445,6 @@ class LocatorStrategy:
                 locator = self.page.locator(selector).filter(has_text=text)
                 if locator.count() > 0 and locator.first.is_visible(timeout=timeout):
                     logger.info(f"Found {semantic_type} with partial text '{text}' using selector: {selector}")
-                    return locator.first
-                
-                # Try case-insensitive match
-                locator = self.page.locator(selector).filter(has_text=re.compile(re.escape(text), re.IGNORECASE))
-                if locator.count() > 0 and locator.first.is_visible(timeout=timeout):
-                    logger.info(f"Found {semantic_type} with case-insensitive text '{text}' using selector: {selector}")
                     return locator.first
                     
             except PlaywrightTimeoutError:
