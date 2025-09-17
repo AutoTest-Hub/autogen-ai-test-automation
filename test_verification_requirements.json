@@ -1,0 +1,49 @@
+{
+  "project": "Generic Verification Test",
+  "version": "1.0.0",
+  "description": "Testing generic verification steps in any application",
+  "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "test_requirements": [
+    {
+      "id": "REQ-001",
+      "name": "Test Generic Verification Steps",
+      "priority": "High",
+      "test_cases": [
+        {
+          "id": "TC-001",
+          "name": "Login with Verification Steps",
+          "description": "Test login with verification steps in the steps section",
+          "steps": [
+            "Navigate to login page",
+            "Enter valid username",
+            "Enter valid password",
+            "Click login button",
+            "Click user name",
+            "Verify logout option available"
+          ],
+          "validations": [
+            "Verify URL contains '/dashboard'"
+          ],
+          "test_data": {
+            "valid_username": "Admin",
+            "valid_password": "admin123",
+            "base_url": "https://opensource-demo.orangehrmlive.com"
+          },
+          "environment": {
+            "browser": "chrome",
+            "viewport_size": "desktop",
+            "headless": true
+          },
+          "expected_result": "User should be logged in and logout option should be available",
+          "priority": "Critical"
+        }
+      ]
+    }
+  ],
+  "global_test_data": {
+    "valid_username": "Admin",
+    "valid_password": "admin123",
+    "base_url": "https://opensource-demo.orangehrmlive.com"
+  }
+}
+

@@ -121,10 +121,15 @@ Be thorough, analytical, and strategic in your planning approach.
         
         # Extract test cases from requirements_json if available
         test_cases = []
-        if requirements_json and "test_requirements" in requirements_json:
-            for req in requirements_json["test_requirements"]:
-                if "test_cases" in req:
-                    test_cases.extend(req["test_cases"])
+        if requirements_json:
+            # Check for test_cases directly in requirements_json
+            if "test_cases" in requirements_json:
+                test_cases = requirements_json["test_cases"]
+            # Also check for test_requirements structure
+            elif "test_requirements" in requirements_json:
+                for req in requirements_json["test_requirements"]:
+                    if "test_cases" in req:
+                        test_cases.extend(req["test_cases"])
         
         # Log the correct count
         total_items = len(test_files) + len(test_cases)
@@ -136,9 +141,20 @@ Be thorough, analytical, and strategic in your planning approach.
             scenario = await self._analyze_test_file(test_file)
             test_scenarios.append(scenario)
             
-        # Analyze test cases from requirements_json
+        # Analyze test cases from requirements_json - convert strings to test case objects
         for test_case in test_cases:
-            scenario = await self._analyze_test_case(test_case)
+            if isinstance(test_case, str):
+                # Convert string test case to proper test case object
+                test_case_obj = {
+                    "name": test_case.lower().replace(" ", "_"),
+                    "description": test_case,
+                    "priority": "High",
+                    "steps": [test_case],
+                    "expected_result": f"Successfully complete: {test_case}"
+                }
+                scenario = await self._analyze_test_case(test_case_obj)
+            else:
+                scenario = await self._analyze_test_case(test_case)
             test_scenarios.append(scenario)
         
         # Create comprehensive test plan

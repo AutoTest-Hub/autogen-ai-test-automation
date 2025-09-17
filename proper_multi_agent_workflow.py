@@ -216,7 +216,10 @@ class ProperMultiAgentWorkflow:
             
             # Ensure test_cases field exists
             if "test_cases" not in test_plan:
-                if "test_requirements" in test_plan:
+                # Check for test_scenarios field (new format)
+                if "test_scenarios" in test_plan:
+                    test_plan["test_cases"] = test_plan["test_scenarios"]
+                elif "test_requirements" in test_plan:
                     # Extract test cases from requirements
                     test_cases = []
                     for req in test_plan["test_requirements"]:

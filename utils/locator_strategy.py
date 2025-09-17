@@ -516,6 +516,197 @@ class LocatorStrategy:
                 # Low priority
                 "[class*='error']",
                 "[class*='invalid']"
+            ],
+            
+            # E-commerce Specific Elements
+            "product_card": [
+                # High priority - specific product containers
+                "[data-testid*='product']",
+                "[data-product-id]",
+                ".product-item",
+                ".product-card",
+                # Medium priority - generic product containers
+                ".product",
+                "[class*='product']",
+                ".item",
+                # Low priority - generic containers with product content
+                "div:has(.add-to-cart)",
+                "div:has([class*='price'])",
+                ".card:has(button)"
+            ],
+            
+            "add_to_cart": [
+                # High priority - specific add to cart buttons
+                "[data-action='add-to-cart']",
+                "[data-testid*='add-cart']",
+                "button:has-text('Add to cart')",
+                "a:has-text('Add to cart')",
+                # Medium priority - class-based selectors
+                ".add-to-cart",
+                ".btn-add-cart",
+                ".add-cart-btn",
+                # Low priority - generic buttons near products
+                "button[class*='add']",
+                ".product button",
+                ".item button"
+            ],
+            
+            "cart_icon": [
+                # High priority - specific cart elements
+                "[data-testid*='cart']",
+                "a[href*='cart']",
+                ".cart-link",
+                ".shopping-cart",
+                # Medium priority - cart navigation
+                "nav a:has-text('Cart')",
+                ".header a:has-text('Cart')",
+                # Low priority - generic cart indicators
+                "[class*='cart']",
+                ".fa-shopping-cart",
+                ".cart-icon"
+            ],
+            
+            "search_product": [
+                # High priority - specific product search
+                "[data-testid*='search']",
+                "input[placeholder*='Search Product' i]",
+                "input[placeholder*='Search' i]",
+                "#search-product",
+                # Medium priority - search inputs
+                ".search-input",
+                ".product-search",
+                "input[name*='search']",
+                # Low priority - generic search
+                "input[type='search']",
+                ".search input",
+                "form input[type='text']"
+            ],
+            
+            "category_filter": [
+                # High priority - specific category elements
+                "[data-testid*='category']",
+                ".category-link",
+                "a[href*='category']",
+                ".filter-category",
+                # Medium priority - navigation categories
+                ".category",
+                ".cat-link",
+                "nav a[class*='category']",
+                # Low priority - generic category elements
+                "[class*='category']",
+                ".sidebar a",
+                ".filter a"
+            ],
+            
+            "brand_filter": [
+                # High priority - specific brand elements
+                "[data-testid*='brand']",
+                ".brand-link",
+                "a[href*='brand']",
+                ".filter-brand",
+                # Medium priority - brand navigation
+                ".brand",
+                ".brand-item",
+                # Low priority - generic brand elements
+                "[class*='brand']",
+                ".sidebar .brand",
+                ".filter .brand"
+            ],
+            
+            "quantity_input": [
+                # High priority - specific quantity controls
+                "[data-testid*='quantity']",
+                "input[name*='quantity']",
+                ".quantity-input",
+                "input[type='number']",
+                # Medium priority - quantity controls
+                ".qty-input",
+                ".quantity",
+                "[class*='quantity'] input",
+                # Low priority - generic number inputs
+                "input[min='1']",
+                ".cart input[type='number']",
+                "table input[type='number']"
+            ],
+            
+            "checkout_button": [
+                # High priority - specific checkout buttons
+                "[data-testid*='checkout']",
+                "button:has-text('Checkout')",
+                "a:has-text('Checkout')",
+                "button:has-text('Proceed To Checkout')",
+                # Medium priority - checkout links/buttons
+                ".checkout-btn",
+                ".btn-checkout",
+                "a[href*='checkout']",
+                # Low priority - generic checkout elements
+                "[class*='checkout']",
+                ".cart button",
+                ".proceed-btn"
+            ],
+            
+            "price_display": [
+                # High priority - specific price elements
+                "[data-testid*='price']",
+                ".price",
+                ".product-price",
+                "[class*='price']",
+                # Medium priority - currency indicators
+                ":has-text('Rs.')",
+                ":has-text('$')",
+                ":has-text('€')",
+                # Low priority - generic price patterns
+                ".cost",
+                ".amount",
+                "[class*='cost']"
+            ],
+            
+            "product_name": [
+                # High priority - specific product name elements
+                "[data-testid*='product-name']",
+                ".product-name",
+                ".product-title",
+                ".item-name",
+                # Medium priority - heading elements in products
+                ".product h1",
+                ".product h2",
+                ".product h3",
+                # Low priority - generic name elements
+                "[class*='name']",
+                "[class*='title']",
+                ".product a"
+            ],
+            
+            "product_image": [
+                # High priority - specific product images
+                "[data-testid*='product-image']",
+                ".product-image",
+                ".product img",
+                ".item-image",
+                # Medium priority - product container images
+                "[class*='product'] img",
+                ".card img",
+                # Low priority - generic images
+                "img[alt*='product' i]",
+                "img[src*='product']",
+                ".image img"
+            ],
+            
+            "search_field": [
+                # High priority - specific search inputs
+                "[data-testid*='search']",
+                "input[name*='search']",
+                "input[placeholder*='search' i]",
+                "#search",
+                ".search-input",
+                # Medium priority - search form elements
+                "form[class*='search'] input",
+                ".search input",
+                "[class*='search'] input[type='text']",
+                # Low priority - generic search patterns
+                "input[type='search']",
+                "input[aria-label*='search' i]",
+                "[role='searchbox']"
             ]
         }
     
