@@ -227,6 +227,35 @@
       "on_success": true,
       "directory": "test_results"
     }
+  },
+  "framework_options": {
+    "use_page_objects": true,
+    "page_object_pattern": "standard",
+    "locator_strategy": "page_object",
+    "test_generation_approach": "application_agnostic",
+    "description": "Framework configuration options for test generation approach",
+    "options": {
+      "use_page_objects": {
+        "description": "Enable page object pattern in generated tests",
+        "default": false,
+        "values": [true, false]
+      },
+      "page_object_pattern": {
+        "description": "Type of page object pattern to use",
+        "default": "standard",
+        "values": ["standard", "fluent", "factory"]
+      },
+      "locator_strategy": {
+        "description": "Element location strategy",
+        "default": "direct",
+        "values": ["direct", "page_object", "hybrid"]
+      },
+      "test_generation_approach": {
+        "description": "Overall test generation approach",
+        "default": "application_agnostic",
+        "values": ["application_agnostic", "application_specific"]
+      }
+    }
   }
 }
 

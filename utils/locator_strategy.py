@@ -129,6 +129,80 @@ class LocatorStrategy:
                 "[title*='user' i]"
             ],
             
+            "user_dropdown": [
+                # High priority - specific dropdown indicators
+                "[data-testid*='user-dropdown']",
+                "[data-testid*='user-menu']",
+                "[data-testid*='profile-dropdown']",
+                ".user-dropdown",
+                ".profile-dropdown",
+                ".user-menu",
+                # Medium priority - user elements with dropdown indicators
+                "[class*='user'][class*='dropdown']",
+                "[class*='user'] .dropdown-toggle",
+                ".user-name[data-toggle='dropdown']",
+                ".username[data-toggle='dropdown']",
+                # Low priority - generic user elements (clickable)
+                "[class*='user']:not(input):not(label)",
+                "[class*='profile']:not(input):not(label)",
+                ".user-info",
+                ".profile-info",
+                "[aria-haspopup='true'][class*='user']"
+            ],
+            
+            "menu_item": [
+                # High priority - specific menu items
+                "[data-testid*='menu-item']",
+                "[data-testid*='nav-item']",
+                "[role='menuitem']",
+                ".menu-item",
+                ".nav-item",
+                ".navigation-item",
+                # Medium priority - navigation links
+                "nav a",
+                ".nav-link",
+                ".menu-link",
+                ".sidebar-nav a",
+                ".main-nav a",
+                # Low priority - generic menu patterns
+                ".nav li a",
+                ".menu li a",
+                "ul.nav a",
+                "ul.menu a"
+            ],
+            
+            "button": [
+                # High priority - semantic buttons
+                "button",
+                "[type='button']",
+                "[type='submit']",
+                "[role='button']",
+                # Medium priority - button-like elements
+                ".btn",
+                ".button",
+                ".submit",
+                ".action-btn",
+                # Low priority - clickable elements
+                "[onclick]",
+                ".clickable",
+                "input[type='button']",
+                "input[type='submit']"
+            ],
+            
+            "link": [
+                # High priority - semantic links
+                "a[href]",
+                "[role='link']",
+                # Medium priority - link-like elements
+                ".link",
+                ".nav-link",
+                ".menu-link",
+                # Low priority - clickable text elements
+                "a:not([href])",
+                "[class*='link']",
+                "span[onclick]"
+            ],
+            
               "dashboard_content": [
                 # High priority
                 "[data-testid*='dashboard']",
@@ -141,6 +215,84 @@ class LocatorStrategy:
                 # Low priority
                 ".page-content",
                 "main"
+            ],
+            
+            # Dashboard Widget Elements
+            "dashboard_widget": [
+                # High priority - generic dashboard widgets
+                "[data-testid*='widget']",
+                "[data-testid*='dashboard-widget']",
+                ".widget",
+                ".dashboard-widget",
+                ".card",
+                # Medium priority - widget containers
+                ".widget-container",
+                ".dashboard-card",
+                ".panel",
+                # Low priority - generic containers
+                "[class*='widget']",
+                "[class*='card']",
+                ".content-box"
+            ],
+            
+            "time_widget": [
+                # High priority - time/work related widgets
+                "[data-testid*='time']",
+                "[data-testid*='work']",
+                "[data-testid*='attendance']",
+                # Medium priority - text-based matching
+                ":has-text('Time at Work')",
+                ":has-text('Time')",
+                ":has-text('Work')",
+                ":has-text('Attendance')",
+                # Low priority - class-based matching
+                "[class*='time']",
+                "[class*='work']",
+                "[class*='attendance']"
+            ],
+            
+            "actions_widget": [
+                # High priority - actions related widgets
+                "[data-testid*='action']",
+                "[data-testid*='my-action']",
+                # Medium priority - text-based matching
+                ":has-text('My Actions')",
+                ":has-text('Actions')",
+                ":has-text('Tasks')",
+                # Low priority - class-based matching
+                "[class*='action']",
+                "[class*='task']"
+            ],
+            
+            "quick_launch_widget": [
+                # High priority - quick launch related widgets
+                "[data-testid*='quick']",
+                "[data-testid*='launch']",
+                "[data-testid*='quick-launch']",
+                # Medium priority - text-based matching
+                ":has-text('Quick Launch')",
+                ":has-text('Quick Access')",
+                ":has-text('Shortcuts')",
+                # Low priority - class-based matching
+                "[class*='quick']",
+                "[class*='launch']",
+                "[class*='shortcut']"
+            ],
+            
+            "buzz_widget": [
+                # High priority - buzz/social related widgets
+                "[data-testid*='buzz']",
+                "[data-testid*='social']",
+                "[data-testid*='posts']",
+                # Medium priority - text-based matching
+                ":has-text('Buzz Latest Posts')",
+                ":has-text('Buzz')",
+                ":has-text('Latest Posts')",
+                ":has-text('Social')",
+                # Low priority - class-based matching
+                "[class*='buzz']",
+                "[class*='social']",
+                "[class*='post']"
             ],
             
             # Generic Text Elements - Application Agnostic
@@ -369,7 +521,7 @@ class LocatorStrategy:
     
     def find_element(self, semantic_type: str, timeout: int = 5000) -> Optional[Locator]:
         """
-        Find element using priority-based fallback strategy.
+        Find element using priority-based fallback strategy with enhanced debugging.
         
         Args:
             semantic_type: Semantic type of element (e.g., 'username_field')
@@ -381,30 +533,63 @@ class LocatorStrategy:
         selectors = self.locator_map.get(semantic_type, [])
         
         if not selectors:
-            logger.warning(f"No selectors defined for semantic type: {semantic_type}")
+            logger.warning(f"❌ No selectors defined for semantic type: {semantic_type}")
+            logger.info(f"📋 Available semantic types: {list(self.locator_map.keys())}")
             return None
+        
+        logger.info(f"🔍 Searching for element: {semantic_type} (trying {len(selectors)} selectors)")
+        logger.debug(f"📍 Current URL: {self.page.url}")
+        logger.debug(f"📄 Page title: {self.page.title()}")
         
         for i, selector in enumerate(selectors):
             try:
-                logger.debug(f"Trying selector {i+1}/{len(selectors)} for {semantic_type}: {selector}")
+                logger.debug(f"🎯 Trying selector {i+1}/{len(selectors)} for {semantic_type}: {selector}")
                 locator = self.page.locator(selector)
                 
-                # Check if element exists and is visible
-                if locator.count() > 0:
+                # Check if element exists
+                element_count = locator.count()
+                logger.debug(f"📊 Found {element_count} elements matching selector: {selector}")
+                
+                if element_count > 0:
                     # Use first() to get the first matching element
                     first_locator = locator.first
-                    if first_locator.is_visible(timeout=timeout):
-                        logger.info(f"Found {semantic_type} using selector: {selector}")
-                        return first_locator
+                    
+                    # Check visibility with detailed logging
+                    try:
+                        is_visible = first_locator.is_visible(timeout=timeout)
+                        if is_visible:
+                            logger.info(f"✅ Found visible {semantic_type} using selector: {selector}")
+                            return first_locator
+                        else:
+                            logger.debug(f"👁️ Element found but not visible: {selector}")
+                    except PlaywrightTimeoutError:
+                        logger.debug(f"⏰ Visibility check timeout for: {selector}")
+                else:
+                    logger.debug(f"🚫 No elements found for selector: {selector}")
                 
             except PlaywrightTimeoutError:
-                logger.debug(f"Timeout for selector: {selector}")
+                logger.debug(f"⏰ Timeout for selector: {selector}")
                 continue
             except Exception as e:
-                logger.debug(f"Error with selector {selector}: {str(e)}")
+                logger.debug(f"💥 Error with selector {selector}: {str(e)}")
                 continue
         
-        logger.warning(f"Could not find element for semantic type: {semantic_type}")
+        # Enhanced error reporting when element not found
+        logger.warning(f"❌ Could not find element for semantic type: {semantic_type}")
+        logger.info(f"🔧 Debugging info:")
+        logger.info(f"   - Tried {len(selectors)} selectors")
+        logger.info(f"   - Current URL: {self.page.url}")
+        logger.info(f"   - Page loaded: {self.page.url != 'about:blank'}")
+        
+        # Take debug screenshot if element not found
+        try:
+            from datetime import datetime
+            debug_filename = f"debug_element_not_found_{semantic_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+            self.page.screenshot(path=debug_filename)
+            logger.info(f"📸 Debug screenshot saved: {debug_filename}")
+        except Exception as e:
+            logger.debug(f"Failed to save debug screenshot: {e}")
+        
         return None
     
     def find_element_by_text(self, semantic_type: str, text: str, timeout: int = 5000):
@@ -534,7 +719,7 @@ class LocatorStrategy:
     
     def click(self, semantic_type: str, timeout: int = 5000) -> bool:
         """
-        Click element using priority-based fallback.
+        Click element using priority-based fallback with enhanced debugging.
         
         Args:
             semantic_type: Semantic type of element
@@ -543,20 +728,38 @@ class LocatorStrategy:
         Returns:
             True if click succeeded, False otherwise
         """
+        logger.info(f"🖱️ Attempting to click: {semantic_type}")
         element = self.find_element(semantic_type, timeout)
         if element:
             try:
+                # Additional checks before clicking
+                logger.debug(f"🔍 Pre-click checks for {semantic_type}")
+                logger.debug(f"   - Element visible: {element.is_visible()}")
+                logger.debug(f"   - Element enabled: {element.is_enabled()}")
+                
                 element.click(timeout=timeout)
-                logger.info(f"Successfully clicked {semantic_type}")
+                logger.info(f"✅ Successfully clicked {semantic_type}")
                 return True
             except Exception as e:
-                logger.error(f"Failed to click {semantic_type}: {str(e)}")
+                logger.error(f"❌ Failed to click {semantic_type}: {str(e)}")
+                
+                # Take debug screenshot on click failure
+                try:
+                    from datetime import datetime
+                    debug_filename = f"debug_click_failure_{semantic_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    self.page.screenshot(path=debug_filename)
+                    logger.info(f"📸 Click failure screenshot saved: {debug_filename}")
+                except Exception as screenshot_e:
+                    logger.debug(f"Failed to save click failure screenshot: {screenshot_e}")
+                
                 return False
+        
+        logger.error(f"❌ Could not find element to click: {semantic_type}")
         return False
     
     def fill(self, semantic_type: str, value: str, timeout: int = 5000) -> bool:
         """
-        Fill element using priority-based fallback.
+        Fill element using priority-based fallback with enhanced debugging.
         
         Args:
             semantic_type: Semantic type of element
@@ -566,15 +769,42 @@ class LocatorStrategy:
         Returns:
             True if fill succeeded, False otherwise
         """
+        logger.info(f"✏️ Attempting to fill: {semantic_type} with value: {'*' * len(value) if 'password' in semantic_type.lower() else value}")
         element = self.find_element(semantic_type, timeout)
         if element:
             try:
+                # Additional checks before filling
+                logger.debug(f"🔍 Pre-fill checks for {semantic_type}")
+                logger.debug(f"   - Element visible: {element.is_visible()}")
+                logger.debug(f"   - Element enabled: {element.is_enabled()}")
+                
+                # Clear field first, then fill
+                element.clear(timeout=timeout)
                 element.fill(value, timeout=timeout)
-                logger.info(f"Successfully filled {semantic_type} with value")
+                
+                # Verify the value was filled correctly
+                filled_value = element.input_value()
+                if filled_value == value:
+                    logger.info(f"✅ Successfully filled {semantic_type}")
+                else:
+                    logger.warning(f"⚠️ Fill verification failed for {semantic_type}: expected '{value}', got '{filled_value}'")
+                
                 return True
             except Exception as e:
-                logger.error(f"Failed to fill {semantic_type}: {str(e)}")
+                logger.error(f"❌ Failed to fill {semantic_type}: {str(e)}")
+                
+                # Take debug screenshot on fill failure
+                try:
+                    from datetime import datetime
+                    debug_filename = f"debug_fill_failure_{semantic_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    self.page.screenshot(path=debug_filename)
+                    logger.info(f"📸 Fill failure screenshot saved: {debug_filename}")
+                except Exception as screenshot_e:
+                    logger.debug(f"Failed to save fill failure screenshot: {screenshot_e}")
+                
                 return False
+        
+        logger.error(f"❌ Could not find element to fill: {semantic_type}")
         return False
     
     def get_text(self, semantic_type: str, timeout: int = 5000) -> Optional[str]:
@@ -657,4 +887,102 @@ class LocatorStrategy:
             )
         
         logger.info(f"Added {len(selectors)} custom selectors for {semantic_type} with {priority} priority")
+
+
+    
+    def click_by_text(self, semantic_type: str, text: str, timeout: int = 5000) -> bool:
+        """
+        Click element by text content using application-agnostic approach.
+        
+        Args:
+            semantic_type: Semantic type of element
+            text: Text content to search for
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            True if click succeeded, False otherwise
+        """
+        logger.info(f"🖱️ Attempting to click by text: '{text}' in {semantic_type}")
+        
+        # Try to find element by text first
+        element = self.find_element_by_text(semantic_type, text, timeout)
+        if element:
+            try:
+                element.click(timeout=timeout)
+                logger.info(f"✅ Successfully clicked '{text}' in {semantic_type}")
+                return True
+            except Exception as e:
+                logger.error(f"❌ Failed to click '{text}' in {semantic_type}: {str(e)}")
+                return False
+        
+        # Fallback: try generic text-based selectors that work with any application
+        generic_text_selectors = [
+            f"text='{text}'",
+            f"text={text}",
+            f"[aria-label*='{text}' i]",
+            f"[title*='{text}' i]",
+            f"*:has-text('{text}')",
+            f"button:has-text('{text}')",
+            f"a:has-text('{text}')",
+            f"span:has-text('{text}')",
+            f"div:has-text('{text}')"
+        ]
+        
+        for selector in generic_text_selectors:
+            try:
+                logger.debug(f"🎯 Trying generic text selector: {selector}")
+                locator = self.page.locator(selector)
+                
+                if locator.count() > 0:
+                    first_locator = locator.first
+                    if first_locator.is_visible(timeout=1000):
+                        first_locator.click(timeout=timeout)
+                        logger.info(f"✅ Successfully clicked '{text}' using generic selector: {selector}")
+                        return True
+                        
+            except Exception as e:
+                logger.debug(f"Generic text selector failed {selector}: {e}")
+                continue
+        
+        logger.warning(f"❌ Could not click '{text}' in {semantic_type} using any method")
+        return False
+    
+    def is_visible_by_text(self, semantic_type: str, text: str, timeout: int = 5000) -> bool:
+        """
+        Check if element with specific text is visible using application-agnostic approach.
+        
+        Args:
+            semantic_type: Semantic type of element
+            text: Text content to search for
+            timeout: Timeout in milliseconds
+            
+        Returns:
+            True if element is visible, False otherwise
+        """
+        logger.debug(f"👁️ Checking visibility by text: '{text}' in {semantic_type}")
+        
+        # Try semantic type first
+        element = self.find_element_by_text(semantic_type, text, timeout)
+        if element:
+            return True
+        
+        # Fallback: try generic text-based visibility check
+        generic_text_selectors = [
+            f"text='{text}'",
+            f"text={text}",
+            f"*:has-text('{text}')"
+        ]
+        
+        for selector in generic_text_selectors:
+            try:
+                locator = self.page.locator(selector)
+                if locator.count() > 0 and locator.first.is_visible(timeout=1000):
+                    logger.debug(f"✅ Found visible text '{text}' using: {selector}")
+                    return True
+            except Exception as e:
+                logger.debug(f"Text visibility check failed {selector}: {e}")
+                continue
+        
+        logger.debug(f"❌ Text '{text}' not visible in {semantic_type}")
+        return False
 

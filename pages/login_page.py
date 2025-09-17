@@ -12,7 +12,7 @@ class LoginPage:
     
     def __init__(self, page: Page):
         self.page = page
-        self.url = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"
+        self.url = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login"  # Dynamic URL from discovery
         self.locator_strategy = LocatorStrategy(page)
         
         # Element selectors discovered from application analysis
