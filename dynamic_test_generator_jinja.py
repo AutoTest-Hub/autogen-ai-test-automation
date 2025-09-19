@@ -12,6 +12,7 @@ import json
 import logging
 import argparse
 import asyncio
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
@@ -309,6 +310,35 @@ class BasePage:
                 with open(base_page_path, 'w') as f:
                     f.write(base_page)
     
+    def sanitize_name(self, name: str) -> str:
+        """
+        Sanitize a name for use in file names and identifiers
+        
+        Args:
+            name: Name to sanitize
+            
+        Returns:
+            Sanitized name
+        """
+        # Replace special characters with underscores
+        sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+        
+        # Remove consecutive underscores
+        sanitized = re.sub(r'_+', '_', sanitized)
+        
+        # Remove leading and trailing underscores
+        sanitized = sanitized.strip('_')
+        
+        # Ensure it starts with a letter or underscore
+        if sanitized and not sanitized[0].isalpha() and sanitized[0] != '_':
+            sanitized = 'page_' + sanitized
+            
+        # If empty, use a default name
+        if not sanitized:
+            sanitized = 'page'
+            
+        return sanitized
+    
     def generate_test_file(self, 
                           test_name: str, 
                           test_description: str, 
@@ -330,12 +360,16 @@ class BasePage:
         """
         logger.info("Generating test file for {}".format(test_name))
         
+        # Sanitize names
+        sanitized_test_name = self.sanitize_name(test_name)
+        sanitized_page_name = self.sanitize_name(page_name)
+        
         # Prepare variables
-        test_class = "Test{}".format(test_name.replace('_', ' ').title().replace(' ', ''))
-        test_function = test_name.lower().replace(' ', '_')
-        page_class = "{}Page".format(page_name.replace('_', ' ').title().replace(' ', ''))
-        page_module = page_name.lower().replace(' ', '_') + "_page"
-        page_var = page_name.lower().replace(' ', '_') + "_page"
+        test_class = "Test{}".format(sanitized_test_name.replace('_', ' ').title().replace(' ', ''))
+        test_function = sanitized_test_name.lower()
+        page_class = "{}Page".format(sanitized_page_name.replace('_', ' ').title().replace(' ', ''))
+        page_module = sanitized_page_name.lower() + "_page"
+        page_var = sanitized_page_name.lower() + "_page"
         
         # Generate test steps
         steps_code = []
@@ -408,8 +442,11 @@ class BasePage:
         """
         logger.info("Generating page object for {}".format(page_name))
         
+        # Sanitize page name
+        sanitized_page_name = self.sanitize_name(page_name)
+        
         # Prepare variables
-        page_class = "{}Page".format(page_name.replace('_', ' ').title().replace(' ', ''))
+        page_class = "{}Page".format(sanitized_page_name.replace('_', ' ').title().replace(' ', ''))
         
         # Generate element selectors
         element_selectors = []
@@ -417,21 +454,21 @@ class BasePage:
         # Process inputs
         for input_el in elements.get("inputs", []):
             name = input_el.get("id") or input_el.get("name") or "{}_{}".format(input_el.get('type', 'input'), len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             selector = input_el.get("css", "")
             element_selectors.append('        self.{}_selector = "{}"'.format(name, selector))
         
         # Process buttons
         for button in elements.get("buttons", []):
             name = button.get("id") or button.get("text", "").lower().replace(' ', '_') or "button_{}".format(len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             selector = button.get("css", "")
             element_selectors.append('        self.{}_selector = "{}"'.format(name, selector))
         
         # Process links
         for link in elements.get("links", []):
             name = link.get("id") or link.get("text", "").lower().replace(' ', '_') or "link_{}".format(len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             selector = link.get("css", "")
             element_selectors.append('        self.{}_selector = "{}"'.format(name, selector))
         
@@ -442,7 +479,7 @@ class BasePage:
         element_methods.append("    # Input methods")
         for input_el in elements.get("inputs", []):
             name = input_el.get("id") or input_el.get("name") or "{}_{}".format(input_el.get('type', 'input'), len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             method_name = "fill_{}".format(name)
             
             method_code = """
@@ -461,7 +498,7 @@ class BasePage:
         element_methods.append("\n    # Button methods")
         for button in elements.get("buttons", []):
             name = button.get("id") or button.get("text", "").lower().replace(' ', '_') or "button_{}".format(len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             method_name = "click_{}".format(name)
             
             method_code = """
@@ -475,7 +512,7 @@ class BasePage:
         element_methods.append("\n    # Link methods")
         for link in elements.get("links", []):
             name = link.get("id") or link.get("text", "").lower().replace(' ', '_') or "link_{}".format(len(element_selectors) + 1)
-            name = name.lower().replace('-', '_').replace(' ', '_')
+            name = self.sanitize_name(name)
             method_name = "click_{}".format(name)
             
             method_code = """
@@ -496,7 +533,7 @@ class BasePage:
         )
         
         # Write page object file
-        page_file_path = self.pages_dir / "{}_page.py".format(page_name.lower().replace(' ', '_'))
+        page_file_path = self.pages_dir / "{}_page.py".format(sanitized_page_name.lower())
         with open(page_file_path, 'w') as f:
             f.write(page_content)
         
@@ -555,7 +592,7 @@ class BasePage:
             generated_files["page_objects"].append(page_file)
             
             # Generate test file
-            test_name = "{}_test".format(page_name.lower().replace(' ', '_'))
+            test_name = "{}_test".format(self.sanitize_name(page_name).lower())
             test_description = "Test for {} page".format(page_name)
             
             # Create test steps

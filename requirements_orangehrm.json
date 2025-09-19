@@ -1,6 +1,45 @@
 {
-    "application_url": "https://opensource-demo.orangehrmlive.com/",
-    "test_cases": [
-        "Test the login functionality with valid credentials."
-    ]
+  "application_url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "base_url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "application_name": "OrangeHRM Demo",
+  "application_type": "Enterprise HR System",
+  "framework_options": {
+    "use_page_objects": false,
+    "page_object_pattern": "standard",
+    "locator_strategy": "direct",
+    "test_generation_approach": "application_agnostic"
+  },
+  "test_requirements": [
+    {
+      "category": "Authentication",
+      "test_cases": [
+        "Valid login with correct credentials",
+        "Invalid login with error validation",
+        "User logout with redirect validation"
+      ]
+    },
+    {
+      "category": "Navigation", 
+      "test_cases": [
+        "Dashboard navigation with comprehensive validations"
+      ]
+    }
+  ],
+  "test_environment": {
+    "browser": "chrome",
+    "headless": true,
+    "timeout": 30000,
+    "test_data": {
+      "valid_username": "Admin",
+      "valid_password": "admin123",
+      "invalid_username": "InvalidUser",
+      "invalid_password": "wrongpass"
+    }
+  },
+  "application_specific_config": {
+    "login_url": "/web/index.php/auth/login",
+    "dashboard_url": "/web/index.php/dashboard/index",
+    "logout_url": "/web/index.php/auth/logout"
+  }
 }
+

@@ -221,3 +221,23 @@ test_results/
 # Old log files - should not be committed
 test_execution_*.log
 test_evidence_*.png
+
+# Auto-generated test files - should not be committed
+tests/test_*.py
+pages/*_page.py
+!pages/__init__.py
+
+# Auto-generated configuration files
+conftest.py
+pytest.ini
+
+# Test execution artifacts
+test_failure_*.png
+test_success_*.png
+navigation_*.png
+valid_login_success_*.png
+real_browser_discovery_test_results_*.json
+
+# Temporary fix files - should not be committed
+fix_*.py
+

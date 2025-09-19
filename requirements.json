@@ -1,101 +1,45 @@
 {
-  "project": "OrangeHRM Test Automation",
-  "version": "1.0.0",
-  "description": "Automated testing for OrangeHRM web application",
-  "url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "application_url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "base_url": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+  "application_name": "OrangeHRM Demo",
+  "application_type": "Enterprise HR System",
+  "framework_options": {
+    "use_page_objects": false,
+    "page_object_pattern": "standard",
+    "locator_strategy": "direct",
+    "test_generation_approach": "application_agnostic"
+  },
   "test_requirements": [
     {
-      "id": "REQ-001",
-      "name": "Login Functionality",
-      "priority": "High",
+      "category": "Authentication",
       "test_cases": [
-        {
-          "id": "TC-001",
-          "name": "Valid Login",
-          "description": "Test login with valid credentials",
-          "steps": [
-            "Navigate to login page",
-            "Enter valid username",
-            "Enter valid password",
-            "Click login button",
-            "Verify successful login"
-          ],
-          "expected_result": "User should be logged in and redirected to dashboard",
-          "priority": "Critical"
-        },
-        {
-          "id": "TC-002",
-          "name": "Invalid Login",
-          "description": "Test login with invalid credentials",
-          "steps": [
-            "Navigate to login page",
-            "Enter invalid username",
-            "Enter invalid password",
-            "Click login button",
-            "Verify error message"
-          ],
-          "expected_result": "Error message should be displayed and user remains on login page",
-          "priority": "High"
-        },
-        {
-          "id": "TC-003",
-          "name": "Empty Credentials",
-          "description": "Test login with empty credentials",
-          "steps": [
-            "Navigate to login page",
-            "Leave username empty",
-            "Leave password empty",
-            "Click login button",
-            "Verify validation messages"
-          ],
-          "expected_result": "Validation messages should be displayed for required fields",
-          "priority": "Medium"
-        }
+        "Valid login with correct credentials",
+        "Invalid login with error validation",
+        "User logout with redirect validation"
       ]
     },
     {
-      "id": "REQ-002",
-      "name": "Navigation",
-      "priority": "Medium",
+      "category": "Navigation", 
       "test_cases": [
-        {
-          "id": "TC-004",
-          "name": "Main Menu Navigation",
-          "description": "Test navigation through main menu items",
-          "steps": [
-            "Login with valid credentials",
-            "Click on each main menu item",
-            "Verify correct page loads",
-            "Verify page title and content"
-          ],
-          "expected_result": "Each menu item should navigate to the correct page",
-          "priority": "High"
-        },
-        {
-          "id": "TC-005",
-          "name": "Logout",
-          "description": "Test logout functionality",
-          "steps": [
-            "Login with valid credentials",
-            "Click on user dropdown",
-            "Click logout",
-            "Verify redirect to login page"
-          ],
-          "expected_result": "User should be logged out and redirected to login page",
-          "priority": "High"
-        }
+        "Dashboard navigation with comprehensive validations"
       ]
     }
   ],
   "test_environment": {
-    "browsers": ["Chrome", "Firefox", "Safari"],
-    "viewport_sizes": ["Desktop", "Tablet", "Mobile"],
+    "browser": "chrome",
+    "headless": true,
+    "timeout": 30000,
     "test_data": {
       "valid_username": "Admin",
       "valid_password": "admin123",
-      "invalid_username": "invalid_user",
-      "invalid_password": "invalid_password"
+      "invalid_username": "InvalidUser",
+      "invalid_password": "wrongpass"
     }
+  },
+  "application_specific_config": {
+    "login_url": "/web/index.php/auth/login",
+    "dashboard_url": "/web/index.php/dashboard/index",
+    "logout_url": "/web/index.php/auth/logout"
   }
 }
 

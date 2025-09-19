@@ -1,0 +1,28 @@
+{
+  "application_url": "https://automationexercise.com/",
+  "application_name": "AutomationExercise E-commerce",
+  "application_type": "e-commerce",
+  "test_cases": [
+    "Browse products without login",
+    "Search for specific products",
+    "View product details and information"
+  ],
+  "framework_options": {
+    "use_page_objects": false,
+    "page_object_pattern": "standard",
+    "locator_strategy": "direct",
+    "test_generation_approach": "application_agnostic"
+  },
+  "application_specific_config": {
+    "base_url": "https://automationexercise.com",
+    "products_url": "https://automationexercise.com/products",
+    "search_terms": ["Blue Top", "Dress", "Jeans"],
+    "categories": ["Women", "Men", "Kids"],
+    "expected_elements": {
+      "navigation": ["Home", "Products", "Cart", "Signup / Login"],
+      "ecommerce": ["Search Product", "Category", "Brands", "View Product"],
+      "products": ["Add to cart", "Product name", "Price", "Details"]
+    }
+  }
+}
+
