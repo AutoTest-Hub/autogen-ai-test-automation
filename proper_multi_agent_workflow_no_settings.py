@@ -1,6 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
+import argparse
 
 from agents.planning_agent import PlanningAgent
 from agents.test_creation_agent import EnhancedTestCreationAgent
@@ -9,14 +10,14 @@ from agents.review_agent import ReviewAgent
 from agents.reporting_agent import ReportingAgent
 from agents.real_browser_discovery_agent_fixed import RealBrowserDiscoveryAgent
 
-class ProperMultiAgentWorkflow:
-    def __init__(self, planning_agent=None, test_creation_agent=None, execution_agent=None, review_agent=None, reporting_agent=None, discovery_agent=None):
-        self.planning_agent = planning_agent or PlanningAgent()
-        self.test_creation_agent = test_creation_agent or EnhancedTestCreationAgent()
-        self.execution_agent = execution_agent or ExecutionAgent()
-        self.review_agent = review_agent or ReviewAgent()
-        self.reporting_agent = reporting_agent or ReportingAgent()
-        self.discovery_agent = discovery_agent or RealBrowserDiscoveryAgent()
+class ProperMultiAgentWorkflowNoSettings:
+    def __init__(self):
+        self.planning_agent = PlanningAgent()
+        self.test_creation_agent = EnhancedTestCreationAgent()
+        self.execution_agent = ExecutionAgent()
+        self.review_agent = ReviewAgent()
+        self.reporting_agent = ReportingAgent()
+        self.discovery_agent = RealBrowserDiscoveryAgent()
 
     async def run(self, requirements_path: str):
         with open(requirements_path, "r") as f:
@@ -30,8 +31,12 @@ class ProperMultiAgentWorkflow:
         await self.reporting_agent.process_task(review_result)
 
 async def main():
-    workflow = ProperMultiAgentWorkflow()
-    await workflow.run("requirements.json")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--requirements", required=True, help="Path to the requirements.json file")
+    args = parser.parse_args()
+
+    workflow = ProperMultiAgentWorkflowNoSettings()
+    await workflow.run(args.requirements)
 
 if __name__ == "__main__":
     asyncio.run(main())

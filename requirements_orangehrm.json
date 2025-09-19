@@ -1,0 +1,6 @@
+{
+    "application_url": "https://opensource-demo.orangehrmlive.com/",
+    "test_cases": [
+        "Test the login functionality with valid credentials."
+    ]
+}

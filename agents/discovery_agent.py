@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 from urllib.parse import urljoin, urlparse
 
-from agents.base_agent import BaseTestAgent
+from .base_agent import BaseTestAgent
 
 
 class DiscoveryAgent(BaseTestAgent):

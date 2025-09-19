@@ -12,7 +12,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 import base64
 
-from .base_agent import BaseTestAgent
+from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole, TestFramework
 
 
