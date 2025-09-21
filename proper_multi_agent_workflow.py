@@ -1020,6 +1020,21 @@ def browser_setup(request):
             command.extend(test_paths)
             command.append("-v")
             
+            # Add HTML and JSON report generation
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            html_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.html"
+            json_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.json"
+            
+            # Ensure the reporting directory exists
+            os.makedirs("work_dir/reporting_agent", exist_ok=True)
+            
+            command.extend([
+                "--html", html_report_path,
+                "--self-contained-html",
+                "--json-report",
+                "--json-report-file", json_report_path
+            ])
+            
             # Add headless option
             if headless:
                 command.append("--headless")
@@ -1044,12 +1059,14 @@ def browser_setup(request):
             # Create execution results
             execution_results = {
                 "name": review_results.get("name", "Unknown"),
-                "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
+                "timestamp": timestamp,
                 "test_paths": test_paths,
                 "return_code": return_code,
                 "stdout": stdout,
                 "stderr": stderr,
-                "success": return_code == 0
+                "success": return_code == 0,
+                "pytest_html_report": html_report_path,
+                "pytest_json_report": json_report_path
             }
             
             return execution_results
@@ -1286,8 +1303,15 @@ async def main():
             report_summary = report_data['report'].get('executive_summary', {})
             print(f"- Total Tests: {report_summary.get('total_tests', 'N/A')}")
             print(f"- Success Rate: {report_summary.get('success_rate', 'N/A')}")
-        print(f"- HTML Report: {report_data.get('html_report_path', report_data.get('html_report', ''))}")
-        print(f"- JSON Report: {report_data.get('json_report_path', '')}")
+        print(f"- Custom HTML Report: {report_data.get('html_report_path', report_data.get('html_report', ''))}")
+        print(f"- Custom JSON Report: {report_data.get('json_report_path', '')}")
+        
+        # Also show pytest reports if available
+        exec_data = workflow_results['execution_results']
+        if 'pytest_html_report' in exec_data:
+            print(f"- Pytest HTML Report: {exec_data['pytest_html_report']}")
+        if 'pytest_json_report' in exec_data:
+            print(f"- Pytest JSON Report: {exec_data['pytest_json_report']}")
     
     print("\nWorkflow completed!")
 

@@ -42,7 +42,7 @@ fi
 
 # Install required packages
 echo "Installing required packages..."
-pip install pytest pytest-asyncio playwright pyautogen
+pip install pytest pytest-asyncio pytest-html pytest-json-report playwright pyautogen
 
 # Install Playwright browsers
 echo "Installing Playwright browsers..."
@@ -60,10 +60,22 @@ fi
 if [ $? -eq 0 ]; then
   echo "Workflow completed successfully!"
   
-  # Open the HTML report if it exists
-  REPORT=$(find work_dir/reporting_agent -name "test_report_*.html" | sort -r | head -n 1)
+  # Open the HTML report if it exists (prioritize pytest reports)
+  PYTEST_REPORT=$(find work_dir/reporting_agent -name "pytest_report_*.html" | sort -r | head -n 1)
+  CUSTOM_REPORT=$(find work_dir/reporting_agent -name "test_report_*.html" | sort -r | head -n 1)
+  
+  if [ -n "$PYTEST_REPORT" ]; then
+    REPORT="$PYTEST_REPORT"
+    echo "Opening Pytest HTML report: $REPORT"
+  elif [ -n "$CUSTOM_REPORT" ]; then
+    REPORT="$CUSTOM_REPORT"
+    echo "Opening Custom HTML report: $REPORT"
+  else
+    echo "No HTML report found in work_dir/reporting_agent/"
+    REPORT=""
+  fi
+  
   if [ -n "$REPORT" ]; then
-    echo "Opening HTML report: $REPORT"
     if command -v xdg-open &> /dev/null; then
       xdg-open "$REPORT"
     elif command -v open &> /dev/null; then
@@ -71,8 +83,6 @@ if [ $? -eq 0 ]; then
     else
       echo "Could not open HTML report automatically. Please open it manually: $REPORT"
     fi
-  else
-    echo "No HTML report found in work_dir/reporting_agent/"
   fi
 else
   echo "Workflow failed!"
