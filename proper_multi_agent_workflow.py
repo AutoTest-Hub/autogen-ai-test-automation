@@ -30,6 +30,12 @@ from agents.review_agent import ReviewAgent
 from agents.execution_agent import ExecutionAgent
 from agents.reporting_agent import ReportingAgent
 
+# Import enhanced agents and utilities
+from agents.enhanced_discovery_agent import create_enhanced_discovery_agent
+from agents.integrated_test_generator import create_integrated_test_generator
+from utils.step_generator import create_step_generator
+from utils.intelligent_flow_handler import create_intelligent_flow_handler
+
 # Import settings
 from config.settings import settings, AgentRole, LLMProvider
 
@@ -50,6 +56,9 @@ class ProperMultiAgentWorkflow:
         # Initialize local AI provider
         self.local_ai_provider = LocalAIProvider()
         
+        # Load requirements configuration if available
+        self.requirements_config = self._load_requirements_config()
+        
         # Initialize agents
         self.logger.info("Initializing agents...")
         self.planning_agent = PlanningAgent(local_ai_provider=self.local_ai_provider)
@@ -58,6 +67,51 @@ class ProperMultiAgentWorkflow:
         self.review_agent = ReviewAgent(local_ai_provider=self.local_ai_provider)
         self.execution_agent = ExecutionAgent(local_ai_provider=self.local_ai_provider)
         self.reporting_agent = ReportingAgent(local_ai_provider=self.local_ai_provider)
+        
+        # Initialize enhanced agents and utilities
+        self.logger.info("Initializing enhanced three-tier system...")
+        self.enhanced_discovery_agent = create_enhanced_discovery_agent()
+        self.integrated_test_generator = create_integrated_test_generator()
+        self.step_generator = create_step_generator()
+        self.flow_handler = create_intelligent_flow_handler()
+        
+        # Flag to use enhanced features
+        self.use_enhanced_features = True
+    
+    def _load_requirements_config(self) -> Optional[Dict[str, Any]]:
+        """Load requirements configuration from JSON files"""
+        # First check for active requirements file (set by shell script)
+        active_req_file = 'active_requirements.json'
+        if Path(active_req_file).exists():
+            try:
+                with open(active_req_file, 'r') as f:
+                    config = json.load(f)
+                    self.logger.info(f"✅ Loaded enhanced requirements configuration from {active_req_file}")
+                    self.logger.info(f"Application Type: {config.get('application_type', 'unknown')}")
+                    self.logger.info(f"Test Scenarios: {len(config.get('test_scenarios', {}))}")
+                    return config
+            except Exception as e:
+                self.logger.warning(f"Error loading {active_req_file}: {e}")
+        
+        # Fallback to auto-detection
+        requirements_files = [
+            'requirements_ecommerce.json',
+            'requirements_hrms.json', 
+            'requirements_banking.json'
+        ]
+        
+        for req_file in requirements_files:
+            if Path(req_file).exists():
+                try:
+                    with open(req_file, 'r') as f:
+                        config = json.load(f)
+                        self.logger.info(f"Loaded requirements configuration from {req_file}")
+                        return config
+                except Exception as e:
+                    self.logger.warning(f"Error loading {req_file}: {e}")
+        
+        self.logger.info("⚠️  No requirements configuration found, using basic workflow")
+        return None
     
     async def run(self, url: str, name: str, headless: bool = True) -> Dict[str, Any]:
         """
