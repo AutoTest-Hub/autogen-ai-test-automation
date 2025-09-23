@@ -23,7 +23,7 @@ class TestMainMenuNavigation:
             page_obj = DashboardPage(page)
             
             # Navigate to application
-            page.goto("https://demo.automationexercise.com")
+            page.goto("https://demo.testfire.net")
             page.wait_for_load_state("networkidle")
             
             # Execute test steps with discovered selectors
