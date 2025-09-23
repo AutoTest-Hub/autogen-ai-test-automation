@@ -549,3 +549,43 @@ Press Ctrl+C to stop the server
 
 if __name__ == "__main__":
     main()
+
+
+
+# --- Advanced AI Endpoints ---
+@app.post("/ai/self-heal", tags=["Advanced AI"])
+async def self_heal_test(request: SelfHealRequest, token: str = Depends(oauth2_scheme)):
+    user = await get_current_user(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    result = await run_self_healing(request.test_file_path, request.error_log)
+    return result
+
+@app.post("/ai/prioritize-tests", tags=["Advanced AI"])
+async def prioritize_tests(request: PrioritizeRequest, token: str = Depends(oauth2_scheme)):
+    user = await get_current_user(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    result = await run_test_prioritization(request.test_files, request.requirements_config)
+    return result
+
+@app.post("/ai/cross-browser-plan", tags=["Advanced AI"])
+async def cross_browser_plan(request: CrossBrowserPlanRequest, token: str = Depends(oauth2_scheme)):
+    user = await get_current_user(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    result = await run_cross_browser_planning(request.requirements_config)
+    return result
+
+@app.post("/ai/predict-performance", tags=["Advanced AI"])
+async def predict_performance(request: PerformancePredictionRequest, token: str = Depends(oauth2_scheme)):
+    user = await get_current_user(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    result = await run_performance_prediction(request.requirements_config, request.test_results)
+    return result
+

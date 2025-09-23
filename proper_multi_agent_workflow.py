@@ -1372,3 +1372,29 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
+
+
+
+# --- Advanced AI Agents ---
+from agents.self_healing_agent import SelfHealingAgent
+from agents.prioritization_agent import PrioritizationAgent
+from agents.cross_browser_agent import CrossBrowserAgent
+from agents.performance_agent import PerformanceAgent
+
+# --- Workflow Enhancements ---
+async def run_self_healing(test_file_path, error_log):
+    agent = SelfHealingAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.analyze_and_heal(test_file_path, error_log)
+
+async def run_test_prioritization(test_files, requirements_config):
+    agent = PrioritizationAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.prioritize_tests(test_files, requirements_config)
+
+async def run_cross_browser_planning(requirements_config):
+    agent = CrossBrowserAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.generate_cross_browser_plan(requirements_config)
+
+async def run_performance_prediction(requirements_config, test_results):
+    agent = PerformanceAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.predict_performance_bottlenecks(requirements_config, test_results)
+

@@ -266,3 +266,22 @@ class ExportResponse(BaseModel):
     export_id: str
     download_url: str
     expires_at: datetime
+
+
+
+# --- Advanced AI Request Models ---
+class SelfHealRequest(BaseModel):
+    test_file_path: str
+    error_log: str
+
+class PrioritizeRequest(BaseModel):
+    test_files: List[str]
+    requirements_config: Dict[str, Any]
+
+class CrossBrowserPlanRequest(BaseModel):
+    requirements_config: Dict[str, Any]
+
+class PerformancePredictionRequest(BaseModel):
+    requirements_config: Dict[str, Any]
+    test_results: Dict[str, Any]
+
