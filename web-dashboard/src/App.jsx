@@ -17,6 +17,7 @@ import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResults'
 import TestManagement from './components/TestManagement'
 import TestManagementWorking from './components/TestManagementWorking'
+import TestManagementReal from './components/TestManagementReal'
 import Requirements from './components/Requirements'
 import Settings from './components/Settings'
 import Login from './components/Login'
@@ -201,6 +202,22 @@ function AppContent() {
                       <Dashboard 
                         user={user} 
                         systemInfo={systemInfo}
+                        deploymentMode={deploymentMode}
+                        onNavigate={(page) => window.location.hash = `#/${page}`} 
+                      />
+                    </motion.div>
+                  } />
+                  
+                  <Route path="/test-management" element={
+                    <motion.div
+                      key="test-management"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <TestManagementReal 
+                        user={user} 
                         deploymentMode={deploymentMode}
                         onNavigate={(page) => window.location.hash = `#/${page}`} 
                       />

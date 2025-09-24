@@ -392,150 +392,109 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
               // Create display for all agents in sequence
               return agentSequence.map((agentType) => {
                 const activity = agentGroups[agentType];
+                const agentDisplay = getAgentTypeDisplay(agentType);
                 
                 // If no activity for this agent yet, show as pending
                 if (!activity) {
-                  const agentDisplay = getAgentTypeDisplay(agentType);
                   return (
                     <div
                       key={agentType}
-                      className="border rounded-lg p-4 border-gray-200 bg-gray-50 opacity-60"
+                      className="border rounded-lg p-4 border-gray-200 bg-gray-50"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                          <span className="font-medium text-gray-600">{agentDisplay.name}</span>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm`}>
+                            {agentDisplay.icon}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-600">{agentDisplay.name}</h4>
+                          </div>
                         </div>
                         <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
                           Pending
                         </span>
                       </div>
-                      <p className="text-sm text-gray-500">Waiting to start...</p>
+                      <p className="text-sm text-gray-500 mb-2">Waiting to start...</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-gray-400 h-2 rounded-full" style={{ width: '0%' }}></div>
+                      </div>
                     </div>
                   );
                 }
                 
-                // Show actual activity
-                return activity;
-              }).filter(Boolean);
-            })().map((activity, index) => {
-              if (typeof activity !== 'object' || !activity.agent_type) {
-                return activity; // Return pending agent display as-is
-              }
-              
-              const statusDisplay = getStatusDisplay(activity.status);
-              const agentDisplay = getAgentTypeDisplay(activity.agent_type);
-              const StatusIcon = statusDisplay.icon;
-              
-              return (
-                <div
-                  key={activity.agent_type || index}
-                  className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
-                    selectedActivity?.id === activity.id 
-                      ? 'border-blue-500 bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedActivity(
-                    selectedActivity?.id === activity.id ? null : activity
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      {/* Agent Type Badge */}
-                      <div className={`w-8 h-8 ${agentDisplay.color} rounded-full flex items-center justify-center text-white text-sm`}>
-                        {agentDisplay.icon}
+                // Show actual activity with real-time status
+                const statusDisplay = getStatusDisplay(activity.status);
+                const StatusIcon = statusDisplay.icon;
+                const progress = activity.progress || 0;
+                
+                return (
+                  <div
+                    key={activity.agent_type}
+                    className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
+                      selectedActivity?.id === activity.id 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : statusDisplay.bgColor
+                    }`}
+                    onClick={() => setSelectedActivity(
+                      selectedActivity?.id === activity.id ? null : activity
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 ${agentDisplay.color} rounded-full flex items-center justify-center text-white text-sm`}>
+                          {agentDisplay.icon}
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-900">{agentDisplay.name}</h4>
+                        </div>
                       </div>
-                      
-                      <div>
-                        <h4 className="font-medium text-gray-900">
-                          {agentDisplay.name}
-                        </h4>
-                        <p className="text-sm text-gray-500">
-                          {activity.current_step || 'Waiting...'}
-                        </p>
+                      <div className="flex items-center space-x-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${statusDisplay.bgColor} ${statusDisplay.textColor}`}>
+                          {activity.status === 'running' ? 'Processing' : statusDisplay.label}
+                        </span>
+                        <StatusIcon className={`w-4 h-4 ${statusDisplay.iconColor}`} />
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-3">
-                      {/* Progress */}
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${activity.progress}%` }}
-                          />
-                        </div>
-                        <span className="text-sm text-gray-600 min-w-[3rem]">
-                          {activity.progress}%
-                        </span>
-                      </div>
-                      
-                      {/* Status */}
-                      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full ${statusDisplay.bgColor}`}>
-                        <StatusIcon className={`w-4 h-4 ${statusDisplay.color}`} />
-                        <span className={`text-xs font-medium ${statusDisplay.color} capitalize`}>
-                          {activity.status}
-                        </span>
-                      </div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {activity.message || activity.description || 'Processing...'}
+                    </p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          activity.status === 'completed' ? 'bg-green-500' :
+                          activity.status === 'running' ? 'bg-blue-500' :
+                          activity.status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      ></div>
                     </div>
+                    
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{progress}% completed</span>
+                      <span>{formatTimestamp(activity.created_at)}</span>
+                    </div>
+                    
+                    {selectedActivity?.id === activity.id && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="text-xs text-gray-600 space-y-1">
+                          <div><strong>Task ID:</strong> {activity.task_id}</div>
+                          <div><strong>Agent ID:</strong> {activity.agent_id}</div>
+                          <div><strong>Status:</strong> {activity.status}</div>
+                          {activity.error && (
+                            <div className="text-red-600">
+                              <strong>Error:</strong> {activity.error}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Expanded Details */}
-                  {selectedActivity?.id === activity.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">Task ID:</span>
-                          <p className="text-sm text-gray-600 font-mono">{activity.task_id}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">Duration:</span>
-                          <p className="text-sm text-gray-600">
-                            {activity.duration ? `${activity.duration.toFixed(1)}s` : 'In progress...'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">Steps:</span>
-                          <p className="text-sm text-gray-600">
-                            {activity.steps_completed} / {activity.total_steps}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">Started:</span>
-                          <p className="text-sm text-gray-600">
-                            {new Date(activity.start_time).toLocaleTimeString()}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Recent Logs */}
-                      {activity.logs && activity.logs.length > 0 && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Activity:</h5>
-                          <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
-                            {activity.logs.slice(-5).map((log, index) => (
-                              <div key={index} className="text-xs text-gray-600 mb-1">
-                                <span className="text-gray-400">
-                                  {new Date(log.timestamp).toLocaleTimeString()}
-                                </span>
-                                {' - '}
-                                <span className={
-                                  log.level === 'error' ? 'text-red-600' :
-                                  log.level === 'warning' ? 'text-yellow-600' :
-                                  'text-gray-600'
-                                }>
-                                  {log.message}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
             <div ref={activitiesEndRef} />
           </div>
         )}

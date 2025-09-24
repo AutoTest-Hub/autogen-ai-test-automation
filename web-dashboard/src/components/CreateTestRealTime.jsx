@@ -24,6 +24,7 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
   const [taskResult, setTaskResult] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showCompletionSuccess, setShowCompletionSuccess] = useState(false);
   
   // Form states for different creation types
   const [requirementsForm, setRequirementsForm] = useState({
@@ -295,17 +296,8 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
       
       localStorage.setItem('latest_test_suite', JSON.stringify(testSuiteData));
       
-      // Show brief success message and redirect to Test Management
-      alert('✅ Test suite created successfully! Redirecting to Test Management...');
-      
-      // Redirect to Test Management page
-      setTimeout(() => {
-        if (onNavigate) {
-          onNavigate('test-management');
-        } else {
-          window.location.hash = '#/test-management';
-        }
-      }, 1000);
+      // Show completion success state (no automatic redirect)
+      setShowCompletionSuccess(true);
       
     } else if (result.status === 'failed') {
       // Show error message
@@ -978,6 +970,50 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
         </div>
       </div>
 
+      {/* Completion Success Modal */}
+      {showCompletionSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                🎉 Test Suite Created Successfully!
+              </h3>
+              
+              <p className="text-gray-600 mb-6">
+                Your comprehensive test suite has been generated and is ready for use. 
+                You can now manage and execute your tests.
+              </p>
+              
+              <div className="flex flex-col space-y-3">
+                <button
+                  onClick={() => {
+                    setShowCompletionSuccess(false);
+                    if (onNavigate) {
+                      onNavigate('test-management');
+                    } else {
+                      window.location.hash = '#/test-management';
+                    }
+                  }}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Go to Test Management
+                </button>
+                
+                <button
+                  onClick={() => setShowCompletionSuccess(false)}
+                  className="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Stay Here
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
