@@ -195,19 +195,29 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
 
   // Handle quick start template selection
   const handleQuickStart = (template) => {
+    console.log('handleQuickStart called with template:', template.name);
+    
     const formData = {
       applicationUrl: template.url,
       applicationName: template.name,
       applicationType: template.type,
-      keyFeatures: template.features,
-      userFlows: template.flows,
+      keyFeatures: template.features || [''],
+      userFlows: template.flows || [''],
       priority: 'normal',
       generatePerformanceTests: false,
       generateCrossBrowserTests: false
     };
     
-    setUrlMetadataForm(formData);
+    console.log('Setting form data:', formData);
+    
+    // Force state update and tab switch
     setActiveTab('url_metadata');
+    setUrlMetadataForm(formData);
+    
+    // Additional debugging
+    setTimeout(() => {
+      console.log('Form state after update:', formData);
+    }, 100);
   };
 
   // Polling mechanism as fallback for WebSocket failures

@@ -187,7 +187,6 @@ function AppContent() {
             </div>
 
             <div className="p-6">
-              <AnimatePresence mode="wait">
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   
@@ -208,7 +207,7 @@ function AppContent() {
                     </motion.div>
                   } />
                   
-                  <Route path="/test-management" element={<div style={{padding: '40px', backgroundColor: '#e8f5e8', minHeight: '400px'}}><h1 style={{color: '#2c3e50', fontSize: '32px'}}>🎯 Test Management - ROUTE WORKING!</h1><p style={{fontSize: '18px', color: '#7f8c8d'}}>This confirms the route is now working correctly!</p></div>} />
+                  <Route path="/manage-tests" element={<TestResults user={user} deploymentMode={deploymentMode} />} />
                   
                   <Route path="/test-simple" element={
                     <div style={{ padding: '40px', backgroundColor: '#e8f5e8' }}>
@@ -384,7 +383,6 @@ function AppContent() {
                     </motion.div>
                   } />
                 </Routes>
-              </AnimatePresence>
             </div>
           </main>
         </div>

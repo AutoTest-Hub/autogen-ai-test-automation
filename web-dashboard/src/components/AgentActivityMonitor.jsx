@@ -375,23 +375,61 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
           </div>
         ) : (
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {/* Group activities by agent type and show the latest activity for each agent */}
-            {Object.entries(
-              filteredActivities.reduce((groups, activity) => {
+            {/* Show all 4 agents in sequence with their current status */}
+            {(() => {
+              // Define the expected agent sequence
+              const agentSequence = ['discovery', 'test_generation', 'code_generation', 'validation'];
+              
+              // Group activities by agent type and get the latest activity for each
+              const agentGroups = filteredActivities.reduce((groups, activity) => {
                 const agentType = activity.agent_type || 'unknown';
                 if (!groups[agentType] || new Date(activity.created_at) > new Date(groups[agentType].created_at)) {
                   groups[agentType] = activity;
                 }
                 return groups;
-              }, {})
-            ).map(([agentType, activity]) => {
+              }, {});
+              
+              // Create display for all agents in sequence
+              return agentSequence.map((agentType) => {
+                const activity = agentGroups[agentType];
+                
+                // If no activity for this agent yet, show as pending
+                if (!activity) {
+                  const agentDisplay = getAgentTypeDisplay(agentType);
+                  return (
+                    <div
+                      key={agentType}
+                      className="border rounded-lg p-4 border-gray-200 bg-gray-50 opacity-60"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          <span className="font-medium text-gray-600">{agentDisplay.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                          Pending
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">Waiting to start...</p>
+                    </div>
+                  );
+                }
+                
+                // Show actual activity
+                return activity;
+              }).filter(Boolean);
+            })().map((activity, index) => {
+              if (typeof activity !== 'object' || !activity.agent_type) {
+                return activity; // Return pending agent display as-is
+              }
+              
               const statusDisplay = getStatusDisplay(activity.status);
               const agentDisplay = getAgentTypeDisplay(activity.agent_type);
               const StatusIcon = statusDisplay.icon;
               
               return (
                 <div
-                  key={agentType}
+                  key={activity.agent_type || index}
                   className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
                     selectedActivity?.id === activity.id 
                       ? 'border-blue-500 bg-blue-50' 
