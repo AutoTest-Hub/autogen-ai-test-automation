@@ -7,8 +7,8 @@ import json
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, HTTPException
 from typing import Optional
-from .websocket_manager import manager, AgentType, AgentStatus
-from .auth import get_current_user_websocket
+from websocket_manager import manager, AgentType, AgentStatus
+from auth import get_current_user_websocket
 
 # Configure logging
 logger = logging.getLogger(__name__)

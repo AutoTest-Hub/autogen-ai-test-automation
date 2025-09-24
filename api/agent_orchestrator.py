@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any, Callable
 from enum import Enum
 import json
 
-from .websocket_manager import manager, AgentType, AgentStatus, AgentActivity
+from websocket_manager import manager, AgentType, AgentStatus, AgentActivity
 
 # Configure logging
 logger = logging.getLogger(__name__)

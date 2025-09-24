@@ -21,6 +21,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 
 # Import WebSocket and orchestration components
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from websocket_manager import manager, AgentType, AgentStatus
 from websocket_endpoints import router as websocket_router, create_agent_activity, simulate_agent_work
 from agent_orchestrator import orchestrator, TaskType, TaskPriority
