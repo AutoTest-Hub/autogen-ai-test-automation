@@ -49,6 +49,7 @@ const TestResults = ({ user }) => {
   const [wsConnection, setWsConnection] = useState(null)
   const [testSuites, setTestSuites] = useState([])
   const [activeTab, setActiveTab] = useState('suites')
+  const [mainTab, setMainTab] = useState('test-suites')
 
   useEffect(() => {
     loadTestSuites()
@@ -518,65 +519,178 @@ const TestResults = ({ user }) => {
       </div>
     )
   }
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="flex justify-between items-center"
       >
         <div>
-          <h1 className="text-3xl font-bold">Test Results</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Test Management & Results</h1>
           <p className="text-muted-foreground">
-            View and analyze your test execution results
+            Manage your test suites and view execution results
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1">
-            <BarChart3 className="w-3 h-3" />
-            {executions.length} executions
-          </Badge>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export All
-          </Button>
-        </div>
       </motion.div>
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex gap-4"
-      >
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search executions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="failed">Failed</TabsTrigger>
-            <TabsTrigger value="running">Running</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </motion.div>
+      {/* Main Tabs */}
+      <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="test-suites">Test Suites</TabsTrigger>
+          <TabsTrigger value="execution-history">Execution History</TabsTrigger>
+        </TabsList>
 
-      {/* Results Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
+        {/* Test Suites Tab */}
+        <TabsContent value="test-suites" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Generated Test Suites</h2>
+              <Button onClick={() => window.location.hash = '#/create-test'}>
+                Create New Tests
+              </Button>
+            </div>
+
+            {testSuites.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Test Suites Found</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    You haven't created any test suites yet. Start by creating your first AI-powered test suite.
+                  </p>
+                  <Button onClick={() => window.location.hash = '#/create-test'}>
+                    Create Your First Test Suite
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {testSuites.map((suite) => (
+                  <Card key={suite.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {suite.name}
+                            <Badge variant={suite.status === 'ready' ? 'default' : 'secondary'}>
+                              {suite.status}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>{suite.description}</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <Button size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Execute Tests
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Created:</span>
+                          <div className="font-medium">{new Date(suite.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Test Cases:</span>
+                          <div className="font-medium">{suite.test_cases?.length || 0}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Coverage:</span>
+                          <div className="font-medium">{suite.coverage || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Files:</span>
+                          <div className="font-medium">{suite.files?.length || 0}</div>
+                        </div>
+                      </div>
+                      
+                      {suite.files && suite.files.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-medium mb-2">Generated Files:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {suite.files.map((file, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {file.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </TabsContent>
+
+        {/* Execution History Tab */}
+        <TabsContent value="execution-history" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-between items-center"
+          >
+            <div>
+              <h2 className="text-xl font-semibold">Test Execution History</h2>
+              <p className="text-muted-foreground">View and analyze your test execution results</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <BarChart3 className="w-3 h-3" />
+                {executions.length} executions
+              </Badge>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export All
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-4"
+          >
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search executions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="failed">Failed</TabsTrigger>
+                <TabsTrigger value="running">Running</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </motion.div>
+
+          {/* Results Table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
         <Card>
           <CardHeader>
             <CardTitle>Execution History</CardTitle>
@@ -689,8 +803,10 @@ const TestResults = ({ user }) => {
               </Table>
             )}
           </CardContent>
-        </Card>
-      </motion.div>
+            </Card>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

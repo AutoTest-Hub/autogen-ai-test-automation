@@ -13,7 +13,7 @@ import {
   Eye,
   Sparkles
 } from 'lucide-react';
-import AgentActivityMonitor from './AgentActivityMonitor';
+import AgentActivityMonitor from './AgentActivityMonitorStable';
 import TaskCompletionSuccess from './TaskCompletionSuccess';
 
 const CreateTestRealTime = ({ user, onNavigate }) => {
