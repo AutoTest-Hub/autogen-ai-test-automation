@@ -35,10 +35,16 @@ const Sidebar = ({ open, onToggle, user, onLogout }) => {
       description: 'Overview & Analytics'
     },
     {
-      path: '/execute',
-      icon: Play,
-      label: 'Execute Tests',
-      description: 'Start New Test Run'
+      path: '/applications',
+      icon: Bot,
+      label: 'Applications',
+      description: 'Manage Your Apps'
+    },
+    {
+      path: '/create-test',
+      icon: Zap,
+      label: 'Create Tests',
+      description: 'AI-Powered Test Creation'
     },
     {
       path: '/results',
@@ -48,8 +54,8 @@ const Sidebar = ({ open, onToggle, user, onLogout }) => {
     },
     {
       path: '/requirements',
-      icon: Bot,
-      label: 'Requirements',
+      icon: Settings,
+      label: 'Templates',
       description: 'Manage Templates'
     },
     {

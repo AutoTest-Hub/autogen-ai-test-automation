@@ -6,6 +6,8 @@ import './App.css'
 // Components
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
+import Applications from './components/Applications'
+import CreateTest from './components/CreateTest'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResults'
 import Requirements from './components/Requirements'
@@ -100,7 +102,29 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <Dashboard user={user} />
+                      <Dashboard user={user} onNavigate={(page) => window.location.hash = `#/${page}`} />
+                    </motion.div>
+                  } />
+                  <Route path="/applications" element={
+                    <motion.div
+                      key="applications"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Applications user={user} onNavigate={(page) => window.location.hash = `#/${page}`} />
+                    </motion.div>
+                  } />
+                  <Route path="/create-test" element={
+                    <motion.div
+                      key="create-test"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <CreateTest user={user} onNavigate={(page) => window.location.hash = `#/${page}`} />
                     </motion.div>
                   } />
                   <Route path="/execute" element={
