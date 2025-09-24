@@ -222,3 +222,4 @@ test_results/
 # Old log files - should not be committed
 test_execution_*.log
 test_evidence_*.png
+web-dashboard/node_modules/
