@@ -12,6 +12,7 @@ import Dashboard from './components/Dashboard'
 import Applications from './components/Applications'
 import CreateTest from './components/CreateTest'
 import CreateTestAdvanced from './components/CreateTestAdvanced'
+import CreateTestRealTime from './components/CreateTestRealTime'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResults'
 import Requirements from './components/Requirements'
@@ -217,7 +218,7 @@ function AppContent() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <CreateTestAdvanced 
+                      <CreateTestRealTime 
                         user={user} 
                         deploymentMode={deploymentMode}
                         onNavigate={(page) => window.location.hash = `#/${page}`} 
