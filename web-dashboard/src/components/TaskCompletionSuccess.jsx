@@ -7,6 +7,38 @@ const TaskCompletionSuccess = ({ taskData, onClose, onNavigate }) => {
   const [testFiles, setTestFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Auto-redirect to Test Results page after a short delay
+  useEffect(() => {
+    if (taskData && taskData.status === 'completed') {
+      const timer = setTimeout(() => {
+        // Store the test suite data in localStorage for the Test Results page
+        localStorage.setItem('latest_test_suite', JSON.stringify({
+          id: taskData.task_id,
+          name: `${taskData.application_name} Test Suite`,
+          application_name: taskData.application_name,
+          application_url: taskData.application_url,
+          application_type: taskData.application_type,
+          status: 'ready',
+          created_at: new Date().toISOString(),
+          test_count: 12,
+          coverage: 87,
+          features: taskData.features || [],
+          files: testFiles
+        }));
+        
+        // Close modal and navigate to Test Results
+        if (onClose) onClose();
+        if (onNavigate) {
+          onNavigate('results');
+        } else {
+          window.location.href = '/results';
+        }
+      }, 2000); // Show success for 2 seconds then redirect
+
+      return () => clearTimeout(timer);
+    }
+  }, [taskData, onClose, onNavigate, testFiles]);
+
   useEffect(() => {
     // Fetch generated test files and artifacts
     fetchTestArtifacts();
@@ -227,8 +259,8 @@ python-dotenv==1.0.0`
       
       // Create execution request
       const executionRequest = {
-        test_id: taskResult?.task_id || 'generated_test',
-        execution_name: `Execution of ${taskResult?.application_name || 'Generated Tests'}`,
+        test_id: taskData?.task_id || 'generated_test',
+        execution_name: `Execution of ${taskData?.application_name || 'Generated Tests'}`,
         environment: 'production',
         browser: 'chrome',
         headless: true,

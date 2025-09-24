@@ -15,6 +15,7 @@ import CreateTestAdvanced from './components/CreateTestAdvanced'
 import CreateTestRealTime from './components/CreateTestRealTime'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResults'
+import TestManagement from './components/TestManagement'
 import Requirements from './components/Requirements'
 import Settings from './components/Settings'
 import Login from './components/Login'
@@ -247,6 +248,30 @@ function AppContent() {
                       transition={{ duration: 0.3 }}
                     >
                       <TestResults user={user} deploymentMode={deploymentMode} />
+                    </motion.div>
+                  } />
+                  
+                  <Route path="/test-results" element={
+                    <motion.div
+                      key="test-results"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <TestResults user={user} deploymentMode={deploymentMode} />
+                    </motion.div>
+                  } />
+                  
+                  <Route path="/test-management" element={
+                    <motion.div
+                      key="test-management"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <TestManagement user={user} deploymentMode={deploymentMode} />
                     </motion.div>
                   } />
                   

@@ -47,6 +47,12 @@ const Sidebar = ({ open, onToggle, user, onLogout }) => {
       description: 'AI-Powered Test Creation'
     },
     {
+      path: '/test-management',
+      icon: Play,
+      label: 'Test Management',
+      description: 'Manage & Execute Tests'
+    },
+    {
       path: '/results',
       icon: FileText,
       label: 'Test Results',

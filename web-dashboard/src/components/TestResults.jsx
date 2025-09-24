@@ -47,8 +47,11 @@ const TestResults = ({ user }) => {
   const [statusFilter, setStatusFilter] = useState('all')
   const [realTimeExecutions, setRealTimeExecutions] = useState(new Map())
   const [wsConnection, setWsConnection] = useState(null)
+  const [testSuites, setTestSuites] = useState([])
+  const [activeTab, setActiveTab] = useState('suites')
 
   useEffect(() => {
+    loadTestSuites()
     loadExecutions()
     setupWebSocketConnection()
     
@@ -154,6 +157,61 @@ const TestResults = ({ user }) => {
         })
         setTimeout(loadExecutions, 1000)
         break
+    }
+  }
+
+  const loadTestSuites = async () => {
+    try {
+      // Load existing test suites (mock data for now)
+      const mockSuites = []
+      
+      // Check for latest test suite from localStorage
+      const latestSuiteData = localStorage.getItem('latest_test_suite')
+      if (latestSuiteData) {
+        try {
+          const latestSuite = JSON.parse(latestSuiteData)
+          mockSuites.push(latestSuite)
+          // Clear it after loading to avoid duplicates
+          localStorage.removeItem('latest_test_suite')
+        } catch (e) {
+          console.error('Error parsing latest test suite:', e)
+        }
+      }
+      
+      // Add default HRMS demo if no suites exist
+      if (mockSuites.length === 0) {
+        mockSuites.push({
+          id: '294971fc-903e-4c58-9135-b07bc261827d',
+          name: 'HRMS Demo Test Suite',
+          application_name: 'HRMS Demo',
+          application_url: 'https://opensource-demo.orangehrmlive.com',
+          application_type: 'HRMS',
+          status: 'ready',
+          created_at: new Date().toISOString(),
+          test_count: 12,
+          coverage: 87,
+          last_execution: null,
+          features: [
+            'Employee Management',
+            'Leave Management', 
+            'Attendance Tracking',
+            'Performance Reviews',
+            'Recruitment Process',
+            'User Authentication'
+          ],
+          files: [
+            { name: 'hrms_login_test.py', type: 'test_file', size: '2.4 KB' },
+            { name: 'employee_management_test.py', type: 'test_file', size: '3.1 KB' },
+            { name: 'leave_management_test.py', type: 'test_file', size: '2.8 KB' },
+            { name: 'test_config.json', type: 'config', size: '1.2 KB' },
+            { name: 'page_objects.py', type: 'support', size: '4.5 KB' }
+          ]
+        })
+      }
+      
+      setTestSuites(mockSuites)
+    } catch (error) {
+      console.error('Failed to load test suites:', error)
     }
   }
 
