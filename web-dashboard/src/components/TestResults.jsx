@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -429,11 +429,8 @@ const TestResults = ({ user }) => {
                 </TableHeader>
                 <TableBody>
                   {filteredExecutions.map((execution, index) => (
-                    <motion.tr
-                      key={execution.execution_id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                    <TableRow
+                      key={execution.execution_id || `execution-${index}`}
                       className="group"
                     >
                       <TableCell className="font-medium">
@@ -480,7 +477,7 @@ const TestResults = ({ user }) => {
                           )}
                         </Dialog>
                       </TableCell>
-                    </motion.tr>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>

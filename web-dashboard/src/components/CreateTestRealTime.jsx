@@ -122,7 +122,13 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
         case 'requirements':
           requestData = {
             creation_type: 'requirements',
-            ...requirementsForm
+            application_url: requirementsForm.applicationUrl,
+            application_name: requirementsForm.applicationName,
+            application_type: requirementsForm.applicationType,
+            business_requirements: requirementsForm.requirementsText,
+            priority: requirementsForm.priority,
+            generate_performance_tests: requirementsForm.generatePerformanceTests,
+            generate_cross_browser_tests: requirementsForm.generateCrossBrowserTests
           };
           break;
         case 'test_cases':
@@ -141,11 +147,11 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
           throw new Error('Invalid creation type');
       }
 
-      const response = await fetch('/api/v1/test/create', {
+      const response = await fetch('http://localhost:8000/api/v1/test/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify(requestData)
       });
