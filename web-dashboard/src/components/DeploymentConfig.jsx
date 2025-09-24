@@ -41,14 +41,14 @@ export const DeploymentProvider = ({ children }) => {
         // Fetch system info from API
         const response = await fetch('http://localhost:8000/api/v1/system/info', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           }
         });
 
         if (response.ok) {
           const systemInfo = await response.json();
           setDeploymentMode(systemInfo.deployment_mode);
-          setFeatures(systemInfo.features_enabled || {});
+          setFeatures(systemInfo.features || {});
         }
       } catch (error) {
         console.warn('Could not detect deployment mode:', error);

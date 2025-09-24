@@ -53,7 +53,7 @@ class ApiService {
 
   // Authentication
   async login(credentials) {
-    const response = await this.request('/auth/login', {
+    const response = await this.request('/api/v1/auth/login', {
       method: 'POST',
       body: credentials,
     })
@@ -66,14 +66,14 @@ class ApiService {
   }
 
   async register(userData) {
-    return this.request('/auth/register', {
+    return this.request('/api/v1/auth/register', {
       method: 'POST',
       body: userData,
     })
   }
 
   async getCurrentUser() {
-    return this.request('/auth/me')
+    return this.request('/api/v1/auth/me')
   }
 
   logout() {

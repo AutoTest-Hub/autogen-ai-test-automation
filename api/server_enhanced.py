@@ -154,7 +154,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -520,6 +520,82 @@ async def health_check():
         "active_connections": len(manager.active_connections),
         "active_tasks": len(orchestrator.running_tasks)
     }
+
+@app.get("/api/v1/system/info")
+async def system_info():
+    """Get system information for deployment configuration (public endpoint)"""
+    try:
+        # Define features based on deployment mode
+        if DEPLOYMENT_MODE == "SaaS":
+            features_enabled = {
+                "billing": True,
+                "userRegistration": True,
+                "multiTenant": True,
+                "subscriptionPlans": True,
+                "publicSignup": True,
+                "marketingPages": True,
+                "usageAnalytics": True,
+                "cloudIntegrations": True,
+                "autoScaling": True,
+                "globalCDN": True,
+                "real_time_monitoring": True,
+                "multi_modal_creation": True,
+                "agent_orchestration": True,
+                "advanced_analytics": True,
+                "ldap_integration": False,
+                "custom_branding": False
+            }
+            branding = {
+                "name": "AI Test Automation Platform",
+                "edition": "SaaS Edition",
+                "logo_url": "/logo.png",
+                "primary_color": "#3b82f6",
+                "secondary_color": "#1e40af"
+            }
+        else:  # OnPrem
+            features_enabled = {
+                "billing": False,
+                "userRegistration": False,
+                "multiTenant": False,
+                "subscriptionPlans": False,
+                "publicSignup": False,
+                "marketingPages": False,
+                "usageAnalytics": True,
+                "cloudIntegrations": False,
+                "autoScaling": False,
+                "globalCDN": False,
+                "ldapIntegration": True,
+                "customBranding": True,
+                "airGappedMode": True,
+                "enterpriseSecurity": True,
+                "auditCompliance": True,
+                "customReports": True,
+                "real_time_monitoring": True,
+                "multi_modal_creation": True,
+                "agent_orchestration": True,
+                "advanced_analytics": True
+            }
+            branding = {
+                "name": "Enterprise Test Automation",
+                "edition": "OnPrem Edition",
+                "logo_url": "/logo-enterprise.png",
+                "primary_color": "#059669",
+                "secondary_color": "#047857"
+            }
+        
+        return {
+            "deployment_mode": DEPLOYMENT_MODE,
+            "version": "1.0.0",
+            "features": features_enabled,
+            "branding": branding
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting system info: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get system info"
+        )
 
 @app.get("/api/v1/system/status")
 async def system_status(current_user: Dict[str, Any] = Depends(get_current_user)):
