@@ -151,10 +151,12 @@ class ConnectionManager:
         logger.info(f"WebSocket disconnected for user {user_id}")
         
     async def send_personal_message(self, message: dict, user_id: str):
-        """Send a message to all connections for a specific user"""
+        """Send a message to a specific user"""
         if user_id in self.active_connections:
+            websockets = self.active_connections[user_id]
             disconnected = set()
-            for websocket in self.active_connections[user_id].copy():
+            
+            for websocket in websockets.copy():
                 try:
                     await websocket.send_text(json.dumps(message))
                 except Exception as e:

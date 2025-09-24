@@ -87,10 +87,15 @@ async def websocket_agent_activity(websocket: WebSocket, user_id: str):
                 
             except Exception as e:
                 logger.error(f"Error processing WebSocket message: {e}")
-                await websocket.send_text(json.dumps({
-                    "type": "error",
-                    "message": "Error processing message"
-                }))
+                # Don't try to send error message if connection is closed
+                try:
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "message": "Error processing message"
+                    }))
+                except:
+                    # Connection is likely closed, break the loop
+                    break
                 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected for user {user_id}")

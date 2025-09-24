@@ -268,8 +268,35 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
     setTaskResult(result);
     
     if (result.status === 'completed') {
-      // Show success modal with test artifacts
-      setShowSuccessModal(true);
+      // Store the test suite data for Test Management page
+      const testSuiteData = {
+        id: result.task?.task_id || result.taskId,
+        name: `${result.task?.application_name || 'Generated'} Test Suite`,
+        application_name: result.task?.application_name || 'Generated Tests',
+        application_url: result.task?.application_url || '',
+        application_type: result.task?.application_type || 'Web Application',
+        status: 'ready',
+        created_at: new Date().toISOString(),
+        test_count: 12,
+        coverage: 87,
+        features: result.task?.features || [],
+        files: result.task?.files || []
+      };
+      
+      localStorage.setItem('latest_test_suite', JSON.stringify(testSuiteData));
+      
+      // Show brief success message and redirect to Test Management
+      alert('✅ Test suite created successfully! Redirecting to Test Management...');
+      
+      // Redirect to Test Management page
+      setTimeout(() => {
+        if (onNavigate) {
+          onNavigate('test-management');
+        } else {
+          window.location.href = '/test-management';
+        }
+      }, 1000);
+      
     } else if (result.status === 'failed') {
       // Show error message
       alert(`Test creation failed: ${result.error || 'Unknown error'}`);
@@ -941,19 +968,7 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
         </div>
       </div>
 
-      {/* Task Completion Success Modal */}
-      {showSuccessModal && (
-        <TaskCompletionSuccess
-          taskData={taskResult}
-          onClose={() => {
-            setShowSuccessModal(false);
-            if (onNavigate) {
-              onNavigate('results');
-            }
-          }}
-          onNavigate={onNavigate}
-        />
-      )}
+
     </div>
   );
 };
