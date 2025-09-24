@@ -20,6 +20,8 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
   const [showAgentMonitor, setShowAgentMonitor] = useState(false);
+  const [taskResult, setTaskResult] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(null);
   
   // Form states for different creation types
   const [requirementsForm, setRequirementsForm] = useState({
@@ -175,9 +177,11 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
 
       const result = await response.json();
       setCurrentTask(result);
-      
-      // Show success message
+      setShowAgentMonitor(true);
       console.log('Test creation started:', result);
+      
+      // Start polling as fallback in case WebSocket fails
+      startTaskPolling(result.task_id);
       
     } catch (error) {
       console.error('Error creating test:', error);
@@ -202,6 +206,77 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
     
     setUrlMetadataForm(formData);
     setActiveTab('url_metadata');
+  };
+
+  // Polling mechanism as fallback for WebSocket failures
+  const startTaskPolling = (taskId) => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    const interval = setInterval(async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`http://localhost:8000/api/v1/test/status/${taskId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const taskStatus = await response.json();
+          console.log('Polling task status:', taskStatus);
+          
+          if (taskStatus.status === 'completed' || taskStatus.status === 'failed') {
+            clearInterval(interval);
+            setPollingInterval(null);
+            
+            // Trigger completion handler if WebSocket didn't already handle it
+            if (isCreating) {
+              handleTaskComplete({
+                taskId: taskId,
+                status: taskStatus.status,
+                task: taskStatus,
+                error: taskStatus.error
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling task status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    setPollingInterval(interval);
+  };
+  
+  const stopTaskPolling = () => {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+  };
+
+  // Handle task completion from AgentActivityMonitor
+  const handleTaskComplete = (result) => {
+    console.log('Task completion received:', result);
+    stopTaskPolling(); // Stop polling when task completes
+    setIsCreating(false);
+    setTaskResult(result);
+    
+    if (result.status === 'completed') {
+      // Show success message and redirect to results
+      alert('Test creation completed successfully! Redirecting to test results...');
+      setTimeout(() => {
+        if (onNavigate) {
+          onNavigate('results');
+        }
+      }, 2000);
+    } else if (result.status === 'failed') {
+      // Show error message
+      alert(`Test creation failed: ${result.error || 'Unknown error'}`);
+    }
   };
 
   // Add/remove dynamic form fields
@@ -863,6 +938,7 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
               userId={user?.id}
               taskId={currentTask?.task_id}
               className="sticky top-6"
+              onTaskComplete={handleTaskComplete}
             />
           )}
         </div>

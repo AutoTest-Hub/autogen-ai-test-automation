@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Bot, CheckCircle, AlertCircle, Clock, Zap, Eye, Play, Pause, RotateCcw } from 'lucide-react';
 
-const AgentActivityMonitor = ({ userId, taskId = null, className = "" }) => {
+const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskComplete, ...props }) => {
   const [activities, setActivities] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [systemStats, setSystemStats] = useState({
@@ -116,6 +116,16 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "" }) => {
       case 'task_failed':
         // Handle task completion
         console.log(`Task ${message.task?.id} ${message.type.split('_')[1]}`);
+        
+        // Notify parent component if callback is provided
+        if (props.onTaskComplete) {
+          props.onTaskComplete({
+            taskId: message.task?.id,
+            status: message.type.split('_')[1], // 'completed' or 'failed'
+            task: message.task,
+            error: message.error
+          });
+        }
         break;
         
       default:
