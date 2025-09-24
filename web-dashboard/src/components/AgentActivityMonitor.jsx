@@ -15,23 +15,42 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
   const wsRef = useRef(null);
   const activitiesEndRef = useRef(null);
 
-  // WebSocket connection management
+  // WebSocket connection management with improved stability
+  const reconnectTimeoutRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
+  const baseReconnectDelay = 1000; // 1 second
+
   useEffect(() => {
     if (!userId) return;
 
     const connectWebSocket = () => {
       try {
+        // Clear any existing reconnection timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
+
         const wsUrl = `ws://localhost:8000/api/v1/ws/agent-activity/${userId}`;
+        console.log(`Attempting WebSocket connection to: ${wsUrl}`);
+        
         wsRef.current = new WebSocket(wsUrl);
 
         wsRef.current.onopen = () => {
-          console.log('WebSocket connected');
+          console.log('WebSocket connected successfully');
           setConnectionStatus('connected');
+          reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
           
-          // Request current activities
-          wsRef.current.send(JSON.stringify({
-            type: 'get_activities'
-          }));
+          // Request current activities with error handling
+          try {
+            wsRef.current.send(JSON.stringify({
+              type: 'get_activities',
+              user_id: userId
+            }));
+          } catch (error) {
+            console.error('Error sending initial message:', error);
+          }
         };
 
         wsRef.current.onmessage = (event) => {
@@ -39,16 +58,28 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
             const message = JSON.parse(event.data);
             handleWebSocketMessage(message);
           } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            console.error('Error parsing WebSocket message:', error, event.data);
           }
         };
 
-        wsRef.current.onclose = () => {
-          console.log('WebSocket disconnected');
+        wsRef.current.onclose = (event) => {
+          console.log('WebSocket disconnected:', event.code, event.reason);
           setConnectionStatus('disconnected');
           
-          // Attempt to reconnect after 3 seconds
-          setTimeout(connectWebSocket, 3000);
+          // Only attempt reconnection if we haven't exceeded max attempts
+          if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+            const delay = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current), 30000);
+            console.log(`Attempting reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current++;
+              setConnectionStatus('reconnecting');
+              connectWebSocket();
+            }, delay);
+          } else {
+            console.error('Max reconnection attempts reached');
+            setConnectionStatus('failed');
+          }
         };
 
         wsRef.current.onerror = (error) => {
@@ -59,12 +90,25 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
       } catch (error) {
         console.error('Error creating WebSocket connection:', error);
         setConnectionStatus('error');
+        
+        // Attempt reconnection on connection creation error
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          const delay = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current), 30000);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectAttemptsRef.current++;
+            connectWebSocket();
+          }, delay);
+        }
       }
     };
 
     connectWebSocket();
 
     return () => {
+      // Clean up on unmount
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (wsRef.current) {
         wsRef.current.close();
       }
@@ -73,23 +117,36 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
 
   // Handle WebSocket messages
   const handleWebSocketMessage = (message) => {
+    console.log('WebSocket message received:', message.type, message);
+    
     switch (message.type) {
       case 'connection_established':
         console.log('WebSocket connection established');
         break;
         
       case 'activities_list':
+        console.log('Activities list received:', message.activities);
+        console.log('Number of activities:', (message.activities || []).length);
         setActivities(message.activities || []);
         updateSystemStats(message.activities || []);
         break;
         
       case 'activity_created':
-        setActivities(prev => [message.activity, ...prev]);
+        console.log('Activity created:', message.activity);
+        setActivities(prev => {
+          // Check if activity already exists to avoid duplicates
+          const exists = prev.some(activity => activity.id === message.activity.id);
+          if (!exists) {
+            return [message.activity, ...prev];
+          }
+          return prev;
+        });
         break;
         
       case 'activity_update':
       case 'progress_update':
       case 'status_update':
+        console.log('Activity update:', message.type, message);
         setActivities(prev => 
           prev.map(activity => 
             activity.id === message.activity_id || activity.id === message.activity?.id
@@ -118,13 +175,21 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
         console.log(`Task ${message.task?.id} ${message.type.split('_')[1]}`);
         
         // Notify parent component if callback is provided
-        if (props.onTaskComplete) {
-          props.onTaskComplete({
+        if (onTaskComplete) {
+          console.log('Calling onTaskComplete callback with:', {
+            taskId: message.task?.id,
+            status: message.type.split('_')[1],
+            task: message.task,
+            error: message.error
+          });
+          onTaskComplete({
             taskId: message.task?.id,
             status: message.type.split('_')[1], // 'completed' or 'failed'
             task: message.task,
             error: message.error
           });
+        } else {
+          console.log('No onTaskComplete callback provided');
         }
         break;
         
@@ -222,11 +287,32 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${
                 connectionStatus === 'connected' ? 'bg-green-500' : 
-                connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+                connectionStatus === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
+                connectionStatus === 'error' || connectionStatus === 'failed' ? 'bg-red-500' : 
+                'bg-gray-500'
               }`} />
               <span className="text-sm text-gray-600 capitalize">
-                {connectionStatus}
+                {connectionStatus === 'reconnecting' ? 'Reconnecting...' : connectionStatus}
               </span>
+              {connectionStatus === 'failed' && (
+                <button
+                  onClick={() => {
+                    reconnectAttemptsRef.current = 0;
+                    setConnectionStatus('disconnected');
+                    // Trigger reconnection by updating userId dependency
+                    const currentUserId = userId;
+                    setTimeout(() => {
+                      if (wsRef.current) {
+                        wsRef.current.close();
+                      }
+                    }, 100);
+                  }}
+                  className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                  title="Retry connection"
+                >
+                  Retry
+                </button>
+              )}
             </div>
             
             {/* Auto-scroll toggle */}

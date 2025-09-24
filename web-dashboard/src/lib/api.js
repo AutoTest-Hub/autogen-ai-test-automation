@@ -88,6 +88,20 @@ class ApiService {
     })
   }
 
+  async getExecutionStatus(executionId) {
+    return this.request(`/api/v1/test/execution/${executionId}`)
+  }
+
+  async getExecutionResults(executionId) {
+    return this.request(`/api/v1/test/execution/${executionId}/results`)
+  }
+
+  async stopExecution(executionId) {
+    return this.request(`/api/v1/test/execution/${executionId}/stop`, {
+      method: 'POST'
+    })
+  }
+
   async getTestStatus(executionId) {
     return this.request(`/api/v1/test/status/${executionId}`)
   }

@@ -436,10 +436,218 @@ async def get_task_status(
         )
 
 # =====================================================
+# TEST EXECUTION ENDPOINTS
+# =====================================================
+
+class TestExecutionRequest(BaseModel):
+    test_id: str = Field(..., description="ID of the test to execute")
+    execution_name: str = Field(..., description="Name for this execution")
+    environment: str = Field("production", description="Environment to run tests against")
+    browser: str = Field("chrome", description="Browser to use for execution")
+    headless: bool = Field(True, description="Run tests in headless mode")
+    parallel: bool = Field(False, description="Run tests in parallel")
+    max_workers: int = Field(1, description="Maximum number of parallel workers")
+    timeout: int = Field(300, description="Test timeout in seconds")
+    retry_failed: bool = Field(True, description="Retry failed tests")
+    max_retries: int = Field(2, description="Maximum number of retries")
+
+class TestExecutionResponse(BaseModel):
+    execution_id: str
+    status: str
+    message: str
+    websocket_url: str
+    estimated_duration: int
+
+@app.post("/api/v1/test/execute", response_model=TestExecutionResponse)
+async def execute_test(
+    request: TestExecutionRequest,
+    current_user: Dict[str, Any] = Depends(check_quota_middleware)
+):
+    """Execute a previously created test"""
+    try:
+        execution_id = str(uuid.uuid4())
+        
+        # Validate test exists (in production, check database)
+        # For demo, we'll simulate test execution
+        
+        # Create execution task
+        task_data = {
+            "test_id": request.test_id,
+            "execution_name": request.execution_name,
+            "environment": request.environment,
+            "browser": request.browser,
+            "headless": request.headless,
+            "parallel": request.parallel,
+            "max_workers": request.max_workers,
+            "timeout": request.timeout,
+            "retry_failed": request.retry_failed,
+            "max_retries": request.max_retries,
+            "execution_id": execution_id
+        }
+        
+        # Submit execution task to orchestrator
+        task_id = await orchestrator.submit_task(
+            task_type=TaskType.EXECUTE_TESTS,
+            user_id=current_user["id"],
+            data=task_data,
+            priority=TaskPriority.NORMAL
+        )
+        
+        logger.info(f"Test execution {execution_id} started for user {current_user['id']}")
+        
+        return TestExecutionResponse(
+            execution_id=execution_id,
+            status="started",
+            message="Test execution started. Connect to WebSocket for real-time updates.",
+            websocket_url=f"/api/v1/ws/agent-activity/{current_user['id']}",
+            estimated_duration=300  # 5 minutes estimate
+        )
+        
+    except Exception as e:
+        logger.error(f"Error executing test: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Test execution failed: {str(e)}"
+        )
+
+@app.get("/api/v1/test/execution/{execution_id}")
+async def get_execution_status(
+    execution_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get the status of a test execution"""
+    try:
+        # In production, this would query the database
+        # For demo, return mock execution status
+        execution_status = {
+            "execution_id": execution_id,
+            "status": "running",
+            "progress": 65,
+            "current_test": "Login functionality test",
+            "tests_completed": 13,
+            "tests_total": 20,
+            "tests_passed": 11,
+            "tests_failed": 2,
+            "start_time": "2024-09-24T10:30:00Z",
+            "estimated_completion": "2024-09-24T10:35:00Z",
+            "environment": "production",
+            "browser": "chrome",
+            "logs": [
+                {"timestamp": "2024-09-24T10:30:00Z", "level": "info", "message": "Starting test execution"},
+                {"timestamp": "2024-09-24T10:30:15Z", "level": "info", "message": "Login test passed"},
+                {"timestamp": "2024-09-24T10:30:30Z", "level": "warning", "message": "Slow response detected"},
+                {"timestamp": "2024-09-24T10:30:45Z", "level": "error", "message": "Element not found: #submit-button"}
+            ]
+        }
+        
+        return execution_status
+        
+    except Exception as e:
+        logger.error(f"Error getting execution status: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get execution status"
+        )
+
+@app.post("/api/v1/test/execution/{execution_id}/stop")
+async def stop_execution(
+    execution_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Stop a running test execution"""
+    try:
+        # In production, this would stop the actual execution
+        logger.info(f"Stopping execution {execution_id} for user {current_user['id']}")
+        
+        return {
+            "execution_id": execution_id,
+            "status": "stopped",
+            "message": "Test execution stopped successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error stopping execution: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to stop execution"
+        )
+
+@app.get("/api/v1/test/execution/{execution_id}/results")
+async def get_execution_results(
+    execution_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get detailed results of a test execution"""
+    try:
+        # In production, this would query the database for actual results
+        results = {
+            "execution_id": execution_id,
+            "status": "completed",
+            "summary": {
+                "total_tests": 20,
+                "passed": 18,
+                "failed": 2,
+                "skipped": 0,
+                "success_rate": 90.0,
+                "duration": 285,
+                "start_time": "2024-09-24T10:30:00Z",
+                "end_time": "2024-09-24T10:34:45Z"
+            },
+            "test_results": [
+                {
+                    "test_name": "User Login",
+                    "status": "passed",
+                    "duration": 12.5,
+                    "assertions": 5,
+                    "screenshots": ["login_success.png"],
+                    "logs": ["Login form filled successfully", "Authentication successful"]
+                },
+                {
+                    "test_name": "Product Search",
+                    "status": "passed", 
+                    "duration": 8.3,
+                    "assertions": 3,
+                    "screenshots": ["search_results.png"],
+                    "logs": ["Search query executed", "Results displayed correctly"]
+                },
+                {
+                    "test_name": "Checkout Process",
+                    "status": "failed",
+                    "duration": 15.2,
+                    "assertions": 7,
+                    "error": "Element not found: #payment-submit",
+                    "screenshots": ["checkout_error.png"],
+                    "logs": ["Cart items loaded", "Payment form displayed", "Error: Submit button not found"]
+                }
+            ],
+            "artifacts": {
+                "screenshots": ["login_success.png", "search_results.png", "checkout_error.png"],
+                "videos": ["execution_recording.mp4"],
+                "reports": ["detailed_report.html", "junit_results.xml"],
+                "logs": ["execution.log", "browser.log"]
+            },
+            "performance": {
+                "avg_response_time": 1.2,
+                "max_response_time": 3.8,
+                "min_response_time": 0.3,
+                "page_load_times": [2.1, 1.8, 2.5, 1.9]
+            }
+        }
+        
+        return results
+        
+    except Exception as e:
+        logger.error(f"Error getting execution results: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get execution results"
+        )
+
+# =====================================================
 # LEGACY TEST EXECUTION ENDPOINT (BACKWARD COMPATIBILITY)
 # =====================================================
 
-@app.post("/api/v1/test/execute")
+@app.post("/api/v1/test/execute-legacy")
 async def execute_test_legacy(
     request: TestExecutionRequest,
     current_user: Dict[str, Any] = Depends(check_quota_middleware)

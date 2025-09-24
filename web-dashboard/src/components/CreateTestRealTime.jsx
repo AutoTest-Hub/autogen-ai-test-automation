@@ -14,6 +14,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import AgentActivityMonitor from './AgentActivityMonitor';
+import TaskCompletionSuccess from './TaskCompletionSuccess';
 
 const CreateTestRealTime = ({ user, onNavigate }) => {
   const [activeTab, setActiveTab] = useState('requirements');
@@ -22,6 +23,7 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
   const [showAgentMonitor, setShowAgentMonitor] = useState(false);
   const [taskResult, setTaskResult] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   // Form states for different creation types
   const [requirementsForm, setRequirementsForm] = useState({
@@ -266,13 +268,8 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
     setTaskResult(result);
     
     if (result.status === 'completed') {
-      // Show success message and redirect to results
-      alert('Test creation completed successfully! Redirecting to test results...');
-      setTimeout(() => {
-        if (onNavigate) {
-          onNavigate('results');
-        }
-      }, 2000);
+      // Show success modal with test artifacts
+      setShowSuccessModal(true);
     } else if (result.status === 'failed') {
       // Show error message
       alert(`Test creation failed: ${result.error || 'Unknown error'}`);
@@ -943,6 +940,20 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
           )}
         </div>
       </div>
+
+      {/* Task Completion Success Modal */}
+      {showSuccessModal && (
+        <TaskCompletionSuccess
+          taskData={taskResult}
+          onClose={() => {
+            setShowSuccessModal(false);
+            if (onNavigate) {
+              onNavigate('results');
+            }
+          }}
+          onNavigate={onNavigate}
+        />
+      )}
     </div>
   );
 };

@@ -45,14 +45,117 @@ const TestResults = ({ user }) => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [realTimeExecutions, setRealTimeExecutions] = useState(new Map())
+  const [wsConnection, setWsConnection] = useState(null)
 
   useEffect(() => {
     loadExecutions()
+    setupWebSocketConnection()
+    
+    return () => {
+      if (wsConnection) {
+        wsConnection.close()
+      }
+    }
   }, [])
 
   useEffect(() => {
     filterExecutions()
-  }, [executions, searchTerm, statusFilter])
+  }, [executions, searchTerm, statusFilter, realTimeExecutions])
+
+  const setupWebSocketConnection = () => {
+    if (!user?.id) return
+
+    try {
+      const ws = new WebSocket(`ws://localhost:8000/api/v1/ws/execution-updates/${user.id}`)
+      
+      ws.onopen = () => {
+        console.log('Test execution WebSocket connected')
+        setWsConnection(ws)
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data)
+          handleExecutionUpdate(message)
+        } catch (error) {
+          console.error('Error parsing execution update:', error)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log('Test execution WebSocket disconnected')
+        setWsConnection(null)
+        // Attempt reconnection after 3 seconds
+        setTimeout(setupWebSocketConnection, 3000)
+      }
+
+      ws.onerror = (error) => {
+        console.error('Test execution WebSocket error:', error)
+      }
+
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error)
+    }
+  }
+
+  const handleExecutionUpdate = (message) => {
+    switch (message.type) {
+      case 'execution_started':
+        setRealTimeExecutions(prev => new Map(prev.set(message.execution_id, {
+          ...message.execution,
+          status: 'running',
+          progress: 0
+        })))
+        break
+        
+      case 'execution_progress':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          const existing = updated.get(message.execution_id) || {}
+          updated.set(message.execution_id, {
+            ...existing,
+            progress: message.progress,
+            current_test: message.current_test,
+            tests_completed: message.tests_completed,
+            tests_passed: message.tests_passed,
+            tests_failed: message.tests_failed
+          })
+          return updated
+        })
+        break
+        
+      case 'execution_completed':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          updated.set(message.execution_id, {
+            ...updated.get(message.execution_id),
+            status: 'completed',
+            progress: 100,
+            end_time: message.end_time,
+            results: message.results
+          })
+          return updated
+        })
+        // Refresh executions list to get the final results
+        setTimeout(loadExecutions, 1000)
+        break
+        
+      case 'execution_failed':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          updated.set(message.execution_id, {
+            ...updated.get(message.execution_id),
+            status: 'failed',
+            error: message.error,
+            end_time: message.end_time
+          })
+          return updated
+        })
+        setTimeout(loadExecutions, 1000)
+        break
+    }
+  }
 
   const loadExecutions = async () => {
     try {
@@ -66,10 +169,27 @@ const TestResults = ({ user }) => {
   }
 
   const filterExecutions = () => {
-    let filtered = executions
+    // Merge real-time executions with stored executions
+    const allExecutions = [...executions]
+    
+    // Add real-time executions that aren't in the stored list
+    realTimeExecutions.forEach((rtExecution, executionId) => {
+      const existingIndex = allExecutions.findIndex(exec => exec.id === executionId)
+      if (existingIndex >= 0) {
+        // Update existing execution with real-time data
+        allExecutions[existingIndex] = { ...allExecutions[existingIndex], ...rtExecution }
+      } else {
+        // Add new real-time execution
+        allExecutions.unshift({ id: executionId, ...rtExecution })
+      }
+    })
+
+    let filtered = allExecutions
 
     if (searchTerm) {
       filtered = filtered.filter(execution =>
+        execution.execution_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        execution.test_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         execution.request?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         execution.request?.url?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -78,6 +198,13 @@ const TestResults = ({ user }) => {
     if (statusFilter !== 'all') {
       filtered = filtered.filter(execution => execution.status === statusFilter)
     }
+
+    // Sort by creation time (newest first)
+    filtered.sort((a, b) => {
+      const timeA = new Date(a.created_at || a.start_time || 0)
+      const timeB = new Date(b.created_at || b.start_time || 0)
+      return timeB - timeA
+    })
 
     setFilteredExecutions(filtered)
   }
@@ -443,7 +570,28 @@ const TestResults = ({ user }) => {
                         <div className="flex items-center gap-2">
                           {getStatusIcon(execution.status)}
                           {getStatusBadge(execution.status)}
+                          {execution.status === 'running' && execution.progress !== undefined && (
+                            <div className="flex items-center gap-2 ml-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${execution.progress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-500">{execution.progress}%</span>
+                            </div>
+                          )}
                         </div>
+                        {execution.status === 'running' && execution.current_test && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Running: {execution.current_test}
+                          </div>
+                        )}
+                        {execution.status === 'running' && execution.tests_completed !== undefined && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {execution.tests_completed}/{execution.tests_total || '?'} tests completed
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
