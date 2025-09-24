@@ -39,7 +39,7 @@ export const DeploymentProvider = ({ children }) => {
         }
 
         // Fetch system info from API
-        const response = await fetch('/api/system/info', {
+        const response = await fetch('http://localhost:8000/api/v1/system/info', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
