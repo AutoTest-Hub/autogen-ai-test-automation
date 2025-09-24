@@ -134,13 +134,26 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
         case 'test_cases':
           requestData = {
             creation_type: 'test_cases',
-            ...testCasesForm
+            application_url: testCasesForm.applicationUrl,
+            application_name: testCasesForm.applicationName,
+            application_type: testCasesForm.applicationType,
+            test_cases: testCasesForm.testCases,
+            priority: testCasesForm.priority,
+            generate_performance_tests: testCasesForm.generatePerformanceTests,
+            generate_cross_browser_tests: testCasesForm.generateCrossBrowserTests
           };
           break;
         case 'url_metadata':
           requestData = {
             creation_type: 'url_metadata',
-            ...urlMetadataForm
+            application_url: urlMetadataForm.applicationUrl,
+            application_name: urlMetadataForm.applicationName,
+            application_type: urlMetadataForm.applicationType,
+            key_features: urlMetadataForm.keyFeatures,
+            user_flows: urlMetadataForm.userFlows,
+            priority: urlMetadataForm.priority,
+            generate_performance_tests: urlMetadataForm.generatePerformanceTests,
+            generate_cross_browser_tests: urlMetadataForm.generateCrossBrowserTests
           };
           break;
         default:
