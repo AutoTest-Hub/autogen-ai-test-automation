@@ -82,35 +82,35 @@ class ApiService {
 
   // Test Execution
   async executeTest(testConfig) {
-    return this.request('/test/execute', {
+    return this.request('/api/v1/test/execute', {
       method: 'POST',
       body: testConfig,
     })
   }
 
   async getTestStatus(executionId) {
-    return this.request(`/test/status/${executionId}`)
+    return this.request(`/api/v1/test/status/${executionId}`)
   }
 
   async getTestResults(executionId) {
-    return this.request(`/test/results/${executionId}`)
+    return this.request(`/api/v1/test/results/${executionId}`)
   }
 
   async getTestExecutions() {
-    return this.request('/test/executions')
+    return this.request('/api/v1/test/executions')
   }
 
   // Requirements
   async getRequirementsTemplates() {
-    return this.request('/requirements/templates')
+    return this.request('/api/v1/requirements/templates')
   }
 
   async getRequirementsTemplate(templateName) {
-    return this.request(`/requirements/template/${templateName}`)
+    return this.request(`/api/v1/requirements/template/${templateName}`)
   }
 
   async validateRequirements(requirements) {
-    return this.request('/requirements/validate', {
+    return this.request('/api/v1/requirements/validate', {
       method: 'POST',
       body: requirements,
     })
@@ -118,28 +118,28 @@ class ApiService {
 
   // Advanced AI Features
   async selfHealTest(testData) {
-    return this.request('/ai/self-heal', {
+    return this.request('/api/v1/ai/self-heal', {
       method: 'POST',
       body: testData,
     })
   }
 
   async prioritizeTests(testFiles) {
-    return this.request('/ai/prioritize-tests', {
+    return this.request('/api/v1/ai/prioritize-tests', {
       method: 'POST',
       body: { test_files: testFiles },
     })
   }
 
   async generateCrossBrowserPlan(planData) {
-    return this.request('/ai/cross-browser-plan', {
+    return this.request('/api/v1/ai/cross-browser-plan', {
       method: 'POST',
       body: planData,
     })
   }
 
   async predictPerformance(performanceData) {
-    return this.request('/ai/predict-performance', {
+    return this.request('/api/v1/ai/predict-performance', {
       method: 'POST',
       body: performanceData,
     })
@@ -147,7 +147,7 @@ class ApiService {
 
   // Health Check
   async getHealth() {
-    return this.request('/health')
+    return this.request('/api/v1/health')
   }
 
   // Utility methods

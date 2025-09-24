@@ -670,6 +670,99 @@ async def get_requirements_templates(current_user: Dict[str, Any] = Depends(get_
             detail="Failed to fetch templates"
         )
 
+@app.get("/api/v1/requirements/template/{template_name}")
+async def get_requirements_template(
+    template_name: str,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get a specific requirements template"""
+    try:
+        # Map template names to files
+        template_files = {
+            "ecommerce": "requirements_ecommerce.json",
+            "banking": "requirements_banking.json", 
+            "hrms": "requirements_hrms.json"
+        }
+        
+        if template_name not in template_files:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Template '{template_name}' not found"
+            )
+        
+        # Load template file
+        template_file = template_files[template_name]
+        template_path = os.path.join(os.path.dirname(__file__), "..", template_file)
+        
+        if os.path.exists(template_path):
+            with open(template_path, 'r') as f:
+                template_data = json.load(f)
+            return template_data
+        else:
+            # Return a basic template structure if file doesn't exist
+            return {
+                "name": template_name.title(),
+                "description": f"Template for {template_name} applications",
+                "requirements": [
+                    "User authentication and authorization",
+                    "Data validation and error handling",
+                    "Security and compliance checks",
+                    "Performance and scalability testing"
+                ]
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching template {template_name}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch template"
+        )
+
+@app.get("/api/v1/test/executions")
+async def get_test_executions(
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Get test execution history"""
+    try:
+        # Return mock data for now - in production this would come from database
+        executions = [
+            {
+                "id": "exec_001",
+                "test_name": "E-commerce Checkout Flow",
+                "application_url": "https://demo-store.example.com",
+                "status": "completed",
+                "created_at": "2024-09-24T10:30:00Z",
+                "completed_at": "2024-09-24T10:45:00Z",
+                "duration": 900,
+                "tests_passed": 24,
+                "tests_failed": 1,
+                "success_rate": 96.0
+            },
+            {
+                "id": "exec_002", 
+                "test_name": "User Registration Flow",
+                "application_url": "https://demo-app.example.com",
+                "status": "running",
+                "created_at": "2024-09-24T11:00:00Z",
+                "completed_at": None,
+                "duration": None,
+                "tests_passed": 12,
+                "tests_failed": 0,
+                "success_rate": 100.0
+            }
+        ]
+        
+        return {"executions": executions}
+        
+    except Exception as e:
+        logger.error(f"Error fetching test executions: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch test executions"
+        )
+
 # =====================================================
 # MAIN APPLICATION ENTRY POINT
 # =====================================================
