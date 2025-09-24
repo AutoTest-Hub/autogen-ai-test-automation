@@ -16,7 +16,7 @@ import CreateTestRealTime from './components/CreateTestRealTime'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResults'
 import TestManagement from './components/TestManagement'
-import TestManagementSimple from './components/TestManagementSimple'
+import TestManagementBasic from './components/TestManagementBasic'
 import Requirements from './components/Requirements'
 import Settings from './components/Settings'
 import Login from './components/Login'
@@ -272,7 +272,7 @@ function AppContent() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <TestManagementSimple user={user} deploymentMode={deploymentMode} />
+                      <TestManagementBasic user={user} deploymentMode={deploymentMode} />
                     </motion.div>
                   } />
                   

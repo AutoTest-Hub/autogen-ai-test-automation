@@ -174,6 +174,14 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
         // Handle task completion
         console.log(`Task ${message.task?.id} ${message.type.split('_')[1]}`);
         
+        // Close WebSocket connection to stop continuous polling
+        if (wsRef.current) {
+          console.log('Closing WebSocket connection after task completion');
+          wsRef.current.close();
+          wsRef.current = null;
+          setConnectionStatus('disconnected');
+        }
+        
         // Notify parent component if callback is provided
         if (onTaskComplete) {
           console.log('Calling onTaskComplete callback with:', {
@@ -367,14 +375,23 @@ const AgentActivityMonitor = ({ userId, taskId = null, className = "", onTaskCom
           </div>
         ) : (
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {filteredActivities.map((activity) => {
+            {/* Group activities by agent type and show the latest activity for each agent */}
+            {Object.entries(
+              filteredActivities.reduce((groups, activity) => {
+                const agentType = activity.agent_type || 'unknown';
+                if (!groups[agentType] || new Date(activity.created_at) > new Date(groups[agentType].created_at)) {
+                  groups[agentType] = activity;
+                }
+                return groups;
+              }, {})
+            ).map(([agentType, activity]) => {
               const statusDisplay = getStatusDisplay(activity.status);
               const agentDisplay = getAgentTypeDisplay(activity.agent_type);
               const StatusIcon = statusDisplay.icon;
               
               return (
                 <div
-                  key={activity.id}
+                  key={agentType}
                   className={`border rounded-lg p-4 transition-all duration-200 hover:shadow-md cursor-pointer ${
                     selectedActivity?.id === activity.id 
                       ? 'border-blue-500 bg-blue-50' 

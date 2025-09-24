@@ -293,7 +293,7 @@ const CreateTestRealTime = ({ user, onNavigate }) => {
         if (onNavigate) {
           onNavigate('test-management');
         } else {
-          window.location.href = '/test-management';
+          window.location.hash = '#/test-management';
         }
       }, 1000);
       
