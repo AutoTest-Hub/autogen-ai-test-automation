@@ -9,6 +9,10 @@ class ApiService {
     this.authToken = localStorage.getItem('authToken')
   }
 
+  setBaseUrl(url) {
+    this.baseUrl = url
+  }
+
   setAuthToken(token) {
     this.authToken = token
     if (token) {
@@ -74,6 +78,10 @@ class ApiService {
 
   async getCurrentUser() {
     return this.request('/api/v1/auth/me')
+  }
+
+  async getSystemInfo() {
+    return this.request('/api/v1/system/info')
   }
 
   logout() {

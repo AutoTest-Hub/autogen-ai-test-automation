@@ -42,14 +42,14 @@ const Dashboard = ({ user, onNavigate }) => {
 
   const loadDashboardData = async () => {
     try {
-      // Load user's applications and test data
+      // Try to load user's applications and test data
       const executions = await apiService.getTestExecutions();
-      
+
       // Calculate customer-specific stats
       const total = executions.executions?.length || 0;
       const successful = executions.executions?.filter(e => e.status === 'completed').length || 0;
       const successRate = total > 0 ? (successful / total) * 100 : 94.2;
-      
+
       setStats({
         applications: user?.applications?.length || 0,
         totalTests: total || 0,
@@ -58,6 +58,62 @@ const Dashboard = ({ user, onNavigate }) => {
         monthlyExecutions: total * 15 || 0, // Simulate monthly data
         aiRecommendations: 8
       });
+
+      // Set recent activity and quick actions for successful API call
+      setRecentActivity([
+        {
+          id: 1,
+          type: 'test_created',
+          message: 'AI created 5 new tests for your checkout flow',
+          time: '2 minutes ago',
+          status: 'success'
+        },
+        {
+          id: 2,
+          type: 'test_executed',
+          message: 'Login flow tests completed successfully',
+          time: '15 minutes ago',
+          status: 'success'
+        },
+        {
+          id: 3,
+          type: 'ai_recommendation',
+          message: 'AI suggests optimizing payment form tests',
+          time: '1 hour ago',
+          status: 'info'
+        },
+        {
+          id: 4,
+          type: 'application_added',
+          message: 'New application connected successfully',
+          time: '3 hours ago',
+          status: 'success'
+        }
+      ]);
+
+      setQuickActions([
+        {
+          title: 'Add New Application',
+          description: 'Connect your web application for AI-powered testing',
+          icon: Globe,
+          action: () => onNavigate && onNavigate('applications'),
+          color: 'bg-blue-500'
+        },
+        {
+          title: 'Create Test Suite',
+          description: 'Describe what you want to test in plain English',
+          icon: Sparkles,
+          action: () => onNavigate && onNavigate('create-test'),
+          color: 'bg-purple-500'
+        },
+        {
+          title: 'View AI Insights',
+          description: 'See AI recommendations for your applications',
+          icon: Target,
+          action: () => onNavigate && onNavigate('insights'),
+          color: 'bg-green-500'
+        }
+      ]);
 
       setRecentActivity([
         {
@@ -113,8 +169,6 @@ const Dashboard = ({ user, onNavigate }) => {
           color: 'bg-green-500'
         }
       ]);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
     }

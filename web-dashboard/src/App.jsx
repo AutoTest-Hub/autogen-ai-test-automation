@@ -3,81 +3,88 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { motion, AnimatePresence } from 'framer-motion'
 import './App.css'
 
-// Deployment Configuration
-import TestManagementNew from './components/TestManagementNew'
-
 // Components
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import Applications from './components/Applications'
-import CreateTest from './components/CreateTest'
-import CreateTestAdvanced from './components/CreateTestAdvanced'
 import CreateTestRealTime from './components/CreateTestRealTime'
+import TestManagementNew from './components/TestManagementNew'
 import TestExecution from './components/TestExecution'
-import TestResults from './components/TestResults'
-import TestManagement from './components/TestManagement'
-import TestManagementFixed from './components/TestManagementFixed'
-import TestManagementBasic from './components/TestManagementBasic'
-import Requirements from './components/Requirements'
+import TestResults from './components/TestResultsSimple'
+import Requirements from './components/RequirementsSimple'
 import Settings from './components/Settings'
-import Login from './components/Login'
-import LoginEnhanced from './components/LoginEnhanced'
+import LoginSimple from './components/LoginSimple'
 
 // API Service
 import { apiService } from './lib/api'
 
-// Enhanced App Component with Deployment Awareness
-function AppContent() {
-  // Use default deployment configuration
-  const deploymentMode = 'saas'
-  const features = { testManagement: true, advancedAnalytics: true, apiIntegration: true }
-  const branding = { name: 'AI Test Automation', logo: null }
-  const deploymentLoading = false
-  const isSaaS = true
-  const isOnPrem = false
+// Simplified deployment configuration
+const DEPLOYMENT_MODES = {
+  SAAS: 'SaaS',
+  ONPREM: 'OnPrem'
+}
+
+function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [systemInfo, setSystemInfo] = useState(null)
+  const [deploymentMode, setDeploymentMode] = useState(DEPLOYMENT_MODES.SAAS)
+  const [features, setFeatures] = useState({})
+  const [branding, setBranding] = useState({
+    title: 'AI Test Automation Platform',
+    subtitle: 'Enterprise-grade test automation powered by AI',
+    primaryColor: '#3b82f6',
+    secondaryColor: '#1e40af'
+  })
 
+  // Fetch system info and set deployment configuration
   useEffect(() => {
-    // Set API base URL based on deployment mode
-    const apiBaseUrl = isSaaS 
-      ? import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      : import.meta.env.VITE_ONPREM_API_URL || 'http://localhost:8000'
-    
-    apiService.setBaseUrl(apiBaseUrl)
-  }, [deploymentMode, isSaaS])
+    const fetchSystemInfo = async () => {
+      try {
+        // Get API base URL
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+        // Fetch system info
+        const response = await fetch(`${apiBaseUrl}/api/v1/system/info`)
+        if (response.ok) {
+          const sysInfo = await response.json()
+          setSystemInfo(sysInfo)
+          setDeploymentMode(sysInfo.deployment_mode)
+          setFeatures(sysInfo.features || {})
+          
+          // Set branding based on deployment mode
+          if (sysInfo.branding) {
+            setBranding({
+              title: sysInfo.branding.name || 'AI Test Automation Platform',
+              subtitle: sysInfo.branding.edition || 'Enterprise-grade test automation',
+              primaryColor: sysInfo.branding.primary_color || '#3b82f6',
+              secondaryColor: sysInfo.branding.secondary_color || '#1e40af'
+            })
+          }
+        }
+      } catch (error) {
+        console.warn('Could not fetch system info:', error)
+        // Use defaults
+      }
+    }
+
+    fetchSystemInfo()
+  }, [])
+
+  // Check for existing authentication
   useEffect(() => {
-    // Check for existing authentication
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('authToken')
     if (token) {
       apiService.setAuthToken(token)
-      
-      // Set a default user to allow the app to load while verifying
-      setUser({ 
-        email: 'admin@demo.com', 
-        name: 'Demo User',
-        role: 'admin'
-      })
-      
-      // Try to verify token and get system info, but don't fail if it doesn't work
-      Promise.all([
-        apiService.getCurrentUser().catch(() => null),
-        apiService.getSystemInfo().catch(() => null)
-      ])
-        .then(([userData, sysInfo]) => {
-          if (userData) {
-            setUser(userData)
-          }
-          if (sysInfo) {
-            setSystemInfo(sysInfo)
-          }
+      // Verify token is still valid
+      apiService.getCurrentUser()
+        .then((userData) => {
+          setUser(userData)
         })
-        .catch((error) => {
-          console.warn('Authentication verification failed:', error)
-          // Don't immediately log out - let the user continue with cached auth
+        .catch(() => {
+          localStorage.removeItem('authToken')
+          apiService.setAuthToken(null)
         })
         .finally(() => setLoading(false))
     } else {
@@ -91,15 +98,6 @@ function AppContent() {
       localStorage.setItem('auth_token', response.access_token)
       apiService.setAuthToken(response.access_token)
       setUser(response.user)
-      
-      // Get system info after login
-      try {
-        const sysInfo = await apiService.getSystemInfo()
-        setSystemInfo(sysInfo)
-      } catch (error) {
-        console.warn('Could not fetch system info:', error)
-      }
-      
       return { success: true }
     } catch (error) {
       return { success: false, error: error.message }
@@ -107,14 +105,13 @@ function AppContent() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token')
+    localStorage.removeItem('authToken')
     apiService.setAuthToken(null)
     setUser(null)
-    setSystemInfo(null)
   }
 
-  // Show loading while deployment config is loading
-  if (deploymentLoading || loading) {
+  // Show loading while initializing
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <motion.div
@@ -122,27 +119,51 @@ function AppContent() {
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
         />
-        <span className="ml-3 text-muted-foreground">
-          {deploymentLoading ? 'Initializing platform...' : 'Loading...'}
-        </span>
+        <span className="ml-3 text-muted-foreground">Loading application...</span>
       </div>
     )
   }
 
-  // Show enhanced login for authenticated users
+  // Show login for unauthenticated users
   if (!user) {
-    return <LoginEnhanced onLogin={handleLogin} />
+    return <LoginSimple onLogin={handleLogin} />
   }
 
-  // Default navigation items (deployment features disabled for stability)
-  const navigationItems = [
-    { id: 'dashboard', label: 'Dashboard', description: 'Overview & Analytics', icon: 'dashboard', path: '/dashboard' },
-    { id: 'applications', label: 'Applications', description: 'Manage Your Apps', icon: 'apps', path: '/applications' },
-    { id: 'create-test', label: 'Create Tests', description: 'AI-Powered Test Creation', icon: 'create', path: '/create-test' },
-    { id: 'test-management', label: 'Test Management', description: 'Manage & Execute Tests', icon: 'manage', path: '/test-management' },
-    { id: 'templates', label: 'Templates', description: 'Manage Templates', icon: 'templates', path: '/templates' },
-    { id: 'settings', label: 'Settings', description: 'Account & Preferences', icon: 'settings', path: '/settings' }
-  ]
+  // Get navigation items based on deployment features
+  const getNavigationItems = () => {
+    const baseItems = [
+      { id: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', path: '/dashboard' },
+      { id: 'applications', label: 'Applications', icon: 'Globe', path: '/applications' },
+      { id: 'create-test', label: 'Create Tests', icon: 'Plus', path: '/create-test' },
+      { id: 'test-management', label: 'Test Management', icon: 'Settings', path: '/manage-tests' },
+      { id: 'test-results', label: 'Test Results', icon: 'BarChart3', path: '/results' },
+      { id: 'requirements', label: 'Requirements', icon: 'FileText', path: '/requirements' }
+    ]
+
+    const conditionalItems = []
+
+    // SaaS-specific items
+    if (features.billing) {
+      conditionalItems.push({ id: 'billing', label: 'Billing', icon: 'CreditCard', path: '/billing' })
+    }
+
+    // OnPrem-specific items
+    if (features.ldapIntegration) {
+      conditionalItems.push({ id: 'users', label: 'User Management', icon: 'Users', path: '/users' })
+    }
+
+    if (features.auditCompliance) {
+      conditionalItems.push({ id: 'audit', label: 'Audit Logs', icon: 'Shield', path: '/audit' })
+    }
+
+    // Settings
+    conditionalItems.push({ id: 'settings', label: 'Settings', icon: 'Settings', path: '/settings' })
+
+    return [...baseItems, ...conditionalItems]
+  }
+
+  const navigationItems = getNavigationItems()
+  const isSaaS = deploymentMode === DEPLOYMENT_MODES.SAAS
 
   return (
     <Router>
@@ -177,13 +198,17 @@ function AppContent() {
                     {deploymentMode} Edition
                   </span>
                   
-                  <span className="text-sm text-muted-foreground">
-                    API Usage: {user?.api_calls_used || 0} / {user?.api_calls_limit || 1000}
-                  </span>
+                  {features.billing && (
+                    <span className="text-sm text-muted-foreground">
+                      API Usage: {user?.api_calls_used || 0} / {user?.api_calls_limit || 1000}
+                    </span>
+                  )}
                   
-                  <span className="text-sm text-muted-foreground">
-                    Compliance: SOC 2 Type II
-                  </span>
+                  {features.auditCompliance && (
+                    <span className="text-sm text-muted-foreground">
+                      Compliance: SOC 2 Type II
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -197,19 +222,8 @@ function AppContent() {
             </div>
 
             <div className="p-6">
+              <AnimatePresence mode="wait">
                 <Routes>
-                  <Route path="/manage-tests" element={
-                    <motion.div
-                      key="manage-tests"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <TestManagementNew />
-                    </motion.div>
-                  } />
-                  
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   
                   <Route path="/dashboard" element={
@@ -220,53 +234,13 @@ function AppContent() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <div style={{ padding: '40px', backgroundColor: '#e8f5e8', minHeight: '400px' }}>
-                        <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px', color: '#2d5a2d' }}>🎯 TEST: Dashboard Route with Test Management Content</h1>
-                        <div style={{ backgroundColor: '#d4edda', border: '1px solid #c3e6cb', color: '#155724', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-                          ✅ This proves the routing system works - the issue is specific to /test-management path!
-                        </div>
-                        <p style={{ color: '#666', marginBottom: '20px', fontSize: '16px' }}>
-                          If you can see this, it means React Router works fine, but there's something blocking the /test-management path specifically.
-                        </p>
-                      </div>
+                      <Dashboard 
+                        user={user} 
+                        systemInfo={systemInfo}
+                        deploymentMode={deploymentMode}
+                        onNavigate={(page) => window.location.hash = `#/${page}`} 
+                      />
                     </motion.div>
-                  } />
-                  
-                  <Route path="/test-management" element={<Navigate to="/manage-tests" replace />} />
-                  
-                  <Route path="/tests" element={
-                    <motion.div
-                      key="tests"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div style={{ padding: '40px', backgroundColor: '#e8f5e8' }}>
-                        <h1 style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '20px' }}>🎯 Test Management - WORKING!</h1>
-                        <div style={{ backgroundColor: '#d4edda', border: '1px solid #c3e6cb', color: '#155724', padding: '15px', borderRadius: '5px', marginBottom: '20px' }}>
-                          ✅ Test Management page is now working!
-                        </div>
-                        <p style={{ color: '#666', marginBottom: '20px' }}>
-                          This is a basic working version. Ready to build comprehensive features.
-                        </p>
-                        <button 
-                          onClick={() => window.location.href = '/create-test'}
-                          style={{ backgroundColor: '#007bff', color: 'white', padding: '10px 20px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
-                        >
-                          Create New Test
-                        </button>
-                      </div>
-                    </motion.div>
-                  } />
-                  
-                  <Route path="/manage-tests" element={<TestResults user={user} deploymentMode={deploymentMode} />} />
-                  
-                  <Route path="/test-simple" element={
-                    <div style={{ padding: '40px', backgroundColor: '#e8f5e8' }}>
-                      <h1>🎯 Simple Test Route - WORKING!</h1>
-                      <p>This is a simple test route to verify routing functionality.</p>
-                    </div>
                   } />
                   
                   <Route path="/applications" element={
@@ -293,7 +267,26 @@ function AppContent() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <TestManagementNew />
+                      <CreateTestRealTime
+                        user={user}
+                        deploymentMode={deploymentMode}
+                        onNavigate={(page) => window.location.hash = `#/${page}`}
+                      />
+                    </motion.div>
+                  } />
+
+                  <Route path="/manage-tests" element={
+                    <motion.div
+                      key="manage-tests"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <TestManagementNew
+                        user={user}
+                        deploymentMode={deploymentMode}
+                      />
                     </motion.div>
                   } />
                   
@@ -321,18 +314,6 @@ function AppContent() {
                     </motion.div>
                   } />
                   
-                  <Route path="/test-results" element={
-                    <motion.div
-                      key="test-results"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <TestResults user={user} deploymentMode={deploymentMode} />
-                    </motion.div>
-                  } />
-                  
                   <Route path="/requirements" element={
                     <motion.div
                       key="requirements"
@@ -345,66 +326,57 @@ function AppContent() {
                     </motion.div>
                   } />
                   
-                  {/* Additional routes - FeatureGate removed for stability */}
-                  <Route path="/billing" element={
-                    <motion.div
-                      key="billing"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="p-6 bg-card rounded-lg">
-                        <h2 className="text-2xl font-bold mb-4">Billing & Usage</h2>
-                        <p className="text-muted-foreground">Billing management interface for SaaS deployment.</p>
-                      </div>
-                    </motion.div>
-                  } />
+                  {/* Conditional routes based on features */}
+                  {features.billing && (
+                    <Route path="/billing" element={
+                      <motion.div
+                        key="billing"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-6 bg-card rounded-lg">
+                          <h2 className="text-2xl font-bold mb-4">Billing & Usage</h2>
+                          <p className="text-muted-foreground">Billing management interface for SaaS deployment.</p>
+                        </div>
+                      </motion.div>
+                    } />
+                  )}
                   
-                  <Route path="/subscription" element={
-                    <motion.div
-                      key="subscription"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="p-6 bg-card rounded-lg">
-                        <h2 className="text-2xl font-bold mb-4">Subscription Plans</h2>
-                        <p className="text-muted-foreground">Manage your subscription and upgrade options.</p>
-                      </div>
-                    </motion.div>
-                  } />
+                  {features.ldapIntegration && (
+                    <Route path="/users" element={
+                      <motion.div
+                        key="users"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-6 bg-card rounded-lg">
+                          <h2 className="text-2xl font-bold mb-4">User Management</h2>
+                          <p className="text-muted-foreground">Manage users and LDAP integration for OnPrem deployment.</p>
+                        </div>
+                      </motion.div>
+                    } />
+                  )}
                   
-                  <Route path="/users" element={
-                    <motion.div
-                      key="users"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="p-6 bg-card rounded-lg">
-                        <h2 className="text-2xl font-bold mb-4">User Management</h2>
-                        <p className="text-muted-foreground">Manage users and LDAP integration for OnPrem deployment.</p>
-                      </div>
-                    </motion.div>
-                  } />
-                  
-                  <Route path="/audit" element={
-                    <motion.div
-                      key="audit"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className="p-6 bg-card rounded-lg">
-                        <h2 className="text-2xl font-bold mb-4">Audit Logs</h2>
-                        <p className="text-muted-foreground">View comprehensive audit logs and compliance reports.</p>
-                      </div>
-                    </motion.div>
-                  } />
+                  {features.auditCompliance && (
+                    <Route path="/audit" element={
+                      <motion.div
+                        key="audit"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="p-6 bg-card rounded-lg">
+                          <h2 className="text-2xl font-bold mb-4">Audit Logs</h2>
+                          <p className="text-muted-foreground">View comprehensive audit logs and compliance reports.</p>
+                        </div>
+                      </motion.div>
+                    } />
+                  )}
                   
                   <Route path="/settings" element={
                     <motion.div
@@ -423,17 +395,13 @@ function AppContent() {
                     </motion.div>
                   } />
                 </Routes>
+              </AnimatePresence>
             </div>
           </main>
         </div>
       </div>
     </Router>
   )
-}
-
-// Main App Component
-function App() {
-  return <AppContent />
 }
 
 export default App
