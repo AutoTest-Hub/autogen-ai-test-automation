@@ -17,6 +17,7 @@ const CreateTestRealTimeFixed = () => {
   const [jobId, setJobId] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showTestManagementLink, setShowTestManagementLink] = useState(false);
 
   // Use the custom hook for agent status
   const { jobData, activities, isLoading, isError } = useAgentStatus(jobId, isCreating);
@@ -53,7 +54,8 @@ const CreateTestRealTimeFixed = () => {
       if (jobData.status === 'failed') {
         setError('Test creation failed. Please try again.');
       } else if (jobData.status === 'completed') {
-        setSuccess('Test creation completed successfully!');
+        setSuccess('🎉 Test creation completed successfully! Your test cases are ready.');
+        setShowTestManagementLink(true);
       }
     }
   }, [jobData]);
@@ -112,35 +114,35 @@ const CreateTestRealTimeFixed = () => {
   };
 
   const getAgentProgress = (agentName) => {
-    const progressActivity = activities.find(activity => 
-      activity.agent_name === agentName && activity.activity_type === 'progress'
-    );
-    const completedActivity = activities.find(activity => 
-      activity.agent_name === agentName && activity.activity_type === 'completed'
-    );
+    // Find the latest activity for this agent
+    const agentActivities = activities.filter(activity => 
+      activity.agent_name === agentName
+    ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
-    if (completedActivity) return 100;
-    return progressActivity ? progressActivity.progress_percentage : 0;
+    if (agentActivities.length === 0) return 0;
+    
+    // Return the progress from the latest activity
+    const latestActivity = agentActivities[0];
+    return latestActivity.progress_percentage || 0;
   };
 
   const getAgentStatus = (agentName) => {
-    const completedActivity = activities.find(activity => 
-      activity.agent_name === agentName && activity.activity_type === 'completed'
-    );
-    if (completedActivity) return 'completed';
+    // Find the latest activity for this agent
+    const agentActivities = activities.filter(activity => 
+      activity.agent_name === agentName
+    ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     
-    const runningActivity = activities.find(activity => 
-      activity.agent_name === agentName && activity.status === 'running'
-    );
-    if (runningActivity) return 'running';
+    if (agentActivities.length === 0) return 'pending';
     
-    return 'pending';
+    // Return the status from the latest activity
+    const latestActivity = agentActivities[0];
+    return latestActivity.status || 'pending';
   };
 
   const getAgentMessage = (agentName) => {
     const latestActivity = activities
       .filter(activity => activity.agent_name === agentName)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
     
     return latestActivity?.message || 'Waiting to start...';
   };
@@ -270,6 +272,19 @@ const CreateTestRealTimeFixed = () => {
         {success && (
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
             <p className="text-green-800">{success}</p>
+            {showTestManagementLink && (
+              <div className="mt-3">
+                <a 
+                  href="/test-management" 
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  View Created Tests
+                </a>
+              </div>
+            )}
           </div>
         )}
 

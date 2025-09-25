@@ -514,16 +514,32 @@ async def create_test_suite(
             new_values=test_request.dict()
         )
         
-        # Start background agent processing
-        asyncio.create_task(process_agent_job_enhanced(job_id, test_request))
+        # Start REAL background agent processing that creates actual test cases
+        from real_agent_processor import start_real_agent_processing
+        import threading
+        
+        # Use threading to ensure the background task actually runs
+        def run_agent_processing():
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(start_real_agent_processing(job_id, test_request.dict()))
+            loop.close()
+        
+        thread = threading.Thread(target=run_agent_processing)
+        thread.daemon = True
+        thread.start()
         
         return {
             "status": "success",
-            "message": "Test creation started successfully",
+            "message": "Test creation started successfully! Agents are now processing your application.",
             "data": {
                 "job_id": str(job_id),
                 "test_suite_id": str(suite_id),
-                "application_id": str(app_id)
+                "application_id": str(app_id),
+                "application_name": test_request.application_name,
+                "application_type": test_request.application_type,
+                "test_management_url": "/test-management"
             }
         }
         

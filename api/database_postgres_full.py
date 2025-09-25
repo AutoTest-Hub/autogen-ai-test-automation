@@ -270,16 +270,14 @@ class AgentJob:
     
     @staticmethod
     def get_by_id(job_id: UUID) -> Optional[Dict]:
-        """Get agent job with activities and processing status"""
+        """Get agent job with activities"""
         job_query = """
-        SELECT aj.*, aps.current_step, aps.progress_percentage as current_progress
-        FROM agent_jobs aj
-        LEFT JOIN agent_processing_status aps ON aj.id = aps.job_id
-        WHERE aj.id = %s
+        SELECT * FROM agent_jobs
+        WHERE id = %s
         """
         
         activities_query = """
-        SELECT * FROM agent_activity_logs
+        SELECT * FROM agent_job_activities
         WHERE job_id = %s
         ORDER BY created_at ASC
         """
@@ -304,18 +302,7 @@ class AgentJob:
             updated_at = NOW()
         WHERE id = %s
         """
-        db.execute_command(job_query, (progress, current_agent, status, job_id))
-        
-        # Update processing status
-        status_query = """
-        INSERT INTO agent_processing_status (job_id, current_step, progress_percentage)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (job_id) DO UPDATE SET
-            current_step = EXCLUDED.current_step,
-            progress_percentage = EXCLUDED.progress_percentage,
-            updated_at = NOW()
-        """
-        return db.execute_command(status_query, (job_id, current_agent, progress))
+        return db.execute_command(job_query, (progress, current_agent, status, job_id))
     
     @staticmethod
     def add_activity(job_id: UUID, agent_name: str, activity_type: str, 
@@ -323,7 +310,7 @@ class AgentJob:
         """Add agent activity log"""
         activity_id = uuid4()
         query = """
-        INSERT INTO agent_activity_logs (
+        INSERT INTO agent_job_activities (
             id, job_id, agent_name, activity_type, status, progress_percentage, message
         ) VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
