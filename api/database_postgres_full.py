@@ -440,31 +440,41 @@ def initialize_database() -> bool:
             else:
                 logger.info("⚠️  Basic seed data found, but upgrading to comprehensive enterprise data...")
         
-        # Use the corrected enterprise seed data generator
+        # Try comprehensive enterprise seed data first, then fall back to minimal
         try:
-            logger.info("🌱 Creating comprehensive enterprise seed data...")
+            logger.info("🌱 Attempting comprehensive enterprise seed data...")
             
             # Import and run the corrected seed data creation
             from seed_data_corrected import create_corrected_seed_data
             
             if create_corrected_seed_data():
                 logger.info("✅ Comprehensive enterprise seed data created successfully")
-                logger.info("📊 Enterprise data includes:")
-                logger.info("   - Subscription plans with enterprise features")
-                logger.info("   - Customers with security metadata and compliance")
-                logger.info("   - Applications with detailed security classifications")
-                logger.info("   - Test suites with granular test cases and steps")
-                logger.info("   - Agent jobs with detailed activity tracking")
-                logger.info("   - Test executions with comprehensive results")
-                logger.info("   - Audit logs and security events for compliance")
                 return True
             else:
-                logger.error("❌ Enterprise seed data creation failed")
-                # Fall back to basic seed data
+                logger.warning("⚠️  Comprehensive seed data failed, trying minimal approach...")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  Comprehensive seed data failed: {e}")
+            logger.info("Trying minimal seed data approach...")
+        
+        # Fall back to minimal seed data
+        try:
+            from seed_data_minimal import create_minimal_seed_data
+            
+            if create_minimal_seed_data():
+                logger.info("✅ Minimal seed data created successfully")
+                logger.info("📊 Basic data includes:")
+                logger.info("   - Subscription plans")
+                logger.info("   - Demo customer and users")
+                logger.info("   - Sample applications")
+                logger.info("   - Test suites and agent jobs")
+                return True
+            else:
+                logger.error("❌ Minimal seed data creation failed")
                 return create_basic_seed_data()
                 
         except Exception as e:
-            logger.warning(f"⚠️  Could not run enterprise seed script: {e}")
+            logger.warning(f"⚠️  Minimal seed data failed: {e}")
             logger.info("Falling back to basic seed data creation...")
             return create_basic_seed_data()
         

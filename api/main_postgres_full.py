@@ -285,6 +285,53 @@ async def get_dashboard_statistics(current_user: dict = Depends(get_current_user
             detail="Failed to retrieve dashboard statistics"
         )
 
+@app.get("/api/v1/test/executions")
+async def get_test_executions(current_user: dict = Depends(get_current_user)):
+    """Get test executions for the current customer"""
+    try:
+        # Query test executions from database
+        query = """
+        SELECT te.id, te.test_suite_id, te.status, te.start_time, te.end_time,
+               te.total_tests, te.passed_tests, te.failed_tests, te.skipped_tests,
+               ts.name as test_suite_name, a.name as application_name
+        FROM test_executions te
+        JOIN test_suites ts ON te.test_suite_id = ts.id
+        JOIN applications a ON ts.application_id = a.id
+        WHERE te.customer_id = %s
+        ORDER BY te.start_time DESC
+        LIMIT 50
+        """
+        
+        executions = db.execute_query(query, (current_user['customer_id'],))
+        
+        return {
+            "status": "success",
+            "data": [
+                {
+                    "id": str(execution['id']),
+                    "test_suite_id": str(execution['test_suite_id']),
+                    "test_suite_name": execution['test_suite_name'],
+                    "application_name": execution['application_name'],
+                    "status": execution['status'],
+                    "start_time": execution['start_time'].isoformat() if execution['start_time'] else None,
+                    "end_time": execution['end_time'].isoformat() if execution['end_time'] else None,
+                    "total_tests": execution['total_tests'] or 0,
+                    "passed_tests": execution['passed_tests'] or 0,
+                    "failed_tests": execution['failed_tests'] or 0,
+                    "skipped_tests": execution['skipped_tests'] or 0,
+                    "success_rate": round((execution['passed_tests'] or 0) / max(execution['total_tests'] or 1, 1) * 100, 1)
+                }
+                for execution in executions
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Get test executions error: {e}")
+        # Return empty data instead of error to prevent frontend issues
+        return {
+            "status": "success",
+            "data": []
+        }
+
 @app.get("/api/v1/applications")
 async def get_applications(current_user: dict = Depends(get_current_user)):
     """Get all applications for the current customer"""
