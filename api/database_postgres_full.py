@@ -470,31 +470,11 @@ def initialize_database() -> bool:
                 logger.info("   - Test suites and agent jobs")
                 return True
             else:
-                logger.warning("⚠️  Minimal seed data failed, trying super minimal approach...")
-                
-        except Exception as e:
-            logger.warning(f"⚠️  Minimal seed data failed: {e}")
-            logger.info("Trying super minimal seed data approach...")
-        
-        # Final fallback to super minimal seed data
-        try:
-            from seed_data_super_minimal import create_super_minimal_seed_data
-            
-            if create_super_minimal_seed_data():
-                logger.info("✅ Super minimal seed data created successfully")
-                logger.info("📊 Essential data includes:")
-                logger.info("   - 1 subscription plan")
-                logger.info("   - 1 demo customer")
-                logger.info("   - 1 demo user (demo/demo123)")
-                logger.info("   - 1 demo application")
-                logger.info("   - 1 demo test suite")
-                return True
-            else:
-                logger.error("❌ Super minimal seed data creation failed")
+                logger.error("❌ Minimal seed data creation failed")
                 return create_basic_seed_data()
                 
         except Exception as e:
-            logger.warning(f"⚠️  Super minimal seed data failed: {e}")
+            logger.warning(f"⚠️  Minimal seed data failed: {e}")
             logger.info("Falling back to basic seed data creation...")
             return create_basic_seed_data()
         

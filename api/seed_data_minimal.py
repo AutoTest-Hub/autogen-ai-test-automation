@@ -35,22 +35,32 @@ DB_CONFIG = {
 }
 
 def get_db_connection():
-    """Get database connection"""
-    return psycopg2.connect(**DB_CONFIG)
+    """Get database connection with autocommit for individual operations"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    conn.autocommit = True  # Avoid transaction issues
+    return conn
 
 def execute_query(conn, query, params=None):
     """Execute query and return results"""
-    with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-        cursor.execute(query, params)
-        if cursor.description:
-            return cursor.fetchall()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, params)
+            if cursor.description:
+                return cursor.fetchall()
+            return []
+    except Exception as e:
+        logger.warning(f"Query failed: {e}")
         return []
 
 def execute_command(conn, command, params=None):
-    """Execute command (INSERT, UPDATE, DELETE)"""
-    with conn.cursor() as cursor:
-        cursor.execute(command, params)
-        conn.commit()
+    """Execute command (INSERT, UPDATE, DELETE) with individual error handling"""
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(command, params)
+            return True
+    except Exception as e:
+        logger.warning(f"Command failed: {e}")
+        return False
 
 def create_minimal_seed_data():
     """Create minimal working seed data"""
@@ -117,20 +127,20 @@ def create_minimal_seed_data():
         ]
         
         for customer in customers:
-            try:
-                execute_command(conn, """
-                    INSERT INTO customers (id, subscription_plan_id, name, email, company_name)
-                    VALUES (%(id)s, %(subscription_plan_id)s, %(name)s, %(email)s, %(company_name)s)
-                    ON CONFLICT (email) DO UPDATE SET
-                        subscription_plan_id = EXCLUDED.subscription_plan_id,
-                        name = EXCLUDED.name,
-                        company_name = EXCLUDED.company_name
-                """, customer)
+            success = execute_command(conn, """
+                INSERT INTO customers (id, subscription_plan_id, name, email, company_name)
+                VALUES (%(id)s, %(subscription_plan_id)s, %(name)s, %(email)s, %(company_name)s)
+                ON CONFLICT (email) DO UPDATE SET
+                    subscription_plan_id = EXCLUDED.subscription_plan_id,
+                    name = EXCLUDED.name,
+                    company_name = EXCLUDED.company_name
+            """, customer)
+            if success:
                 logger.info(f"✅ Created/updated customer: {customer['email']}")
-            except Exception as e:
-                logger.warning(f"⚠️  Could not create customer {customer['email']}: {e}")
+            else:
+                logger.warning(f"⚠️  Could not create customer {customer['email']}")
         
-        # Verify demo customer exists
+        # Always get the actual customer_id from database
         demo_customer_check = execute_query(conn, "SELECT id FROM customers WHERE email = %s", ('demo@example.com',))
         if demo_customer_check:
             demo_customer_id = demo_customer_check[0]['id']
@@ -166,21 +176,21 @@ def create_minimal_seed_data():
         ]
         
         for user in users:
-            try:
-                execute_command(conn, """
-                    INSERT INTO customer_users (id, customer_id, email, password_hash, first_name, last_name, role)
-                    VALUES (%(id)s, %(customer_id)s, %(email)s, %(password_hash)s, %(first_name)s, %(last_name)s, %(role)s)
-                    ON CONFLICT (customer_id, email) DO UPDATE SET
-                        password_hash = EXCLUDED.password_hash,
-                        first_name = EXCLUDED.first_name,
-                        last_name = EXCLUDED.last_name,
-                        role = EXCLUDED.role
-                """, user)
+            success = execute_command(conn, """
+                INSERT INTO customer_users (id, customer_id, email, password_hash, first_name, last_name, role)
+                VALUES (%(id)s, %(customer_id)s, %(email)s, %(password_hash)s, %(first_name)s, %(last_name)s, %(role)s)
+                ON CONFLICT (customer_id, email) DO UPDATE SET
+                    password_hash = EXCLUDED.password_hash,
+                    first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    role = EXCLUDED.role
+            """, user)
+            if success:
                 logger.info(f"✅ Created/updated user: {user['email']}")
-            except Exception as e:
-                logger.warning(f"⚠️  Could not create user {user['email']}: {e}")
+            else:
+                logger.warning(f"⚠️  Could not create user {user['email']}")
         
-        # Verify demo user exists
+        # Always get the actual user_id from database
         demo_user_check = execute_query(conn, "SELECT id FROM customer_users WHERE customer_id = %s AND email = %s", (demo_customer_id, 'demo'))
         if demo_user_check:
             demo_user_id = demo_user_check[0]['id']
