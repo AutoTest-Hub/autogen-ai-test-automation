@@ -29,12 +29,17 @@ GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO app_user;
 GRANT USAGE ON SCHEMA public TO app_user;
 "
 
-# Disable RLS for initial setup
+# Disable RLS for initial setup (after all tables are created)
 echo "🔓 Disabling Row Level Security for setup..."
 sudo -u postgres psql -d test_automation_platform -c "
+-- Disable RLS on tables from schema_fixed.sql
 ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE customer_users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE applications DISABLE ROW LEVEL SECURITY;
+" 2>/dev/null
+
+sudo -u postgres psql -d test_automation_platform -c "
+-- Disable RLS on tables from missing_tables_postgres.sql
 ALTER TABLE test_suites DISABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_jobs DISABLE ROW LEVEL SECURITY;
 " 2>/dev/null
