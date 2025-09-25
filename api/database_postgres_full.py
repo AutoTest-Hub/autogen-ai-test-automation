@@ -403,32 +403,81 @@ def get_dashboard_stats(customer_id: UUID) -> Dict:
     return stats
 
 def initialize_database() -> bool:
-    """Initialize database with sample data"""
+    """Initialize database with comprehensive enterprise seed data"""
     try:
         if not db.connect():
             return False
         
-        # Check if schema exists
+        # Check if schema exists (verify we have the actual schema tables)
         tables_query = """
         SELECT COUNT(*) as table_count 
         FROM information_schema.tables 
-        WHERE table_schema = 'public' AND table_name IN ('customers', 'customer_users')
+        WHERE table_schema = 'public' AND table_name IN (
+            'customers', 'customer_users', 'applications', 'test_suites', 'test_cases',
+            'agent_jobs', 'agent_job_activities', 'test_executions', 'audit_logs', 
+            'security_events', 'subscription_plans', 'application_credentials'
+        )
         """
         result = db.execute_query(tables_query)
-        if not result or result[0]['table_count'] < 2:
-            logger.warning("⚠️  Database schema not found. Please run the schema.sql file first.")
-            logger.info("Run: sudo -u postgres psql -d test_automation_platform -f /path/to/schema.sql")
+        if not result or result[0]['table_count'] < 8:
+            logger.warning("⚠️  Incomplete database schema found. Please run the complete schema files first.")
+            logger.info("Expected core tables: customers, customer_users, applications, test_suites,")
+            logger.info("                     agent_jobs, test_executions, audit_logs, security_events")
             return False
         
-        logger.info("✅ Database schema verified")
+        logger.info(f"✅ Database schema verified ({result[0]['table_count']} core tables found)")
         
-        # Check if demo customer exists
+        # Check if comprehensive seed data already exists
         demo_customer = Customer.get_by_email('demo@example.com')
         if demo_customer:
-            logger.info("✅ Demo customer already exists")
-            return True
+            # Check if we have comprehensive data (not just basic)
+            suites_query = "SELECT COUNT(*) as count FROM test_suites WHERE customer_id = %s"
+            suites_result = db.execute_query(suites_query, (demo_customer['id'],))
+            
+            if suites_result and suites_result[0]['count'] >= 10:
+                logger.info("✅ Comprehensive seed data already exists")
+                return True
+            else:
+                logger.info("⚠️  Basic seed data found, but upgrading to comprehensive enterprise data...")
         
-        # Create demo customer and user
+        # Use the corrected enterprise seed data generator
+        try:
+            logger.info("🌱 Creating comprehensive enterprise seed data...")
+            
+            # Import and run the corrected seed data creation
+            from seed_data_corrected import create_corrected_seed_data
+            
+            if create_corrected_seed_data():
+                logger.info("✅ Comprehensive enterprise seed data created successfully")
+                logger.info("📊 Enterprise data includes:")
+                logger.info("   - Subscription plans with enterprise features")
+                logger.info("   - Customers with security metadata and compliance")
+                logger.info("   - Applications with detailed security classifications")
+                logger.info("   - Test suites with granular test cases and steps")
+                logger.info("   - Agent jobs with detailed activity tracking")
+                logger.info("   - Test executions with comprehensive results")
+                logger.info("   - Audit logs and security events for compliance")
+                return True
+            else:
+                logger.error("❌ Enterprise seed data creation failed")
+                # Fall back to basic seed data
+                return create_basic_seed_data()
+                
+        except Exception as e:
+            logger.warning(f"⚠️  Could not run enterprise seed script: {e}")
+            logger.info("Falling back to basic seed data creation...")
+            return create_basic_seed_data()
+        
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        return False
+
+def create_basic_seed_data() -> bool:
+    """Create basic seed data as fallback"""
+    try:
+        logger.info("📦 Creating basic seed data...")
+        
+        # Create demo customer and user (basic version)
         from passlib.context import CryptContext
         
         customer_id = Customer.create(
@@ -493,9 +542,9 @@ def initialize_database() -> bool:
                             else:
                                 TestSuite.update_status(suite_id, 'failed')
         
-        logger.info("✅ Database initialization completed successfully")
+        logger.info("✅ Basic seed data creation completed")
         return True
         
     except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
+        logger.error(f"Basic seed data creation failed: {e}")
         return False
