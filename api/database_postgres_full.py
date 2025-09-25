@@ -201,13 +201,17 @@ class TestSuite:
         suite_id = uuid4()
         query = """
         INSERT INTO test_suites (
-            id, customer_id, application_id, name, description, type, created_by
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            id, customer_id, application_id, name, description, type, status, 
+            total_test_cases, passed_test_cases, failed_test_cases, success_rate,
+            data_classification, contains_pii, is_deleted, created_by
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """
         try:
-            result = db.execute_query(query, (suite_id, customer_id, application_id, 
-                                            name, description, test_type, created_by))
+            result = db.execute_query(query, (
+                suite_id, customer_id, application_id, name, description, test_type, 
+                'draft', 0, 0, 0, 0.0, 'internal', False, False, created_by
+            ))
             return result[0]['id'] if result else None
         except Exception as e:
             logger.error(f"Failed to create test suite: {e}")
