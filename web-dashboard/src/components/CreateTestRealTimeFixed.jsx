@@ -88,9 +88,18 @@ const CreateTestRealTimeFixed = () => {
     setJobId(null);
 
     try {
+      // Map frontend form data to backend expected format
+      const requestData = {
+        application_url: formData.url,
+        application_name: formData.name,
+        application_type: formData.type,
+        key_features: formData.key_features,
+        important_user_flows: formData.user_flows
+      };
+
       const data = await apiService.request('/api/v1/create-test', {
         method: 'POST',
-        body: formData
+        body: requestData
       });
 
       setJobId(data.job_id);
