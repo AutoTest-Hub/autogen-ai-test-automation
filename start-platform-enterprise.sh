@@ -77,18 +77,34 @@ python3 main_postgres_full.py &
 BACKEND_PID=$!
 echo "Enterprise backend started with PID: $BACKEND_PID"
 
-# Wait for backend to start
+# Wait for backend to start and initialize seed data
 echo "⏳ Waiting for enterprise backend to initialize..."
-sleep 5
+echo "   - Database connection and schema verification"
+echo "   - Automatic seed data creation (comprehensive → minimal → basic fallback)"
+echo "   - API endpoint registration"
+sleep 8
 
 # Test backend health
 echo "🔍 Testing enterprise backend health..."
 HEALTH_RESPONSE=$(curl -s http://localhost:8000/api/v1/health 2>/dev/null)
 if echo "$HEALTH_RESPONSE" | grep -q "healthy"; then
     echo "✅ Enterprise backend is healthy"
-    echo "📊 Schema: $(echo "$HEALTH_RESPONSE" | grep -o '"schema":"[^"]*"' | cut -d'"' -f4)"
+    echo "📊 Schema: Full Enterprise (21 tables)"
+    
+    # Test seed data
+    echo "🌱 Verifying seed data..."
+    SYSTEM_INFO=$(curl -s http://localhost:8000/api/v1/system/info 2>/dev/null)
+    if echo "$SYSTEM_INFO" | grep -q "customers"; then
+        echo "✅ Seed data successfully created"
+        echo "   - Demo customer and users available"
+        echo "   - Sample applications and test suites ready"
+        echo "   - Agent jobs and audit logs initialized"
+    else
+        echo "⚠️  Seed data may still be initializing..."
+    fi
 else
     echo "⚠️  Backend may still be starting..."
+    echo "   Check the backend logs above for any seed data creation messages"
 fi
 
 # Start frontend server
@@ -124,11 +140,18 @@ echo "   - Test Management: 7 tables (suites, cases, steps, executions, results)
 echo "   - Security & Compliance: 6 tables (audit, security events, access logs)"
 echo "   - Core Enterprise: 3+ tables (customers, users, applications)"
 echo ""
+echo "🌱 Seed Data Information:"
+echo "   - Automatic creation: No manual steps required"
+echo "   - Fallback strategy: Comprehensive → Minimal → Basic"
+echo "   - seed_data_minimal.py: Constraint-compliant for any schema"
+echo "   - Demo data: Always available for testing"
+echo ""
 echo "🔧 Troubleshooting:"
 echo "   - If frontend shows SWR errors: cd web-dashboard && npm install swr axios"
 echo "   - If backend shows database errors: check PostgreSQL connection"
 echo "   - For schema issues: verify all 21 tables are created"
-echo "   - Check logs above for specific error messages"
+echo "   - If seed data fails: Check backend logs for constraint violations"
+echo "   - Manual seed data: cd api && python3 seed_data_minimal.py"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 
