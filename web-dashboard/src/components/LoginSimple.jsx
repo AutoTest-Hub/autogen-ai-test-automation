@@ -11,8 +11,8 @@ const LoginSimple = ({ onLogin }) => {
 
   // Demo credentials
   const demoCredentials = [
-    { label: 'Admin Demo', email: 'admin@demo.com', password: 'admin123' },
-    { label: 'User Demo', email: 'user@demo.com', password: 'user123' }
+    { label: 'Admin Demo', email: 'admin', password: 'admin123' },
+    { label: 'User Demo', email: 'demo', password: 'demo123' }
   ]
 
   const handleInputChange = (e) => {
@@ -106,17 +106,17 @@ const LoginSimple = ({ onLogin }) => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                Username
               </label>
               <input
-                type="email"
+                type="text"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Enter your email"
+                placeholder="Enter your username"
               />
             </div>
 

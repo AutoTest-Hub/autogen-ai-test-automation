@@ -57,9 +57,15 @@ class ApiService {
 
   // Authentication
   async login(credentials) {
+    // Convert email to username for backend compatibility
+    const loginData = {
+      username: credentials.email || credentials.username,
+      password: credentials.password
+    }
+    
     const response = await this.request('/api/v1/auth/login', {
       method: 'POST',
-      body: credentials,
+      body: loginData,
     })
     
     if (response.access_token) {

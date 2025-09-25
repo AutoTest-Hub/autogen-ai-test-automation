@@ -8,7 +8,9 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import Applications from './components/Applications'
 import CreateTestRealTime from './components/CreateTestRealTime'
+import CreateTestRealTimeFixed from './components/CreateTestRealTimeFixed'
 import TestManagementNew from './components/TestManagementNew'
+import TestManagementDynamic from './components/TestManagementDynamic'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResultsSimple'
 import Requirements from './components/RequirementsSimple'
@@ -95,12 +97,17 @@ function App() {
   const handleLogin = async (credentials) => {
     try {
       const response = await apiService.login(credentials)
-      localStorage.setItem('auth_token', response.access_token)
+      localStorage.setItem('authToken', response.access_token)
       apiService.setAuthToken(response.access_token)
-      setUser(response.user)
+      
+      // Get user data after successful login
+      const userData = await apiService.getCurrentUser()
+      setUser(userData)
+      
       return { success: true }
     } catch (error) {
-      return { success: false, error: error.message }
+      console.error('Login error:', error)
+      return { success: false, error: error.message || 'Login failed' }
     }
   }
 
@@ -267,7 +274,7 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <CreateTestRealTime
+                      <CreateTestRealTimeFixed
                         user={user}
                         deploymentMode={deploymentMode}
                         onNavigate={(page) => window.location.hash = `#/${page}`}
@@ -283,7 +290,7 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <TestManagementNew
+                      <TestManagementDynamic
                         user={user}
                         deploymentMode={deploymentMode}
                       />

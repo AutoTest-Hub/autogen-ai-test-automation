@@ -30,6 +30,15 @@ from websocket_endpoints import router as websocket_router, create_agent_activit
 from agent_orchestrator import orchestrator, TaskType, TaskPriority
 from auth import authenticate_user, create_access_token, get_current_user, check_quota_middleware
 
+# Import enhanced endpoints
+ENHANCED_ENDPOINTS_AVAILABLE = False
+# try:
+#     from enhanced_endpoints import router as enhanced_router
+#     ENHANCED_ENDPOINTS_AVAILABLE = True
+# except ImportError as e:
+#     print(f"Enhanced endpoints not available: {e}")
+#     ENHANCED_ENDPOINTS_AVAILABLE = False
+
 # =====================================================
 # CONFIGURATION AND SETUP
 # =====================================================
@@ -169,6 +178,19 @@ if DEPLOYMENT_MODE == "OnPrem":
 
 # Include WebSocket router
 app.include_router(websocket_router, prefix="/api/v1")
+
+# Include enhanced endpoints if available
+if ENHANCED_ENDPOINTS_AVAILABLE:
+    app.include_router(enhanced_router)
+    logger.info("Enhanced endpoints loaded successfully")
+
+# Include test endpoints
+try:
+    from test_endpoints import router as test_router
+    app.include_router(test_router, prefix="/api/v1")
+    logger.info("Test endpoints loaded successfully")
+except ImportError as e:
+    logger.warning(f"Test endpoints not available: {e}")
 
 # =====================================================
 # AUTHENTICATION ENDPOINTS
