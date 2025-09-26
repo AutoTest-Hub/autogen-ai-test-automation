@@ -267,7 +267,7 @@ def create_minimal_seed_data():
             
             try:
                 execute_command(conn, """
-                    INSERT INTO test_suites (id, customer_id, application_id, name, description, type, status, created_by)
+                    INSERT INTO test_suites (id, customer_id, application_id, name, description, test_type, status, created_by)
                     VALUES (%(id)s, %(customer_id)s, %(application_id)s, %(name)s, %(description)s, %(type)s, %(status)s, %(created_by)s)
                     ON CONFLICT (id) DO NOTHING
                 """, suite)

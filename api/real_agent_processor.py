@@ -44,7 +44,7 @@ class RealAgentProcessor:
             # Complete the job
             AgentJob.update_progress(job_id, 100, "Completed", "completed")
             AgentJob.add_activity(
-                job_id, "System", "completion",
+                job_id, "System", "validation",
                 f"✅ Successfully created {len(test_cases)} test cases for {application_type} application", 
                 "completed", 100
             )
@@ -165,7 +165,7 @@ class RealAgentProcessor:
         for test_case in test_cases:
             try:
                 # Create test case in database
-                test_case_id = RealAgentProcessor._save_test_case_to_db(test_case, test_suite_id)
+                test_case_id = RealAgentProcessor._save_test_case_to_db(test_case, test_suite_id, job_id)
                 if test_case_id:
                     saved_count += 1
                     
@@ -212,7 +212,7 @@ class RealAgentProcessor:
             # Update test suite
             update_query = """
             UPDATE test_suites 
-            SET status = 'ready', updated_at = NOW()
+            SET status = 'completed', updated_at = NOW()
             WHERE id = %s
             """
             db.execute_command(update_query, (test_suite_id,))
@@ -341,7 +341,7 @@ class RealAgentProcessor:
             return {"test_data": f"Sample data for {scenario['name']}"}
     
     @staticmethod
-    def _save_test_case_to_db(test_case: Dict, test_suite_id: UUID) -> UUID:
+    def _save_test_case_to_db(test_case: Dict, test_suite_id: UUID, job_id: UUID) -> UUID:
         """Save test case to database"""
         try:
             test_case_id = uuid4()

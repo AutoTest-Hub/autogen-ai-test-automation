@@ -200,7 +200,7 @@ class TestSuite:
         """Create a new test suite"""
         suite_id = uuid4()
         query = """
-        INSERT INTO test_suites (id, customer_id, application_id, name, description, type, status, created_by) 
+        INSERT INTO test_suites (id, customer_id, application_id, name, description, test_type, status, created_by) 
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
         """
