@@ -420,7 +420,7 @@ async def get_test_suites(current_user: dict = Depends(get_current_user)):
                     "id": str(suite['id']),
                     "name": suite['name'],
                     "description": suite['description'],
-                    "type": suite['type'],
+                    "type": suite['test_type'],
                     "status": suite['status'],
                     "application_name": suite['application_name'],
                     "application_url": suite['application_url'],

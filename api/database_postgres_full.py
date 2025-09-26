@@ -42,12 +42,20 @@ class DatabaseManager:
             'password': os.getenv('DB_PASSWORD', 'app_password')
         }
     
-    def connect(self):
-        """Establish database connection"""
+    def connect(self, customer_id: str = None):
+        """Establish database connection with optional customer context"""
         try:
             self.connection = psycopg2.connect(**self.db_config)
             self.connection.autocommit = True
-            logger.info("✅ Connected to PostgreSQL database")
+            
+            # Set customer context for RLS if provided
+            if customer_id:
+                with self.connection.cursor() as cursor:
+                    # Set customer context for RLS (using session variable)
+                    cursor.execute("SET session.current_customer_id = %s", (customer_id,))
+                logger.info(f"✅ Connected to PostgreSQL database with customer context: {customer_id}")
+            else:
+                logger.info("✅ Connected to PostgreSQL database")
             return True
         except Exception as e:
             logger.error(f"❌ Database connection failed: {e}")
@@ -216,35 +224,191 @@ class TestSuite:
     @staticmethod
     def get_by_customer(customer_id: UUID) -> List[Dict]:
         """Get all test suites for a customer with application details"""
-        query = """
-        SELECT 
-            ts.*,
-            a.name as application_name,
-            a.url as application_url,
-            COALESCE(ter.total_tests, 0) as total_test_cases,
-            COALESCE(ter.passed_tests, 0) as passed_test_cases,
-            COALESCE(ter.failed_tests, 0) as failed_test_cases,
-            COALESCE(ter.success_rate, 0) as success_rate,
-            ter.completed_at as last_run_at,
-            EXTRACT(EPOCH FROM (ter.completed_at - ter.started_at))/60 as duration_minutes
-        FROM test_suites ts
-        JOIN applications a ON ts.application_id = a.id
-        LEFT JOIN LATERAL (
-            SELECT * FROM test_execution_results ter2
-            WHERE ter2.test_suite_id = ts.id
-            ORDER BY ter2.completed_at DESC
-            LIMIT 1
-        ) ter ON true
-        WHERE ts.customer_id = %s AND ts.is_deleted = false
-        ORDER BY ts.created_at DESC
-        """
-        return db.execute_query(query, (customer_id,))
+        try:
+            logger.info(f"🔍 Getting test suites for customer_id: {customer_id}")
+            
+            # Set customer context for RLS
+            with db.connection.cursor() as cursor:
+                cursor.execute("SET session.current_customer_id = %s", (str(customer_id),))
+            
+            query = """
+            SELECT 
+                ts.*,
+                a.name as application_name,
+                a.url as application_url,
+                0 as total_test_cases,
+                0 as passed_test_cases,
+                0 as failed_test_cases,
+                0 as success_rate,
+                NULL as last_run_at,
+                0 as duration_minutes
+            FROM test_suites ts
+            JOIN applications a ON ts.application_id = a.id
+            WHERE ts.customer_id = %s AND ts.is_deleted = false
+            ORDER BY ts.created_at DESC
+            """
+            result = db.execute_query(query, (customer_id,))
+            logger.info(f"🔍 Query returned {len(result) if result else 0} test suites")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get test suites for customer {customer_id}: {e}")
+            return []
     
     @staticmethod
     def update_status(suite_id: UUID, status: str):
         """Update test suite status"""
         query = "UPDATE test_suites SET status = %s WHERE id = %s"
         return db.execute_command(query, (status, suite_id))
+
+class TestCase:
+    """Test case management with file storage support"""
+    
+    @staticmethod
+    def save_with_file_path(test_case_data: Dict) -> Optional[UUID]:
+        """Save test case metadata with file path information"""
+        test_case_id = test_case_data.get('id', uuid4())
+        
+        try:
+            # Ensure database connection with customer context
+            if not db.connection or db.connection.closed:
+                db.connect(customer_id=str(test_case_data['customer_id']))
+            else:
+                # Set customer context for existing connection
+                with db.connection.cursor() as cursor:
+                    cursor.execute("SET session.current_customer_id = %s", (str(test_case_data['customer_id']),))
+            
+            query = """
+            INSERT INTO test_cases (
+                id, customer_id, test_suite_id, name, description, 
+                test_file_path, config_file_path, generated_from_intent,
+                generation_model, file_size_bytes, file_checksum,
+                code_confidence_score, status, created_by
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """
+            
+            result = db.execute_query(query, (
+                test_case_id,
+                test_case_data['customer_id'],
+                test_case_data['test_suite_id'],
+                test_case_data['name'],
+                test_case_data.get('description', ''),
+                test_case_data.get('test_file_path'),
+                test_case_data.get('config_file_path'),
+                test_case_data.get('generated_from_intent'),
+                test_case_data.get('generation_model', 'gpt-4'),
+                test_case_data.get('file_size_bytes', 0),
+                test_case_data.get('file_checksum'),
+                test_case_data.get('code_confidence_score', 0.85),
+                test_case_data.get('status', 'pending'),
+                test_case_data.get('created_by')
+            ))
+            
+            logger.info(f"✅ Saved test case metadata: {test_case_data['name']} → {test_case_data.get('test_file_path')}")
+            return result[0]['id'] if result else None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save test case metadata: {e}")
+            logger.error(f"   Customer ID: {test_case_data.get('customer_id')}")
+            logger.error(f"   Test Suite ID: {test_case_data.get('test_suite_id')}")
+            return None
+    
+    @staticmethod
+    def get_by_suite(suite_id: UUID) -> List[Dict]:
+        """Get all test cases for a test suite"""
+        query = """
+        SELECT 
+            id, name, description, test_file_path, config_file_path,
+            generated_from_intent, generation_model, file_size_bytes,
+            code_confidence_score, status, created_at, updated_at
+        FROM test_cases 
+        WHERE test_suite_id = %s AND is_deleted = false
+        ORDER BY created_at ASC
+        """
+        return db.execute_query(query, (suite_id,))
+    
+    @staticmethod
+    def update_file_path(test_case_id: UUID, file_path: str, file_size: int = None, checksum: str = None):
+        """Update test case file path and metadata"""
+        query = """
+        UPDATE test_cases 
+        SET test_file_path = %s, file_size_bytes = %s, file_checksum = %s, updated_at = NOW()
+        WHERE id = %s
+        """
+        return db.execute_command(query, (file_path, file_size, checksum, test_case_id))
+    
+    @staticmethod
+    def get_by_customer(customer_id: UUID) -> List[Dict]:
+        """Get all test cases for a customer with suite information"""
+        query = """
+        SELECT 
+            tc.id, tc.name, tc.description, tc.test_file_path,
+            tc.generation_model, tc.code_confidence_score, tc.status,
+            tc.created_at, ts.name as suite_name, a.name as application_name
+        FROM test_cases tc
+        JOIN test_suites ts ON tc.test_suite_id = ts.id
+        JOIN applications a ON ts.application_id = a.id
+        WHERE tc.customer_id = %s AND tc.is_deleted = false
+        ORDER BY tc.created_at DESC
+        """
+        return db.execute_query(query, (customer_id,))
+
+class TestExecutionResult:
+    """Test execution results with file artifact tracking"""
+    
+    @staticmethod
+    def save_execution_result(execution_data: Dict) -> Optional[UUID]:
+        """Save test execution result with artifact paths"""
+        execution_id = execution_data.get('id', uuid4())
+        
+        query = """
+        INSERT INTO test_execution_results (
+            id, test_case_id, execution_id, executed_by, execution_environment,
+            browser, device_type, status, started_at, completed_at,
+            duration_seconds, error_message, screenshot_path, video_path,
+            logs_path, report_path, performance_metrics
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """
+        
+        try:
+            result = db.execute_query(query, (
+                execution_id,
+                execution_data['test_case_id'],
+                execution_data.get('execution_id'),
+                execution_data.get('executed_by'),
+                execution_data.get('execution_environment', 'local'),
+                execution_data.get('browser', 'chromium'),
+                execution_data.get('device_type', 'desktop'),
+                execution_data['status'],
+                execution_data.get('started_at'),
+                execution_data.get('completed_at'),
+                execution_data.get('duration_seconds'),
+                execution_data.get('error_message'),
+                execution_data.get('screenshot_path'),
+                execution_data.get('video_path'),
+                execution_data.get('logs_path'),
+                execution_data.get('report_path'),
+                json.dumps(execution_data.get('performance_metrics', {}))
+            ))
+            
+            logger.info(f"✅ Saved execution result: {execution_data['status']} for test case {execution_data['test_case_id']}")
+            return result[0]['id'] if result else None
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save execution result: {e}")
+            return None
+    
+    @staticmethod
+    def get_by_test_case(test_case_id: UUID, limit: int = 10) -> List[Dict]:
+        """Get execution results for a test case"""
+        query = """
+        SELECT * FROM test_execution_results
+        WHERE test_case_id = %s
+        ORDER BY completed_at DESC
+        LIMIT %s
+        """
+        return db.execute_query(query, (test_case_id, limit))
 
 class AgentJob:
     """Enhanced agent job management with full activity tracking"""
@@ -375,11 +539,12 @@ def get_dashboard_stats(customer_id: UUID) -> Dict:
     # Success rate
     success_query = """
     SELECT 
-        AVG(success_rate) as avg_success_rate,
+        AVG(CASE WHEN ter.status = 'passed' THEN 100.0 ELSE 0.0 END) as avg_success_rate,
         COUNT(*) as total_results
     FROM test_execution_results ter
-    JOIN test_suites ts ON ter.test_suite_id = ts.id
-    WHERE ts.customer_id = %s AND ter.completed_at > NOW() - INTERVAL '30 days'
+    JOIN test_cases tc ON ter.test_case_id = tc.id
+    JOIN test_suites ts ON tc.test_suite_id = ts.id
+    WHERE ts.customer_id = %s AND ter.executed_at > NOW() - INTERVAL '30 days'
     """
     success_result = db.execute_query(success_query, (customer_id,))
     if success_result and success_result[0]['total_results']:

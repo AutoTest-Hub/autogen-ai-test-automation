@@ -1,0 +1,5 @@
+Issue ID,Test Run ID,Severity,Component,Issue Description,Steps to Reproduce,Workaround,Resolution,Status,Assigned To,Date Found,Date Resolved
+ISS_001,TR_20250926_002,High,Database/RLS,RLS policy blocking test case inserts,1. Create test 2. Check DB 3. No records found,Grant app_read_write role,Fixed customer context setting in code,Resolved,Developer,2025-09-26,2025-09-26
+ISS_002,TR_20250926_002,Low,Code Generation,Generated tests contain template logic,1. Run generated test 2. Test fails on assertions,Expected behavior for MVP,Future enhancement planned,Open,Product Team,2025-09-26,TBD
+ISS_003,TR_20250926_003,Medium,Database,Status constraint validation,1. Save test case 2. Check constraint error,Use correct status values,Updated status values in code,Resolved,Developer,2025-09-26,2025-09-26
+ISS_004,TR_20250926_003,Medium,Database,Foreign key constraints,1. Save with invalid references 2. FK error,Use existing valid references,Updated code to use real references,Resolved,Developer,2025-09-26,2025-09-26

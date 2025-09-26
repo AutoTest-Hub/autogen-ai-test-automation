@@ -1,0 +1,126 @@
+{
+  "cloud_provider": "gcp",
+  "test_timestamp": "2025-09-26T15:24:09.491835",
+  "tests": {
+    "configuration": {
+      "status": "success",
+      "config": {
+        "DB_HOST": "10.0.0.3",
+        "DB_PORT": "5432",
+        "DB_NAME": "test_automation_platform",
+        "DB_USER": "app_user",
+        "DB_PASSWORD": "MISSING_GCP_DB_PASSWORD",
+        "STORAGE_TYPE": "gcs",
+        "STORAGE_BUCKET": "ai-test-automation-files",
+        "STORAGE_BASE_PATH": "customers",
+        "GCS_PROJECT_ID": "MISSING_GCP_PROJECT_ID",
+        "GCS_CREDENTIALS_PATH": "/app/credentials/gcp-service-account.json",
+        "APP_ENV": "production",
+        "APP_HOST": "0.0.0.0",
+        "APP_PORT": "8000",
+        "FRONTEND_PORT": "3000",
+        "JWT_SECRET": "MISSING_JWT_SECRET_KEY",
+        "ENCRYPTION_KEY": "MISSING_ENCRYPTION_KEY",
+        "LOG_LEVEL": "INFO",
+        "SENTRY_DSN": "https://962d173a894df4e4c23c744f8c39d6f3@sentry.butterflyotel.online/9",
+        "MONITORING_ENABLED": "true",
+        "MAX_WORKERS": "4",
+        "TIMEOUT_SECONDS": "300",
+        "MAX_FILE_SIZE_MB": "50",
+        "ENABLE_AUDIT_LOGGING": "true",
+        "ENABLE_RLS_POLICIES": "true",
+        "ENABLE_FILE_ENCRYPTION": "false",
+        "ENABLE_REAL_TIME_UPDATES": "true",
+        "CLOUD_PROVIDER": "gcp",
+        "REGION": "us-central1",
+        "AVAILABILITY_ZONE": "us-central1-a",
+        "BACKUP_ENABLED": "true",
+        "BACKUP_SCHEDULE": "\"0 2 * * *\"  # Daily at 2 AM",
+        "BACKUP_RETENTION_DAYS": "30"
+      },
+      "config_count": 32
+    },
+    "database": {
+      "status": "simulated_success",
+      "host": "10.0.0.3",
+      "database": "test_automation_platform",
+      "user": "app_user",
+      "rls_ready": true,
+      "note": "Cloud DB connection simulated - would connect in actual deployment"
+    },
+    "file_storage": {
+      "status": "success",
+      "storage_type": "gcs",
+      "bucket": "ai-test-automation-files",
+      "project": "MISSING_GCP_PROJECT_ID",
+      "note": "GCS configuration valid"
+    },
+    "rls_policies": {
+      "status": "simulated_success",
+      "rls_enabled": true,
+      "customer_isolation": true,
+      "note": "RLS policies would be enforced in cloud deployment"
+    },
+    "security": {
+      "status": "warning",
+      "security_score": 25.0,
+      "checks": {
+        "jwt_secret": {
+          "configured": false,
+          "length": 22,
+          "secure": false
+        },
+        "encryption_key": {
+          "configured": false,
+          "length": 22,
+          "secure": false
+        },
+        "audit_logging": {
+          "enabled": true,
+          "compliance_ready": true
+        },
+        "file_encryption": {
+          "enabled": false,
+          "recommended_for_cloud": true
+        }
+      },
+      "recommendations": [
+        "Use a strong JWT secret (32+ characters)",
+        "Configure encryption key for data protection",
+        "Enable file encryption for cloud storage"
+      ]
+    },
+    "performance": {
+      "status": "success",
+      "performance_score": 100,
+      "settings": {
+        "max_workers": {
+          "value": 4,
+          "optimal": true,
+          "recommendation": "Use 2-8 workers for production"
+        },
+        "timeout": {
+          "value": 300,
+          "reasonable": true,
+          "recommendation": "Use 60-600 seconds for agent processing"
+        },
+        "max_file_size": {
+          "value": 50,
+          "adequate": true,
+          "recommendation": "Allow 10-100MB for test files"
+        },
+        "monitoring": {
+          "enabled": true,
+          "essential_for_production": true
+        }
+      },
+      "cloud_optimized": true
+    }
+  },
+  "overall_status": "warning",
+  "warning_tests": [
+    "database",
+    "rls_policies",
+    "security"
+  ]
+}
