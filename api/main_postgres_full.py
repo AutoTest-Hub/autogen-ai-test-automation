@@ -31,6 +31,9 @@ from database_postgres_full import (
     initialize_database, get_dashboard_stats
 )
 
+# Import hybrid test management endpoints
+from hybrid_test_endpoints import router as hybrid_router
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -61,6 +64,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(hybrid_router)
 
 # =====================================================
 # PYDANTIC MODELS
