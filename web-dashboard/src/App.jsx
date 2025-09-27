@@ -9,7 +9,7 @@ import Dashboard from './components/Dashboard'
 import Applications from './components/Applications'
 import CreateTestRealTime from './components/CreateTestRealTime'
 import CreateTestRealTimeFixed from './components/CreateTestRealTimeFixed'
-import CreateTestComplete from './components/CreateTestComplete'
+import CreateTestWorking from './components/CreateTestWorking'
 import TestManagementNew from './components/TestManagementNew'
 import TestManagementDynamic from './components/TestManagementDynamic'
 import TestExecution from './components/TestExecution'
@@ -275,7 +275,7 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <CreateTestComplete
+                      <CreateTestWorking
                         user={user}
                         deploymentMode={deploymentMode}
                         apiService={apiService}
