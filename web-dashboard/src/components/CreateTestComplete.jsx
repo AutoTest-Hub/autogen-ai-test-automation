@@ -182,9 +182,12 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
 
   const loadApplications = async () => {
     try {
-      // Use the authenticated API service if provided, otherwise fall back to enhanced service
-      const service = apiService || enhancedApiService;
-      const response = await service.getApplications();
+      // Set auth token for enhanced service if we have an authenticated API service
+      if (apiService && apiService.authToken) {
+        enhancedApiService.setAuthToken(apiService.authToken);
+      }
+      
+      const response = await enhancedApiService.getApplications();
       if (response && (response.status === 'success' || Array.isArray(response))) {
         setApplications(Array.isArray(response) ? response : response.data);
       }
@@ -291,11 +294,8 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   ];
 
   const handleTemplateClick = (template) => {
-    setFormData(prev => ({
-      ...prev,
-      testName: `${template.name} Test Suite`,
-      testDescription: template.testDescription
-    }));
+    setTestName(`${template.name} Test Suite`);
+    setTestDescription(template.testDescription);
     
     // Show success message
     setNotifications(prev => [...prev, {
