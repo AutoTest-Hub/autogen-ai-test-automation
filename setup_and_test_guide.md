@@ -392,3 +392,24 @@ The framework is designed to be robust and self-healing, but proper setup is cru
 
 **🎯 You now have a complete, enterprise-ready AI test automation framework with local AI capabilities!**
 
+
+
+
+##  DATABASE REPAIR
+
+### Issue: `column application_id of relation agent_jobs does not exist`
+
+If you encounter this error when creating tests in your local environment, it means your `agent_jobs` table is missing the `application_id` column. This can happen if you set up the database with an older schema.
+
+### Solution: Apply the Database Repair Script
+
+A SQL script has been created to fix this issue. To apply it, run the following command in your terminal:
+
+```bash
+psql -U postgres -d postgres -f database_repair.sql
+```
+
+This command will execute the `database_repair.sql` script, which adds the missing `application_id` column to the `agent_jobs` table.
+
+After applying the script, restart the platform, and the test creation functionality should work correctly.
+

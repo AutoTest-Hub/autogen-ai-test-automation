@@ -225,7 +225,7 @@ class RealAgentProcessor:
                                          file_path: str, file_metadata: Dict, job_id: UUID) -> UUID:
         """Save test case metadata to database with file path (MVP FILE STORAGE)"""
         try:
-            from api.database_postgres_full import TestCase
+            from database_postgres_full import TestCase
             
             test_case_id = uuid4()
             

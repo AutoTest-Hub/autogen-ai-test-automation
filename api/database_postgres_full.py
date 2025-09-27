@@ -300,7 +300,7 @@ class TestCase:
                 test_case_data.get('file_size_bytes', 0),
                 test_case_data.get('file_checksum'),
                 test_case_data.get('code_confidence_score', 0.85),
-                test_case_data.get('status', 'pending'),
+                test_case_data.get('status', 'generated'),
                 test_case_data.get('created_by')
             ))
             
