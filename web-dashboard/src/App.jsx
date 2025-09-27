@@ -278,6 +278,7 @@ function App() {
                       <CreateTestComplete
                         user={user}
                         deploymentMode={deploymentMode}
+                        apiService={apiService}
                         onNavigate={(page) => window.location.hash = `#/${page}`}
                       />
                     </motion.div>

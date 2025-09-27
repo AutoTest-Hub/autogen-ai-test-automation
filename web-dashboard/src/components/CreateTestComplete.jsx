@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { enhancedApiService } from '../lib/api-enhanced';
 
-const CreateTestComplete = ({ user, onNavigate }) => {
+const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   const [applications, setApplications] = useState([]);
   const [selectedApp, setSelectedApp] = useState('');
   const [testDescription, setTestDescription] = useState('');
@@ -166,12 +166,15 @@ const CreateTestComplete = ({ user, onNavigate }) => {
 
   const loadApplications = async () => {
     try {
-      const response = await enhancedApiService.getApplications();
-      if (response.status === 'success') {
-        setApplications(response.data);
+      // Use the authenticated API service if provided, otherwise fall back to enhanced service
+      const service = apiService || enhancedApiService;
+      const response = await service.getApplications();
+      if (response && (response.status === 'success' || Array.isArray(response))) {
+        setApplications(Array.isArray(response) ? response : response.data);
       }
     } catch (error) {
       console.error('Failed to load applications:', error);
+      // Set fallback applications
       setApplications([
         { id: 1, name: 'E-commerce Store', url: 'https://mystore.example.com', type: 'ecommerce' },
         { id: 2, name: 'Admin Dashboard', url: 'https://admin.mystore.example.com', type: 'admin' }
