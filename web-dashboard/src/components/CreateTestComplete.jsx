@@ -115,9 +115,21 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   ];
 
   useEffect(() => {
-    loadApplications();
-    loadSuggestions();
-    requestNotificationPermission();
+    const initializeComponent = async () => {
+      try {
+        await loadApplications();
+      } catch (error) {
+        console.error('Failed to load applications:', error);
+      }
+      
+      try {
+        await requestNotificationPermission();
+      } catch (error) {
+        console.error('Failed to request notification permission:', error);
+      }
+    };
+    
+    initializeComponent();
     
     return () => {
       if (pollingInterval.current) {
@@ -143,7 +155,11 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   }, [selectedApp, testDescription, testName]);
 
   const requestNotificationPermission = async () => {
-    await enhancedApiService.requestNotificationPermission();
+    try {
+      await enhancedApiService.requestNotificationPermission();
+    } catch (error) {
+      console.error('Notification permission request failed:', error);
+    }
   };
 
   const addNotification = (type, message, data = {}) => {
