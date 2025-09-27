@@ -181,18 +181,35 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   };
 
   const loadApplications = async () => {
+    console.log('loadApplications called');
+    console.log('apiService:', apiService);
+    console.log('apiService.authToken:', apiService?.authToken);
+    
     try {
       // Set auth token for enhanced service if we have an authenticated API service
       if (apiService && apiService.authToken) {
+        console.log('Setting auth token for enhanced service');
         enhancedApiService.setAuthToken(apiService.authToken);
       }
       
+      console.log('Calling enhancedApiService.getApplications()');
       const response = await enhancedApiService.getApplications();
+      console.log('Applications API response:', response);
+      
       if (response && (response.status === 'success' || Array.isArray(response))) {
-        setApplications(Array.isArray(response) ? response : response.data);
+        const apps = Array.isArray(response) ? response : response.data;
+        console.log('Setting applications to:', apps);
+        setApplications(apps);
+      } else {
+        console.log('Response format not recognized, using fallback');
+        setApplications([
+          { id: 1, name: 'E-commerce Store', url: 'https://mystore.example.com', type: 'ecommerce' },
+          { id: 2, name: 'Admin Dashboard', url: 'https://admin.mystore.example.com', type: 'admin' }
+        ]);
       }
     } catch (error) {
       console.error('Failed to load applications:', error);
+      console.log('Using fallback applications due to error');
       // Set fallback applications
       setApplications([
         { id: 1, name: 'E-commerce Store', url: 'https://mystore.example.com', type: 'ecommerce' },
@@ -294,15 +311,20 @@ const CreateTestComplete = ({ user, onNavigate, apiService }) => {
   ];
 
   const handleTemplateClick = (template) => {
+    console.log('Template clicked:', template);
+    console.log('Current testName state:', testName);
+    console.log('Current testDescription state:', testDescription);
+    console.log('Setting testName to:', `${template.name} Test Suite`);
+    console.log('Setting testDescription to:', template.testDescription);
+    
     setTestName(`${template.name} Test Suite`);
     setTestDescription(template.testDescription);
     
-    // Show success message
-    setNotifications(prev => [...prev, {
-      id: Date.now(),
-      type: 'success',
-      message: `Applied ${template.name} template successfully!`
-    }]);
+    // Debug: Check if state actually updates by using setTimeout
+    setTimeout(() => {
+      console.log('After state update - testName:', testName);
+      console.log('After state update - testDescription:', testDescription);
+    }, 100);
   };
 
   const checkForDuplicatesAndAnalyze = async () => {
