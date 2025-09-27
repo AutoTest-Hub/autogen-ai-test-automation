@@ -137,20 +137,31 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
 
   const loadApplications = async () => {
     try {
+      console.log('🔍 Loading applications...');
       const response = await apiService.request('/api/v1/applications');
+      console.log('📊 Applications API response:', response);
       if (response && response.data) {
+        console.log('✅ Setting applications:', response.data.length, 'applications found');
         setApplications(response.data);
+      } else {
+        console.log('❌ No applications data in response');
       }
     } catch (error) {
-      console.error('Failed to load applications:', error);
+      console.error('❌ Failed to load applications:', error);
       setError('Failed to load applications. Please refresh the page.');
     }
   };
 
   const handleTemplateClick = (template) => {
+    console.log('🎯 Template clicked:', template.name);
+    console.log('📝 Before update - selectedApp:', selectedApp, 'testDescription:', testDescription);
+    
     setTestName(`${template.name} Test Suite`);
     setTestDescription(template.testDescription);
     setError(null);
+    
+    console.log('📝 After update - testDescription will be:', template.testDescription);
+    console.log('🔘 Button should be enabled if selectedApp exists:', !!selectedApp);
   };
 
   const handleRequirementsUpload = (event) => {
@@ -358,7 +369,15 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
 
           <div className="flex gap-4">
             <Button 
-              onClick={handleCreateTests} 
+              onClick={() => {
+                console.log('🔘 Button clicked - selectedApp:', selectedApp, 'testDescription:', testDescription.trim());
+                console.log('🔘 Button disabled conditions:', {
+                  isCreating,
+                  noSelectedApp: !selectedApp,
+                  noTestDescription: !testDescription.trim()
+                });
+                handleCreateTests();
+              }}
               disabled={isCreating || !selectedApp || !testDescription.trim()}
               className="flex-1"
             >
