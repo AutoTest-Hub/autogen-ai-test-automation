@@ -192,12 +192,25 @@ class Application:
     @staticmethod
     def get_by_customer(customer_id: UUID) -> List[Dict]:
         """Get all applications for a customer"""
-        query = """
-        SELECT * FROM applications 
-        WHERE customer_id = %s AND status = 'active'
-        ORDER BY created_at DESC
-        """
-        return db.execute_query(query, (customer_id,))
+        try:
+            logger.info(f"🔍 Getting applications for customer_id: {customer_id}")
+            
+            # Set customer context for RLS
+            with db.connection.cursor() as cursor:
+                cursor.execute("SET session.current_customer_id = %s", (str(customer_id),))
+                cursor.execute("SET app.current_customer_id = %s", (str(customer_id),))
+            
+            query = """
+            SELECT * FROM applications 
+            WHERE customer_id = %s AND status = 'active'
+            ORDER BY created_at DESC
+            """
+            result = db.execute_query(query, (customer_id,))
+            logger.info(f"✅ Found {len(result)} applications for customer {customer_id}")
+            return result
+        except Exception as e:
+            logger.error(f"❌ Error getting applications for customer {customer_id}: {e}")
+            return []
 
 class TestSuite:
     """Enhanced test suite management with full schema support"""
