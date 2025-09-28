@@ -18,7 +18,7 @@ export const useTests = () => {
   });
 
   return {
-    tests: data?.tests || [],
+    tests: data?.data || [], // The API returns data in data field, not tests field
     isLoading: !error && !data,
     isError: error,
     mutate,

@@ -249,14 +249,29 @@ class TestSuite:
                 ts.*,
                 a.name as application_name,
                 a.url as application_url,
-                0 as total_test_cases,
-                0 as passed_test_cases,
-                0 as failed_test_cases,
-                0 as success_rate,
-                NULL as last_run_at,
-                0 as duration_minutes
+                COALESCE(tc_counts.total_test_cases, 0) as total_test_cases,
+                COALESCE(tc_counts.passed_test_cases, 0) as passed_test_cases,
+                COALESCE(tc_counts.failed_test_cases, 0) as failed_test_cases,
+                CASE 
+                    WHEN COALESCE(tc_counts.total_test_cases, 0) > 0 
+                    THEN ROUND((COALESCE(tc_counts.passed_test_cases, 0) * 100.0 / tc_counts.total_test_cases), 2)
+                    ELSE 0 
+                END as success_rate,
+                tc_counts.last_run_at,
+                COALESCE(tc_counts.avg_duration, 0) as duration_minutes
             FROM test_suites ts
             JOIN applications a ON ts.application_id = a.id
+            LEFT JOIN (
+                SELECT 
+                    test_suite_id,
+                    COUNT(*) as total_test_cases,
+                    COUNT(CASE WHEN status = 'passed' THEN 1 END) as passed_test_cases,
+                    COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed_test_cases,
+                    MAX(updated_at) as last_run_at,
+                    AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/60) as avg_duration
+                FROM test_cases
+                GROUP BY test_suite_id
+            ) tc_counts ON ts.id = tc_counts.test_suite_id
             WHERE ts.customer_id = %s AND ts.is_deleted = false
             ORDER BY ts.created_at DESC
             """

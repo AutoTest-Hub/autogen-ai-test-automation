@@ -64,7 +64,7 @@ class RealAgentProcessor:
             logger.error(f"❌ REAL agent processing failed for job {job_id}: {e}")
             AgentJob.update_progress(job_id, 0, "Failed", "failed")
             AgentJob.add_activity(
-                job_id, "System", "error", 
+                job_id, "System", "validation", 
                 f"❌ Agent processing failed: {str(e)}", "failed", 0
             )
             return False
@@ -90,12 +90,26 @@ class RealAgentProcessor:
         )
         await asyncio.sleep(2)
         
-        # Generate test scenarios based on application type
-        application_type = test_request.get('application_type', '').lower()
+        # Generate test scenarios based on application type and requirements
+        application_type = test_request.get('application_type', 'web')
+        if application_type:
+            application_type = application_type.lower()
+        else:
+            application_type = 'web'
+        
         key_features = test_request.get('key_features', '')
         user_flows = test_request.get('important_user_flows', '')
+        requirements_data = test_request.get('requirements_data')
         
-        test_scenarios = RealAgentProcessor._generate_test_scenarios(application_type, key_features, user_flows)
+        # If requirements.json is provided, use it to generate scenarios
+        if requirements_data:
+            test_scenarios = RealAgentProcessor._generate_scenarios_from_requirements(requirements_data)
+            AgentJob.add_activity(
+                job_id, "Discovery Agent", "analysis",
+                f"📋 Processing uploaded requirements.json with {len(requirements_data.get('testCategories', []))} categories", "running", 20
+            )
+        else:
+            test_scenarios = RealAgentProcessor._generate_test_scenarios(application_type, key_features, user_flows)
         
         AgentJob.update_progress(job_id, 25, "Discovery Agent", "running")
         AgentJob.add_activity(
@@ -359,15 +373,29 @@ class RealAgentProcessor:
     @staticmethod
     def _create_detailed_test_case(scenario: Dict, test_request: Dict[str, Any]) -> Dict:
         """Create detailed test case from scenario"""
-        return {
-            "name": scenario["name"],
-            "description": f"Automated test for {scenario['name']} functionality in {test_request.get('application_name', 'application')}",
-            "type": scenario["type"],
-            "priority": scenario["priority"],
-            "steps": RealAgentProcessor._generate_test_steps(scenario, test_request),
-            "expected_result": f"{scenario['name']} should function correctly without errors",
-            "test_data": RealAgentProcessor._generate_test_data(scenario, test_request)
-        }
+        # Handle requirements-based scenarios differently
+        if scenario.get('requirements_based'):
+            return {
+                "name": scenario["name"],
+                "description": scenario.get("description", f"Test for {scenario['name']}"),
+                "type": scenario["type"],
+                "priority": scenario["priority"],
+                "category": scenario.get("category", "General"),
+                "steps": scenario.get("steps", []),
+                "expected_result": f"{scenario['name']} should function correctly according to requirements",
+                "test_data": RealAgentProcessor._generate_test_data(scenario, test_request),
+                "requirements_based": True
+            }
+        else:
+            return {
+                "name": scenario["name"],
+                "description": f"Automated test for {scenario['name']} functionality in {test_request.get('application_name', 'application')}",
+                "type": scenario["type"],
+                "priority": scenario["priority"],
+                "steps": RealAgentProcessor._generate_test_steps(scenario, test_request),
+                "expected_result": f"{scenario['name']} should function correctly without errors",
+                "test_data": RealAgentProcessor._generate_test_data(scenario, test_request)
+            }
     
     @staticmethod
     def _generate_test_steps(scenario: Dict, test_request: Dict[str, Any]) -> List[Dict]:
@@ -480,3 +508,58 @@ async def start_real_agent_processing(job_id: UUID, test_request: Dict[str, Any]
         await processor.process_test_creation(job_id, test_request)
     except Exception as e:
         logger.error(f"Real agent processing failed: {e}")
+
+    @staticmethod
+    def _generate_scenarios_from_requirements(requirements_data: Dict) -> List[Dict]:
+        """Generate test scenarios from uploaded requirements.json file"""
+        scenarios = []
+        
+        try:
+            test_categories = requirements_data.get('testCategories', [])
+            
+            for category in test_categories:
+                category_name = category.get('category', 'Unknown')
+                category_priority = category.get('priority', 'medium')
+                tests = category.get('tests', [])
+                
+                for test in tests:
+                    scenario = {
+                        "name": test.get('name', f"{category_name} Test"),
+                        "description": test.get('description', f"Test for {category_name}"),
+                        "priority": category_priority,
+                        "type": "functional",
+                        "category": category_name,
+                        "steps": test.get('steps', []),
+                        "requirements_based": True
+                    }
+                    scenarios.append(scenario)
+            
+            # If no test categories found, create a basic scenario
+            if not scenarios:
+                scenarios = [
+                    {
+                        "name": "Requirements-based Test Suite",
+                        "description": requirements_data.get('description', 'Test suite based on uploaded requirements'),
+                        "priority": "high",
+                        "type": "functional",
+                        "category": "General",
+                        "requirements_based": True
+                    }
+                ]
+            
+            logger.info(f"Generated {len(scenarios)} scenarios from requirements.json")
+            return scenarios
+            
+        except Exception as e:
+            logger.error(f"Error processing requirements.json: {e}")
+            # Return a fallback scenario
+            return [
+                {
+                    "name": "Requirements Processing Error",
+                    "description": "Failed to process uploaded requirements file",
+                    "priority": "medium",
+                    "type": "functional",
+                    "category": "Error",
+                    "requirements_based": True
+                }
+            ]

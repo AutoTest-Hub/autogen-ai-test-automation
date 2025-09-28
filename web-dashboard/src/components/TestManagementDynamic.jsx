@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Card,
@@ -45,9 +45,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import TestCasesList from './TestCasesList';
 import {
   Play,
   Eye,
+  Edit3,
   Download,
   FileText,
   Code,
@@ -64,18 +66,71 @@ import {
   BarChart3,
   TrendingUp,
   RefreshCw,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { useTests, useDashboardStats } from '../hooks/useTests';
 import { apiService } from '../lib/api';
+import directApiService from '../lib/api-direct';
+import TestEditor from './TestEditor';
 
 const TestManagementDynamic = ({ user }) => {
   const { tests, isLoading, isError, mutate } = useTests();
   const { stats } = useDashboardStats();
   const [selectedSuite, setSelectedSuite] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [executingTests, setExecutingTests] = useState(new Set()); // Track executing test suites
+  const [executionStatuses, setExecutionStatuses] = useState(new Map()); // Store real-time execution statuses
+  const [editingTestCases, setEditingTestCases] = useState([]);
+  const [editingSuite, setEditingSuite] = useState(null);
+
+  // Polling for execution status updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Poll for status updates of executing tests
+      executingTests.forEach(async (suiteId) => {
+        const status = executionStatuses.get(suiteId);
+        if (status && status.executionId && status.status === 'running') {
+          try {
+            const response = await directApiService.getExecutionStatus(status.executionId);
+            if (response.status === 'success') {
+              const statusData = response.data;
+              
+              setExecutionStatuses(prev => new Map(prev.set(suiteId, {
+                ...status,
+                status: statusData.status,
+                message: statusData.message,
+                details: statusData.details,
+                progress: statusData.progress || 0,
+                currentStep: statusData.current_step,
+                executionTime: statusData.execution_time,
+                result: statusData.result
+              })));
+
+              // If execution completed, remove from executing set
+              if (statusData.status === 'completed' || statusData.status === 'failed') {
+                setExecutingTests(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(suiteId);
+                  return newSet;
+                });
+                
+                // Refresh the test list to get updated data
+                mutate();
+              }
+            }
+          } catch (error) {
+            console.error('Failed to poll execution status:', error);
+          }
+        }
+      });
+    }, 3000); // Poll every 3 seconds for real-time updates
+
+    return () => clearInterval(interval);
+  }, [executingTests, executionStatuses, mutate]);
 
   // Filter tests based on search and filters
   const filteredTests = tests.filter(test => {
@@ -88,30 +143,49 @@ const TestManagementDynamic = ({ user }) => {
 
   const executeTestSuite = async (suite) => {
     try {
+      // Mark test suite as executing
+      setExecutingTests(prev => new Set([...prev, suite.id]));
+      
       const executionRequest = {
-        test_id: suite.id,
-        execution_name: `Execution of ${suite.application_name}`,
-        environment: 'production',
+        test_suite_id: suite.id,
+        environment: 'staging',
         browser: 'chrome',
-        headless: true,
-        parallel: false,
-        max_workers: 1,
-        timeout: 300,
-        retry_failed: true,
-        max_retries: 2
+        parallel: false
       };
 
-      const response = await apiService.executeTest(executionRequest);
+      const response = await directApiService.executeTestSuite(suite.id, executionRequest);
       
-      // Show success message
-      alert(`Test execution started! Execution ID: ${response.execution_id}`);
-      
-      // Refresh data
-      mutate();
+      if (response.status === 'success') {
+        // Store execution info for real-time tracking
+        setExecutionStatuses(prev => new Map(prev.set(suite.id, {
+          executionId: response.data.execution_id,
+          status: 'running',
+          message: `Starting execution of ${response.data.total_test_cases} test cases...`,
+          details: 'Initializing test environment',
+          progress: 0,
+          startTime: new Date(),
+          totalTestCases: response.data.total_test_cases
+        })));
+      } else {
+        throw new Error(response.message || 'Unknown error');
+      }
       
     } catch (error) {
       console.error('Failed to execute tests:', error);
-      alert('Failed to start test execution. Please try again.');
+      // Remove from executing set on error
+      setExecutingTests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suite.id);
+        return newSet;
+      });
+      
+      // Set error status
+      setExecutionStatuses(prev => new Map(prev.set(suite.id, {
+        status: 'failed',
+        message: `Failed to start execution: ${error.message}`,
+        details: 'Please try again',
+        progress: 0
+      })));
     }
   };
 
@@ -128,7 +202,46 @@ const TestManagementDynamic = ({ user }) => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const editTestSuite = async (suite) => {
+    try {
+      // Load test cases for the suite
+      const response = await apiService.getTestCases(suite.id);
+      setEditingTestCases(response?.data || []);
+      setEditingSuite(suite);
+    } catch (error) {
+      console.error('Failed to load test cases:', error);
+      alert('Failed to load test cases for editing. Please try again.');
+    }
+  };
+
+  const handleSaveTestSuite = async (saveData) => {
+    try {
+      // Refresh the test list after saving
+      mutate();
+      setEditingSuite(null);
+      setEditingTestCases([]);
+    } catch (error) {
+      console.error('Failed to save test suite:', error);
+    }
+  };
+
+  const getStatusIcon = (status, suiteId) => {
+    // Check if there's a real-time execution status
+    const executionStatus = executionStatuses.get(suiteId);
+    if (executionStatus) {
+      switch (executionStatus.status) {
+        case 'running':
+          return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+        case 'completed':
+          return <CheckCircle className="w-4 h-4 text-green-500" />;
+        case 'failed':
+          return <XCircle className="w-4 h-4 text-red-500" />;
+        default:
+          return <Clock className="w-4 h-4 text-yellow-500" />;
+      }
+    }
+
+    // Default status icons
     switch (status) {
       case 'completed':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
@@ -143,7 +256,24 @@ const TestManagementDynamic = ({ user }) => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, suiteId) => {
+    // Check if there's a real-time execution status
+    const executionStatus = executionStatuses.get(suiteId);
+    if (executionStatus) {
+      const variants = {
+        running: 'secondary',
+        completed: 'default',
+        failed: 'destructive'
+      };
+      
+      return (
+        <Badge variant={variants[executionStatus.status] || 'outline'}>
+          {executionStatus.status === 'running' ? 'Executing' : executionStatus.status.charAt(0).toUpperCase() + executionStatus.status.slice(1)}
+        </Badge>
+      );
+    }
+
+    // Default status badges
     const variants = {
       completed: 'default',
       running: 'secondary',
@@ -156,6 +286,22 @@ const TestManagementDynamic = ({ user }) => {
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
+  };
+
+  const getStatusMessage = (suite) => {
+    const executionStatus = executionStatuses.get(suite.id);
+    if (executionStatus) {
+      return executionStatus.message || 'Execution in progress...';
+    }
+    return null;
+  };
+
+  const getExecutionProgress = (suiteId) => {
+    const executionStatus = executionStatuses.get(suiteId);
+    if (executionStatus && executionStatus.status === 'running') {
+      return executionStatus.progress || 0;
+    }
+    return null;
   };
 
   const formatDate = (dateString) => {
@@ -418,9 +564,28 @@ const TestManagementDynamic = ({ user }) => {
                         <Badge variant="outline">{suite.type}</Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(suite.status)}
-                          {getStatusBadge(suite.status)}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(suite.status, suite.id)}
+                            {getStatusBadge(suite.status, suite.id)}
+                          </div>
+                          
+                          {/* Real-time execution status message */}
+                          {getStatusMessage(suite) && (
+                            <div className="text-xs text-muted-foreground">
+                              {getStatusMessage(suite)}
+                            </div>
+                          )}
+                          
+                          {/* Progress bar for running executions */}
+                          {getExecutionProgress(suite.id) !== null && (
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                style={{ width: `${getExecutionProgress(suite.id)}%` }}
+                              />
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -453,10 +618,19 @@ const TestManagementDynamic = ({ user }) => {
                             variant="outline"
                             size="sm"
                             onClick={() => executeTestSuite(suite)}
-                            disabled={suite.status === 'running'}
+                            disabled={executingTests.has(suite.id)}
                           >
-                            <Play className="w-3 h-3 mr-1" />
-                            Execute
+                            {executingTests.has(suite.id) ? (
+                              <>
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                Running
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-3 h-3 mr-1" />
+                                Execute
+                              </>
+                            )}
                           </Button>
                           
                           <Dialog>
@@ -481,6 +655,7 @@ const TestManagementDynamic = ({ user }) => {
                               <Tabs defaultValue="overview" className="w-full">
                                 <TabsList>
                                   <TabsTrigger value="overview">Overview</TabsTrigger>
+                                  <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
                                   <TabsTrigger value="details">Details</TabsTrigger>
                                 </TabsList>
                                 
@@ -524,6 +699,10 @@ const TestManagementDynamic = ({ user }) => {
                                   </div>
                                 </TabsContent>
                                 
+                                <TabsContent value="test-cases" className="space-y-4">
+                                  <TestCasesList suiteId={suite.id} />
+                                </TabsContent>
+                                
                                 <TabsContent value="details" className="space-y-4">
                                   <div className="space-y-4">
                                     <div>
@@ -553,6 +732,16 @@ const TestManagementDynamic = ({ user }) => {
                           </Dialog>
 
                           <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            title="Edit functionality coming soon"
+                          >
+                            <Edit3 className="w-3 h-3 mr-1" />
+                            Edit (Coming Soon)
+                          </Button>
+                          
+                          <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteTestSuite(suite.id)}
@@ -569,6 +758,20 @@ const TestManagementDynamic = ({ user }) => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Test Editor Modal */}
+      {editingSuite && (
+        <TestEditor
+          testSuite={editingSuite}
+          testCases={editingTestCases}
+          onSave={handleSaveTestSuite}
+          onClose={() => {
+            setEditingSuite(null);
+            setEditingTestCases([]);
+          }}
+          apiService={apiService}
+        />
+      )}
     </div>
   );
 };

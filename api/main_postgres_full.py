@@ -68,6 +68,48 @@ app.add_middleware(
 # Include routers
 app.include_router(hybrid_router)
 
+# Import and include agent job endpoints
+try:
+    from agent_job_endpoints import router as agent_job_router
+    app.include_router(agent_job_router)
+except ImportError as e:
+    logger.warning(f"Could not import agent job endpoints: {e}")
+
+# Import and include requirements endpoints
+try:
+    from requirements_endpoints import router as requirements_router
+    app.include_router(requirements_router)
+except ImportError as e:
+    logger.warning(f"Could not import requirements endpoints: {e}")
+
+# Import and include duplicate prevention endpoints
+try:
+    from duplicate_prevention_endpoints import router as duplicate_router
+    app.include_router(duplicate_router)
+except ImportError as e:
+    logger.warning(f"Could not import duplicate prevention endpoints: {e}")
+
+# Import and include test editing endpoints
+try:
+    from test_editing_endpoints import router as test_editing_router
+    app.include_router(test_editing_router)
+except ImportError as e:
+    logger.warning(f"Could not import test editing endpoints: {e}")
+
+# Import and include test execution endpoints
+try:
+    from test_execution_endpoints import router as test_execution_router
+    app.include_router(test_execution_router)
+except ImportError as e:
+    logger.warning(f"Could not import test execution endpoints: {e}")
+
+# Import and include direct test execution endpoints
+try:
+    from test_execution_direct_endpoints import router as test_execution_direct_router
+    app.include_router(test_execution_direct_router)
+except ImportError as e:
+    logger.warning(f"Could not import direct test execution endpoints: {e}")
+
 # =====================================================
 # PYDANTIC MODELS
 # =====================================================
@@ -92,9 +134,16 @@ class ApplicationCreate(BaseModel):
     description: Optional[str] = None
 
 class TestCreationRequest(BaseModel):
-    application_url: str
-    application_name: str
-    application_type: str
+    application_id: str
+    test_name: Optional[str] = None
+    test_description: str
+    priority: Optional[str] = "medium"
+    requirements_data: Optional[dict] = None
+    
+    # Legacy fields for backward compatibility
+    application_url: Optional[str] = None
+    application_name: Optional[str] = None
+    application_type: Optional[str] = None
     key_features: Optional[str] = None
     important_user_flows: Optional[str] = None
 
@@ -456,34 +505,24 @@ async def create_test_suite(
 ):
     """Create a new test suite with enhanced agent processing"""
     try:
-        # First, create or get the application
-        app_id = Application.create(
-            customer_id=current_user['customer_id'],
-            name=test_request.application_name,
-            url=test_request.application_url,
-            application_type=test_request.application_type,
-            description=f"Application for {test_request.application_type} testing",
-            created_by=current_user['id']
-        )
+        # Get the application by ID
+        applications = Application.get_by_customer(current_user['customer_id'])
+        app = next((app for app in applications if str(app['id']) == test_request.application_id), None)
         
-        if not app_id:
-            # Try to get existing application
-            applications = Application.get_by_customer(current_user['customer_id'])
-            existing_app = next((app for app in applications if app['url'] == test_request.application_url), None)
-            if existing_app:
-                app_id = existing_app['id']
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Failed to create or find application"
-                )
+        if not app:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_id = app['id']
         
         # Create test suite
         suite_id = TestSuite.create(
             customer_id=current_user['customer_id'],
             application_id=app_id,
-            name=f"{test_request.application_name} - Automated Test Suite",
-            description=f"AI-generated test suite for {test_request.application_type} application",
+            name=test_request.test_name or f"{app['name']} - Automated Test Suite",
+            description=test_request.test_description,
             test_type='functional',
             created_by=current_user['id']
         )
@@ -543,8 +582,8 @@ async def create_test_suite(
                 "job_id": str(job_id),
                 "test_suite_id": str(suite_id),
                 "application_id": str(app_id),
-                "application_name": test_request.application_name,
-                "application_type": test_request.application_type,
+                "application_name": app['name'],
+                "application_type": app['application_type'],
                 "test_management_url": "/test-management"
             }
         }

@@ -11,8 +11,8 @@ const LoginSimple = ({ onLogin }) => {
 
   // Demo credentials
   const demoCredentials = [
-    { label: 'Admin Demo', email: 'admin', password: 'admin123' },
-    { label: 'User Demo', email: 'demo', password: 'demo123' }
+    { label: 'Demo User', email: 'tester@demo.com', password: 'demo123' },
+    { label: 'Quick Login', email: 'tester@demo.com', password: 'demo123' }
   ]
 
   const handleInputChange = (e) => {

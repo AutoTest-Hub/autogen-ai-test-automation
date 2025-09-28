@@ -8,6 +8,8 @@ import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
+import TestStatusTracker from './TestStatusTracker';
+import DuplicateDetectionDialog from './DuplicateDetectionDialog';
 import { 
   Sparkles, 
   Bot, 
@@ -48,11 +50,14 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
   const [currentJobId, setCurrentJobId] = useState(null);
   const [agentProgress, setAgentProgress] = useState([]);
   const [createdTests, setCreatedTests] = useState([]);
-  
-  // UI state
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [showResults, setShowResults] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [error, setError] = useState(null);
+  
+  // Duplicate detection state
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateData, setDuplicateData] = useState(null);
+  const [pendingTestConfig, setPendingTestConfig] = useState(null);
   
   // Requirements.json support
   const [requirementsFile, setRequirementsFile] = useState(null);
@@ -138,7 +143,7 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
   const loadApplications = async () => {
     try {
       console.log('🔍 Loading applications...');
-      const response = await apiService.request('/api/v1/applications');
+      const response = await apiService.getApplications();
       console.log('📊 Applications API response:', response);
       if (response && response.data) {
         console.log('✅ Setting applications:', response.data.length, 'applications found');
@@ -164,57 +169,45 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
     console.log('🔘 Button should be enabled if selectedApp exists:', !!selectedApp);
   };
 
-  const handleRequirementsUpload = (event) => {
+  const handleRequirementsUpload = async (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/json') {
       setRequirementsFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target.result);
+      setError(null);
+      
+      try {
+        // Use API service to upload and validate the file
+        const response = await apiService.uploadRequirementsFile(file);
+        
+        if (response.status === 'success') {
+          const data = response.data.requirements_data;
           setRequirementsData(data);
           setTestName(data.testSuiteName || 'Requirements-based Test Suite');
           setTestDescription(data.description || 'Test suite based on uploaded requirements');
-          setError(null);
-        } catch (error) {
-          setError('Invalid JSON file. Please check the file format.');
+          
+          // Show validation results
+          const validation = response.data.validation;
+          if (validation.errors && validation.errors.length > 0) {
+            setError(`Validation errors: ${validation.errors.join(', ')}`);
+          } else if (validation.warnings && validation.warnings.length > 0) {
+            console.warn('Validation warnings:', validation.warnings);
+          }
         }
-      };
-      reader.readAsText(file);
+      } catch (error) {
+        console.error('Requirements upload failed:', error);
+        setError(`Failed to upload requirements file: ${error.message}`);
+        setRequirementsFile(null);
+      }
     } else {
       setError('Please upload a valid JSON file.');
     }
   };
 
-  const startRealTimePolling = (jobId) => {
-    pollingInterval.current = setInterval(async () => {
-      try {
-        const response = await apiService.request(`/api/v1/agent-jobs/${jobId}/status`);
-        if (response && response.data) {
-          setAgentProgress(response.data.phases || []);
-          
-          // Check if job is complete
-          if (response.data.status === 'completed') {
-            clearInterval(pollingInterval.current);
-            setIsCreating(false);
-            await loadCreatedTests(jobId);
-            setSuccess('Tests created successfully! View the results below.');
-            setShowResults(true);
-          } else if (response.data.status === 'failed') {
-            clearInterval(pollingInterval.current);
-            setIsCreating(false);
-            setError('Test creation failed. Please try again.');
-          }
-        }
-      } catch (error) {
-        console.error('Failed to poll agent status:', error);
-      }
-    }, 2000); // Poll every 2 seconds
-  };
+  // Polling is now handled by TestStatusTracker component
 
   const loadCreatedTests = async (jobId) => {
     try {
-      const response = await apiService.request(`/api/v1/agent-jobs/${jobId}/tests`);
+      const response = await apiService.getAgentJobTests(jobId);
       if (response && response.data) {
         setCreatedTests(response.data);
       }
@@ -229,36 +222,115 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
       return;
     }
 
-    setIsCreating(true);
+    // Find the full application object
+    const selectedApplication = applications.find(app => app.id.toString() === selectedApp);
+    if (!selectedApplication) {
+      setError('Selected application not found. Please refresh and try again.');
+      return;
+    }
+
     setError(null);
     setSuccess(null);
-    setAgentProgress([]);
-    setCreatedTests([]);
-    setShowResults(false);
 
     try {
-      const testConfig = {
-        application_id: selectedApp,
-        test_name: testName || 'Generated Test Suite',
-        test_description: testDescription,
-        priority: priority,
-        requirements_data: requirementsData
-      };
+      // First, check for duplicates
+      const duplicateResponse = await apiService.checkForDuplicates(
+        selectedApplication.id,
+        testName || `${selectedApplication.name} Test Suite`,
+        testDescription,
+        requirementsData
+      );
 
-      const response = await apiService.request('/api/v1/create-test', {
-        method: 'POST',
-        body: testConfig
-      });
+      if (duplicateResponse && duplicateResponse.data) {
+        const duplicateInfo = duplicateResponse.data;
+        
+        // Store the test configuration for later use
+        const testConfig = {
+          application_id: selectedApplication.id,
+          test_name: testName || `${selectedApplication.name} Test Suite`,
+          test_description: testDescription,
+          priority: priority,
+          requirements_data: requirementsData
+        };
+        setPendingTestConfig(testConfig);
+        
+        // Show duplicate detection dialog
+        setDuplicateData(duplicateInfo);
+        setShowDuplicateDialog(true);
+      } else {
+        // No duplicates found, proceed with creation
+        await createTestDirectly();
+      }
+    } catch (error) {
+      setError(`Failed to check for duplicates: ${error.message}`);
+    }
+  };
+
+  const createTestDirectly = async (testConfig = null) => {
+    // Find the full application object
+    const selectedApplication = applications.find(app => app.id.toString() === selectedApp);
+    if (!selectedApplication) {
+      setError('Selected application not found. Please refresh and try again.');
+      return;
+    }
+
+    const config = testConfig || pendingTestConfig || {
+      application_id: selectedApplication.id,
+      test_name: testName || `${selectedApplication.name} Test Suite`,
+      test_description: testDescription,
+      priority: priority,
+      requirements_data: requirementsData
+    };
+
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const response = await apiService.createTest(config);
 
       if (response && response.data && response.data.job_id) {
         setCurrentJobId(response.data.job_id);
-        startRealTimePolling(response.data.job_id);
+        // Real-time polling is now handled by TestStatusTracker component
+        
+        // Auto-scroll to agent processing section
+        setTimeout(() => {
+          const agentSection = document.getElementById('agent-processing-section');
+          if (agentSection) {
+            agentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 500);
       } else {
         throw new Error('Invalid response from server');
       }
     } catch (error) {
       setIsCreating(false);
       setError(`Failed to create tests: ${error.message}`);
+    }
+  };
+
+  const handleUpdateExisting = async (existingSuite) => {
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      const response = await apiService.updateExistingTestSuite(
+        existingSuite.id,
+        selectedApp.id,
+        testName || `${selectedApp.name} Test Suite`,
+        testDescription,
+        requirementsData
+      );
+
+      if (response && response.status === 'success') {
+        setSuccess('Test suite updated successfully!');
+        // Optionally refresh the page or redirect
+      } else {
+        throw new Error('Failed to update test suite');
+      }
+    } catch (error) {
+      setError(`Failed to update test suite: ${error.message}`);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -294,7 +366,16 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
       {success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{success}</AlertDescription>
+          <AlertDescription className="text-green-800 flex items-center justify-between">
+            <span>{success}</span>
+            <Button 
+              onClick={() => onNavigate('manage-tests')}
+              size="sm"
+              className="ml-4"
+            >
+              Go to Test Management
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
@@ -328,6 +409,31 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Application URL Display */}
+              {selectedApp && (() => {
+                const selectedApplication = applications.find(app => app.id.toString() === selectedApp);
+                return selectedApplication ? (
+                  <div className="mt-3 space-y-2">
+                    <Label htmlFor="appUrl">Application URL</Label>
+                    <Input
+                      id="appUrl"
+                      value={selectedApplication.url}
+                      readOnly
+                      className="bg-gray-50 text-gray-700"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedApplication.type}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedApplication.category}
+                      </Badge>
+                      <span className="text-xs text-gray-600">• {selectedApplication.description}</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
             
             <div>
@@ -467,54 +573,23 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
       </Card>
 
       {/* Real-time Agent Progress */}
-      {isCreating && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 animate-pulse text-blue-500" />
-              AI Agents Working
-            </CardTitle>
-            <CardDescription>
-              Real-time progress of AI agents creating your tests
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {agentPhases.map((phase, index) => {
-                const progress = agentProgress.find(p => p.phase === phase.name);
-                const isActive = progress?.status === 'running';
-                const isComplete = progress?.status === 'completed';
-                const isFailed = progress?.status === 'failed';
-                
-                return (
-                  <div key={index} className="flex items-center gap-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      isComplete ? 'bg-green-100 text-green-600' :
-                      isActive ? 'bg-blue-100 text-blue-600' :
-                      isFailed ? 'bg-red-100 text-red-600' :
-                      'bg-gray-100 text-gray-400'
-                    }`}>
-                      {isComplete ? (
-                        <CheckCircle className="h-4 w-4" />
-                      ) : isActive ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Clock className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{phase.name}</h4>
-                      <p className="text-sm text-muted-foreground">{phase.description}</p>
-                      {progress?.message && (
-                        <p className="text-xs text-blue-600 mt-1">{progress.message}</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {isCreating && currentJobId && (
+        <div id="agent-processing-section">
+          <TestStatusTracker
+          jobId={currentJobId}
+          apiService={apiService}
+          onComplete={async (jobId) => {
+            setIsCreating(false);
+            await loadCreatedTests(jobId);
+            setSuccess('🎉 Tests created successfully! Go to "Test Management" to view, edit, and execute your test suite.');
+            setShowResults(true);
+          }}
+          onError={(error) => {
+            setIsCreating(false);
+            setError(error);
+          }}
+        />
+        </div>
       )}
 
       {/* Created Tests Results */}
@@ -548,6 +623,26 @@ const CreateTestWorking = ({ user, onNavigate, apiService }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Duplicate Detection Dialog */}
+      <DuplicateDetectionDialog
+        isOpen={showDuplicateDialog}
+        onClose={() => setShowDuplicateDialog(false)}
+        duplicateData={duplicateData}
+        onCreateNew={() => {
+          setShowDuplicateDialog(false);
+          createTestDirectly();
+        }}
+        onUpdateExisting={(existingSuite) => {
+          setShowDuplicateDialog(false);
+          handleUpdateExisting(existingSuite);
+        }}
+        onCancel={() => {
+          setShowDuplicateDialog(false);
+          setPendingTestConfig(null);
+          setDuplicateData(null);
+        }}
+      />
     </div>
   );
 };
