@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List
 import logging
 import json
 from datetime import datetime
-from enhanced_test_execution_service import enhanced_test_execution_service
+from real_test_execution_service import real_test_execution_service
 from database_postgres_full import db
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ async def execute_test_case_direct(request: TestCaseExecutionRequest):
     """Execute a single test case - Direct endpoint with AI agent integration"""
     try:
         current_user = await get_current_user()
-        result = await enhanced_test_execution_service.execute_test_case(
+        result = await real_test_execution_service.execute_test_case(
             test_case_id=request.test_case_id,
             customer_id=current_user['customer_id']
         )
@@ -63,7 +63,7 @@ async def execute_test_suite_direct(request: TestSuiteExecutionRequest):
     """Execute all test cases in a test suite - Direct endpoint with AI agent integration"""
     try:
         current_user = await get_current_user()
-        result = await enhanced_test_execution_service.execute_test_suite(
+        result = await real_test_execution_service.execute_test_suite(
             test_suite_id=request.test_suite_id,
             customer_id=current_user['customer_id']
         )
@@ -95,7 +95,7 @@ async def execute_test_suite_direct(request: TestSuiteExecutionRequest):
 async def get_execution_status_direct(execution_id: str):
     """Get the status of a running test execution - Direct endpoint with enhanced status"""
     try:
-        status_data = await enhanced_test_execution_service.get_execution_status(execution_id)
+        status_data = await real_test_execution_service.get_execution_status(execution_id)
         
         # Format response for frontend compatibility
         if status_data.get('status') == 'not_found':

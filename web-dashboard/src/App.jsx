@@ -11,7 +11,7 @@ import CreateTestRealTime from './components/CreateTestRealTime'
 import CreateTestRealTimeFixed from './components/CreateTestRealTimeFixed'
 import CreateTestWorking from './components/CreateTestWorking'
 import TestManagementNew from './components/TestManagementNew'
-import TestManagementDynamic from './components/TestManagementDynamic'
+import UnifiedTestManagement from './components/UnifiedTestManagement'
 import TestExecution from './components/TestExecution'
 import TestResults from './components/TestResultsSimple'
 import Requirements from './components/RequirementsSimple'
@@ -292,7 +292,7 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <TestManagementDynamic
+                      <UnifiedTestManagement
                         user={user}
                         deploymentMode={deploymentMode}
                       />
