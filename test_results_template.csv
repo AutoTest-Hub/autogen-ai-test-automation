@@ -1,0 +1,3 @@
+Test Run ID,Date,Time,Tester,Environment,Platform Version,Overall Status,Total Duration (min),Files Generated,DB Records Created,Agents Completed,Critical Issues,Notes
+TR_20250926_001,2025-09-26,14:30:00,Test User,Local,v1.0.0,RUNNING,0,0/8,0,0/4,0,Initial test run
+TR_TEMPLATE,YYYY-MM-DD,HH:MM:SS,Your Name,Local/Staging,v1.0.0,PASS/FAIL/PARTIAL,XX,X/8,X,X/4,X,Test notes here

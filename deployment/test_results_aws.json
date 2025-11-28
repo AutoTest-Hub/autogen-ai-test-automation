@@ -1,0 +1,129 @@
+{
+  "cloud_provider": "aws",
+  "test_timestamp": "2025-09-26T15:24:13.591930",
+  "tests": {
+    "configuration": {
+      "status": "success",
+      "config": {
+        "DB_HOST": "test-automation-db.cluster-xyz.us-east-1.rds.amazonaws.com",
+        "DB_PORT": "5432",
+        "DB_NAME": "test_automation_platform",
+        "DB_USER": "app_user",
+        "DB_PASSWORD": "MISSING_AWS_DB_PASSWORD",
+        "STORAGE_TYPE": "s3",
+        "STORAGE_BUCKET": "ai-test-automation-files",
+        "STORAGE_BASE_PATH": "customers",
+        "AWS_REGION": "us-east-1",
+        "AWS_ACCESS_KEY_ID": "MISSING_AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY": "MISSING_AWS_SECRET_ACCESS_KEY",
+        "APP_ENV": "production",
+        "APP_HOST": "0.0.0.0",
+        "APP_PORT": "8000",
+        "FRONTEND_PORT": "3000",
+        "JWT_SECRET": "MISSING_JWT_SECRET_KEY",
+        "ENCRYPTION_KEY": "MISSING_ENCRYPTION_KEY",
+        "LOG_LEVEL": "INFO",
+        "CLOUDWATCH_LOG_GROUP": "/aws/ecs/ai-test-automation",
+        "MONITORING_ENABLED": "true",
+        "MAX_WORKERS": "4",
+        "TIMEOUT_SECONDS": "300",
+        "MAX_FILE_SIZE_MB": "50",
+        "ENABLE_AUDIT_LOGGING": "true",
+        "ENABLE_RLS_POLICIES": "true",
+        "ENABLE_FILE_ENCRYPTION": "true",
+        "ENABLE_REAL_TIME_UPDATES": "true",
+        "CLOUD_PROVIDER": "aws",
+        "REGION": "us-east-1",
+        "AVAILABILITY_ZONE": "us-east-1a",
+        "BACKUP_ENABLED": "true",
+        "BACKUP_SCHEDULE": "\"0 2 * * *\"  # Daily at 2 AM",
+        "BACKUP_RETENTION_DAYS": "30",
+        "ECS_CLUSTER": "ai-test-automation-cluster",
+        "ECS_SERVICE": "ai-test-automation-service",
+        "TASK_DEFINITION": "ai-test-automation:latest"
+      },
+      "config_count": 36
+    },
+    "database": {
+      "status": "simulated_success",
+      "host": "test-automation-db.cluster-xyz.us-east-1.rds.amazonaws.com",
+      "database": "test_automation_platform",
+      "user": "app_user",
+      "rls_ready": true,
+      "note": "Cloud DB connection simulated - would connect in actual deployment"
+    },
+    "file_storage": {
+      "status": "success",
+      "storage_type": "s3",
+      "bucket": "ai-test-automation-files",
+      "region": "us-east-1",
+      "note": "S3 configuration valid"
+    },
+    "rls_policies": {
+      "status": "simulated_success",
+      "rls_enabled": true,
+      "customer_isolation": true,
+      "note": "RLS policies would be enforced in cloud deployment"
+    },
+    "security": {
+      "status": "warning",
+      "security_score": 50.0,
+      "checks": {
+        "jwt_secret": {
+          "configured": false,
+          "length": 22,
+          "secure": false
+        },
+        "encryption_key": {
+          "configured": false,
+          "length": 22,
+          "secure": false
+        },
+        "audit_logging": {
+          "enabled": true,
+          "compliance_ready": true
+        },
+        "file_encryption": {
+          "enabled": true,
+          "recommended_for_cloud": true
+        }
+      },
+      "recommendations": [
+        "Use a strong JWT secret (32+ characters)",
+        "Configure encryption key for data protection"
+      ]
+    },
+    "performance": {
+      "status": "success",
+      "performance_score": 100,
+      "settings": {
+        "max_workers": {
+          "value": 4,
+          "optimal": true,
+          "recommendation": "Use 2-8 workers for production"
+        },
+        "timeout": {
+          "value": 300,
+          "reasonable": true,
+          "recommendation": "Use 60-600 seconds for agent processing"
+        },
+        "max_file_size": {
+          "value": 50,
+          "adequate": true,
+          "recommendation": "Allow 10-100MB for test files"
+        },
+        "monitoring": {
+          "enabled": true,
+          "essential_for_production": true
+        }
+      },
+      "cloud_optimized": true
+    }
+  },
+  "overall_status": "warning",
+  "warning_tests": [
+    "database",
+    "rls_policies",
+    "security"
+  ]
+}

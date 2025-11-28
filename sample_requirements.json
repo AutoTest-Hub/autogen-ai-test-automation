@@ -1,0 +1,175 @@
+{
+  "testSuiteName": "E-commerce Platform Comprehensive Test Suite",
+  "description": "Complete test coverage for e-commerce platform including user authentication, product catalog, shopping cart, checkout process, and order management",
+  "applicationInfo": {
+    "name": "E-commerce Demo Store",
+    "type": "ecommerce",
+    "url": "https://demo.opencart.com"
+  },
+  "testCategories": [
+    {
+      "category": "Authentication",
+      "priority": "high",
+      "tests": [
+        {
+          "name": "User Registration",
+          "description": "Test user registration with valid and invalid data",
+          "steps": [
+            "Navigate to registration page",
+            "Fill registration form with valid data",
+            "Submit form and verify success",
+            "Test with invalid email format",
+            "Test with weak password",
+            "Test with existing email"
+          ]
+        },
+        {
+          "name": "User Login",
+          "description": "Test user login functionality",
+          "steps": [
+            "Navigate to login page",
+            "Login with valid credentials",
+            "Verify successful login",
+            "Test with invalid credentials",
+            "Test password reset functionality"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Product Catalog",
+      "priority": "high",
+      "tests": [
+        {
+          "name": "Product Search",
+          "description": "Test product search functionality",
+          "steps": [
+            "Enter search term in search box",
+            "Verify search results are relevant",
+            "Test search with no results",
+            "Test search filters",
+            "Test search sorting options"
+          ]
+        },
+        {
+          "name": "Product Details",
+          "description": "Test product detail page functionality",
+          "steps": [
+            "Navigate to product detail page",
+            "Verify product information display",
+            "Test product image gallery",
+            "Test product options selection",
+            "Test add to cart functionality"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Shopping Cart",
+      "priority": "high",
+      "tests": [
+        {
+          "name": "Add to Cart",
+          "description": "Test adding products to shopping cart",
+          "steps": [
+            "Add product to cart from product page",
+            "Verify cart item count updates",
+            "Add multiple quantities",
+            "Add different products",
+            "Verify cart total calculation"
+          ]
+        },
+        {
+          "name": "Cart Management",
+          "description": "Test cart modification functionality",
+          "steps": [
+            "Update product quantities in cart",
+            "Remove products from cart",
+            "Clear entire cart",
+            "Verify cart persistence across sessions",
+            "Test cart with maximum items"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Checkout Process",
+      "priority": "critical",
+      "tests": [
+        {
+          "name": "Guest Checkout",
+          "description": "Test checkout process for guest users",
+          "steps": [
+            "Proceed to checkout as guest",
+            "Fill billing information",
+            "Select shipping method",
+            "Select payment method",
+            "Review and place order",
+            "Verify order confirmation"
+          ]
+        },
+        {
+          "name": "Registered User Checkout",
+          "description": "Test checkout process for registered users",
+          "steps": [
+            "Login and proceed to checkout",
+            "Use saved billing address",
+            "Add new shipping address",
+            "Apply discount coupon",
+            "Complete payment process",
+            "Verify order in account history"
+          ]
+        }
+      ]
+    },
+    {
+      "category": "Order Management",
+      "priority": "medium",
+      "tests": [
+        {
+          "name": "Order History",
+          "description": "Test order history functionality",
+          "steps": [
+            "Navigate to order history page",
+            "Verify order list display",
+            "View order details",
+            "Test order status updates",
+            "Test order search and filtering"
+          ]
+        },
+        {
+          "name": "Order Tracking",
+          "description": "Test order tracking functionality",
+          "steps": [
+            "Access order tracking page",
+            "Enter order number",
+            "Verify tracking information",
+            "Test invalid order numbers",
+            "Test tracking email notifications"
+          ]
+        }
+      ]
+    }
+  ],
+  "testConfiguration": {
+    "browsers": ["Chrome", "Firefox", "Safari"],
+    "devices": ["Desktop", "Tablet", "Mobile"],
+    "environments": ["Development", "Staging", "Production"],
+    "dataRequirements": {
+      "testUsers": 5,
+      "testProducts": 10,
+      "testOrders": 3
+    }
+  },
+  "expectedOutcomes": {
+    "totalTests": 25,
+    "estimatedDuration": "2-3 hours",
+    "coverageAreas": [
+      "User Authentication",
+      "Product Management",
+      "Shopping Cart",
+      "Payment Processing",
+      "Order Management"
+    ]
+  }
+}

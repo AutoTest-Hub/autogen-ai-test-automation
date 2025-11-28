@@ -10,8 +10,15 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
 
-import autogen_agentchat as autogen
-from autogen_agentchat.agents import AssistantAgent as ConversableAgent, UserProxyAgent
+try:
+    import autogen
+    from autogen import AssistantAgent as ConversableAgent, UserProxyAgent
+    AUTOGEN_AVAILABLE = True
+except ImportError:
+    autogen = None
+    ConversableAgent = None
+    UserProxyAgent = None
+    AUTOGEN_AVAILABLE = False
 from config.settings import settings, AgentRole, LLMProvider
 from models.local_ai_provider import LocalAIProvider, ModelType
 

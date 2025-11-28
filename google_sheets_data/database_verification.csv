@@ -1,0 +1,8 @@
+Test Run ID,Table Name,Records Found,File Paths Stored,Metadata Complete,Customer Isolation,Suite Association,RLS Working,Audit Logs,Performance (ms),Issues,Notes
+TR_20250926_003,test_cases,1,1/1,YES,YES,YES,YES,5,250,None,RLS policy fixed - customer context working
+TR_20250926_003,test_suites,1,N/A,YES,YES,N/A,YES,3,150,None,Test suite created successfully
+TR_20250926_003,agent_jobs,4,N/A,YES,YES,YES,YES,12,200,None,All agent jobs tracked
+TR_20250926_003,agent_activities,35,N/A,YES,YES,YES,YES,35,180,None,Detailed activity logging
+TR_20250926_002,test_cases,0,0/7,NO,NO,NO,NO,0,N/A,RLS blocking,Customer context not set
+TR_20250926_002,test_suites,1,N/A,YES,YES,N/A,YES,3,150,None,Suite creation working
+TR_20250926_002,agent_jobs,4,N/A,YES,YES,YES,YES,12,200,None,Agent tracking working

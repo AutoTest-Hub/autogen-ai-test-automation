@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Test Automation Platform - Loading...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .instructions {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AI Test Automation Platform</h1>
+        <div class="spinner"></div>
+        <p>Loading the platform...</p>
+        <div class="instructions">
+            <p>If you see an ngrok warning page, please:</p>
+            <ol style="text-align: left; display: inline-block;">
+                <li>Click "Visit Site" or continue through the warning</li>
+                <li>Or use the direct access button below</li>
+            </ol>
+        </div>
+        <button class="button" onclick="accessPlatform()">Access Platform Directly</button>
+        
+        <script>
+            function accessPlatform() {
+                // Try to access the main application with bypass headers
+                const currentUrl = window.location.origin;
+                
+                // Method 1: Try to fetch with bypass headers
+                fetch(currentUrl, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true',
+                        'User-Agent': 'AI-Test-Platform/1.0'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = currentUrl;
+                    } else {
+                        // Method 2: Try direct navigation
+                        window.location.href = currentUrl + '?bypass=true';
+                    }
+                }).catch(() => {
+                    // Method 3: Force navigation
+                    window.location.href = currentUrl;
+                });
+            }
+            
+            // Auto-redirect after 3 seconds
+            setTimeout(() => {
+                accessPlatform();
+            }, 3000);
+            
+            // Also try immediate redirect if no ngrok warning
+            if (!document.title.includes('ERR_NGROK')) {
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            }
+        </script>
+    </div>
+</body>
+</html>

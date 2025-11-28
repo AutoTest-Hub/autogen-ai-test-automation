@@ -1,0 +1,453 @@
+{
+  "app_name": "banking_demo",
+  "base_url": "https://demo.testfire.net",
+  "description": "Banking application testing requirements with comprehensive financial transaction coverage and security validation",
+  "application_type": "financial_banking",
+  "priority_areas": [
+    "account_management",
+    "transaction_processing",
+    "fund_transfers",
+    "security_authentication",
+    "regulatory_compliance"
+  ],
+  "test_scenarios": {
+    "user_authentication": {
+      "priority": "critical",
+      "description": "Test multi-factor authentication and secure login processes",
+      "test_data": {
+        "valid_credentials": [
+          {
+            "username": "jsmith",
+            "password": "Demo1234"
+          },
+          {
+            "username": "admin",
+            "password": "admin"
+          }
+        ],
+        "invalid_credentials": [
+          {
+            "username": "invalid_user",
+            "password": "wrong_password"
+          }
+        ],
+        "mfa_scenarios": [
+          {
+            "method": "sms",
+            "phone": "+1234567890"
+          },
+          {
+            "method": "email",
+            "email": "user@example.com"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[name='uid']",
+        "input[name='passw']",
+        "input[type='submit']",
+        ".mfa-code-input"
+      ]
+    },
+    "account_overview": {
+      "priority": "high",
+      "description": "Test account balance display and account summary information",
+      "test_data": {
+        "account_types": [
+          "checking",
+          "savings",
+          "credit_card",
+          "loan"
+        ],
+        "balance_ranges": [
+          {
+            "min": 0,
+            "max": 1000
+          },
+          {
+            "min": 1000,
+            "max": 10000
+          }
+        ]
+      },
+      "expected_elements": [
+        ".account-balance",
+        ".account-number",
+        ".account-type",
+        ".recent-transactions"
+      ]
+    },
+    "fund_transfer": {
+      "priority": "critical",
+      "description": "Test internal and external fund transfer functionality",
+      "test_data": {
+        "internal_transfers": [
+          {
+            "from_account": "800002",
+            "to_account": "800003",
+            "amount": 100.00,
+            "description": "Internal transfer test"
+          }
+        ],
+        "external_transfers": [
+          {
+            "from_account": "800002",
+            "to_account": "123456789",
+            "routing_number": "021000021",
+            "amount": 250.00,
+            "description": "External transfer test"
+          }
+        ],
+        "transfer_limits": {
+          "daily_limit": 5000.00,
+          "per_transaction_limit": 2500.00
+        }
+      },
+      "expected_elements": [
+        "select[name='fromAccount']",
+        "input[name='toAccount']",
+        "input[name='transferAmount']",
+        "input[name='description']"
+      ]
+    },
+    "bill_payment": {
+      "priority": "high",
+      "description": "Test bill payment functionality and payee management",
+      "test_data": {
+        "payees": [
+          {
+            "name": "Electric Company",
+            "account_number": "ELC123456",
+            "category": "utilities"
+          },
+          {
+            "name": "Credit Card Company",
+            "account_number": "CC987654",
+            "category": "credit_cards"
+          }
+        ],
+        "payments": [
+          {
+            "payee": "Electric Company",
+            "amount": 150.75,
+            "payment_date": "2024-09-30"
+          }
+        ]
+      },
+      "expected_elements": [
+        ".payee-list",
+        "input[name='paymentAmount']",
+        "input[name='paymentDate']",
+        ".payment-confirmation"
+      ]
+    },
+    "transaction_history": {
+      "priority": "medium",
+      "description": "Test transaction history viewing and filtering",
+      "test_data": {
+        "date_ranges": [
+          {
+            "from": "2024-09-01",
+            "to": "2024-09-30"
+          },
+          {
+            "from": "2024-08-01",
+            "to": "2024-08-31"
+          }
+        ],
+        "transaction_types": [
+          "deposit",
+          "withdrawal",
+          "transfer",
+          "payment"
+        ],
+        "amount_ranges": [
+          {
+            "min": 0,
+            "max": 100
+          },
+          {
+            "min": 100,
+            "max": 1000
+          }
+        ]
+      },
+      "expected_elements": [
+        ".transaction-row",
+        ".date-filter",
+        ".amount-filter",
+        ".transaction-details"
+      ]
+    },
+    "loan_application": {
+      "priority": "medium",
+      "description": "Test loan application process and approval workflow",
+      "test_data": {
+        "loan_types": [
+          "personal",
+          "auto",
+          "mortgage",
+          "business"
+        ],
+        "loan_applications": [
+          {
+            "type": "personal",
+            "amount": 10000,
+            "term_months": 36,
+            "purpose": "debt_consolidation"
+          }
+        ],
+        "applicant_info": {
+          "annual_income": 75000,
+          "employment_status": "employed",
+          "credit_score": 720
+        }
+      },
+      "expected_elements": [
+        "select[name='loanType']",
+        "input[name='loanAmount']",
+        "input[name='annualIncome']",
+        ".loan-calculator"
+      ]
+    },
+    "investment_portfolio": {
+      "priority": "low",
+      "description": "Test investment account management and portfolio tracking",
+      "test_data": {
+        "investment_types": [
+          "stocks",
+          "bonds",
+          "mutual_funds",
+          "etfs"
+        ],
+        "portfolio_data": [
+          {
+            "symbol": "AAPL",
+            "shares": 10,
+            "purchase_price": 150.00
+          },
+          {
+            "symbol": "GOOGL",
+            "shares": 5,
+            "purchase_price": 2500.00
+          }
+        ]
+      },
+      "expected_elements": [
+        ".portfolio-summary",
+        ".stock-ticker",
+        ".investment-performance",
+        ".buy-sell-buttons"
+      ]
+    }
+  },
+  "security_validations": {
+    "authentication": {
+      "password_complexity": {
+        "min_length": 8,
+        "require_uppercase": true,
+        "require_lowercase": true,
+        "require_numbers": true,
+        "require_special_chars": true
+      },
+      "account_lockout": {
+        "max_failed_attempts": 3,
+        "lockout_duration_minutes": 15
+      },
+      "session_management": {
+        "timeout_minutes": 15,
+        "concurrent_sessions": 1
+      }
+    },
+    "transaction_security": {
+      "daily_limits": {
+        "transfer_limit": 5000.00,
+        "bill_payment_limit": 2500.00,
+        "atm_withdrawal_limit": 500.00
+      },
+      "fraud_detection": {
+        "unusual_activity_monitoring": true,
+        "velocity_checks": true,
+        "geolocation_validation": true
+      }
+    },
+    "data_protection": {
+      "encryption": {
+        "data_at_rest": "AES-256",
+        "data_in_transit": "TLS-1.3"
+      },
+      "pii_masking": {
+        "account_numbers": true,
+        "ssn": true,
+        "credit_card_numbers": true
+      }
+    }
+  },
+  "regulatory_compliance": {
+    "pci_dss": {
+      "card_data_protection": true,
+      "secure_transmission": true,
+      "access_controls": true
+    },
+    "sox_compliance": {
+      "audit_trails": true,
+      "segregation_of_duties": true,
+      "change_management": true
+    },
+    "kyc_aml": {
+      "customer_identification": true,
+      "transaction_monitoring": true,
+      "suspicious_activity_reporting": true
+    }
+  },
+  "business_rules": {
+    "account_minimums": {
+      "checking": 25.00,
+      "savings": 100.00,
+      "money_market": 1000.00
+    },
+    "transaction_fees": {
+      "wire_transfer": 25.00,
+      "overdraft": 35.00,
+      "foreign_transaction": 3.00
+    },
+    "interest_rates": {
+      "savings": 0.01,
+      "checking": 0.001,
+      "cd_12_month": 0.025
+    }
+  },
+  "integration_points": [
+    {
+      "name": "core_banking_system",
+      "type": "mainframe_api",
+      "test_mode": true
+    },
+    {
+      "name": "payment_processor",
+      "type": "external_api",
+      "test_mode": true
+    },
+    {
+      "name": "credit_bureau",
+      "type": "web_service",
+      "mock_data": true
+    },
+    {
+      "name": "fraud_detection_system",
+      "type": "real_time_api",
+      "test_mode": true
+    },
+    {
+      "name": "regulatory_reporting",
+      "type": "batch_process",
+      "test_mode": true
+    }
+  ],
+  "performance_requirements": {
+    "page_load_time": 2000,
+    "transaction_processing_time": 5000,
+    "balance_inquiry_time": 1000,
+    "concurrent_users": 1000,
+    "peak_load_capacity": 5000
+  },
+  "disaster_recovery": {
+    "rto_minutes": 240,
+    "rpo_minutes": 15,
+    "backup_frequency": "continuous",
+    "failover_testing": "quarterly"
+  },
+  "browser_compatibility": [
+    "chrome",
+    "firefox",
+    "safari",
+    "edge",
+    "internet_explorer_11"
+  ],
+  "mobile_compatibility": {
+    "responsive_design": true,
+    "mobile_app_testing": true,
+    "touch_interface": true,
+    "biometric_authentication": true
+  },
+  "test_environment": {
+    "headless": true,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "timeout": 60000,
+    "retry_attempts": 2,
+    "network_simulation": {
+      "slow_3g": true,
+      "offline_mode": true
+    }
+  },
+  "test_data_management": {
+    "strategy": "synthetic_data",
+    "data_masking": true,
+    "cleanup_after_test": true,
+    "data_isolation": true,
+    "gdpr_compliance": true
+  },
+  "reporting_requirements": {
+    "html_report": true,
+    "json_report": true,
+    "pdf_report": true,
+    "screenshot_on_failure": true,
+    "video_recording": true,
+    "performance_metrics": true,
+    "security_scan_results": true
+  },
+  "accessibility_requirements": {
+    "wcag_level": "AAA",
+    "screen_reader_support": true,
+    "keyboard_navigation": true,
+    "color_contrast": true,
+    "font_scaling": true
+  },
+  "api_testing": {
+    "rest_endpoints": [
+      {
+        "path": "/api/accounts",
+        "method": "GET",
+        "authentication": "bearer_token"
+      },
+      {
+        "path": "/api/transactions",
+        "method": "POST",
+        "authentication": "bearer_token"
+      },
+      {
+        "path": "/api/transfers",
+        "method": "POST",
+        "authentication": "bearer_token"
+      }
+    ],
+    "soap_services": [
+      {
+        "wsdl": "/services/AccountService?wsdl",
+        "operations": ["getBalance", "getTransactionHistory"]
+      }
+    ]
+  },
+  "load_testing": {
+    "scenarios": [
+      {
+        "name": "login_load",
+        "concurrent_users": 100,
+        "duration_minutes": 10
+      },
+      {
+        "name": "transaction_load",
+        "concurrent_users": 50,
+        "duration_minutes": 15
+      }
+    ],
+    "performance_thresholds": {
+      "response_time_95th_percentile": 3000,
+      "error_rate_threshold": 0.01,
+      "throughput_minimum": 100
+    }
+  }
+}

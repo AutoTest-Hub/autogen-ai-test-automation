@@ -30,6 +30,12 @@ from agents.review_agent import ReviewAgent
 from agents.execution_agent import ExecutionAgent
 from agents.reporting_agent import ReportingAgent
 
+# Import enhanced agents and utilities
+from agents.enhanced_discovery_agent import create_enhanced_discovery_agent
+from agents.integrated_test_generator import create_integrated_test_generator
+from utils.step_generator import create_step_generator
+from utils.intelligent_flow_handler import create_intelligent_flow_handler
+
 # Import settings
 from config.settings import settings, AgentRole, LLMProvider
 
@@ -50,6 +56,9 @@ class ProperMultiAgentWorkflow:
         # Initialize local AI provider
         self.local_ai_provider = LocalAIProvider()
         
+        # Load requirements configuration if available
+        self.requirements_config = self._load_requirements_config()
+        
         # Initialize agents
         self.logger.info("Initializing agents...")
         self.planning_agent = PlanningAgent(local_ai_provider=self.local_ai_provider)
@@ -58,6 +67,51 @@ class ProperMultiAgentWorkflow:
         self.review_agent = ReviewAgent(local_ai_provider=self.local_ai_provider)
         self.execution_agent = ExecutionAgent(local_ai_provider=self.local_ai_provider)
         self.reporting_agent = ReportingAgent(local_ai_provider=self.local_ai_provider)
+        
+        # Initialize enhanced agents and utilities
+        self.logger.info("Initializing enhanced three-tier system...")
+        self.enhanced_discovery_agent = create_enhanced_discovery_agent()
+        self.integrated_test_generator = create_integrated_test_generator()
+        self.step_generator = create_step_generator()
+        self.flow_handler = create_intelligent_flow_handler()
+        
+        # Flag to use enhanced features
+        self.use_enhanced_features = True
+    
+    def _load_requirements_config(self) -> Optional[Dict[str, Any]]:
+        """Load requirements configuration from JSON files"""
+        # First check for active requirements file (set by shell script)
+        active_req_file = 'active_requirements.json'
+        if Path(active_req_file).exists():
+            try:
+                with open(active_req_file, 'r') as f:
+                    config = json.load(f)
+                    self.logger.info(f"✅ Loaded enhanced requirements configuration from {active_req_file}")
+                    self.logger.info(f"Application Type: {config.get('application_type', 'unknown')}")
+                    self.logger.info(f"Test Scenarios: {len(config.get('test_scenarios', {}))}")
+                    return config
+            except Exception as e:
+                self.logger.warning(f"Error loading {active_req_file}: {e}")
+        
+        # Fallback to auto-detection
+        requirements_files = [
+            'requirements_ecommerce.json',
+            'requirements_hrms.json', 
+            'requirements_banking.json'
+        ]
+        
+        for req_file in requirements_files:
+            if Path(req_file).exists():
+                try:
+                    with open(req_file, 'r') as f:
+                        config = json.load(f)
+                        self.logger.info(f"Loaded requirements configuration from {req_file}")
+                        return config
+                except Exception as e:
+                    self.logger.warning(f"Error loading {req_file}: {e}")
+        
+        self.logger.info("⚠️  No requirements configuration found, using basic workflow")
+        return None
     
     async def run(self, url: str, name: str, headless: bool = True) -> Dict[str, Any]:
         """
@@ -1020,6 +1074,21 @@ def browser_setup(request):
             command.extend(test_paths)
             command.append("-v")
             
+            # Add HTML and JSON report generation
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            html_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.html"
+            json_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.json"
+            
+            # Ensure the reporting directory exists
+            os.makedirs("work_dir/reporting_agent", exist_ok=True)
+            
+            command.extend([
+                "--html", html_report_path,
+                "--self-contained-html",
+                "--json-report",
+                "--json-report-file", json_report_path
+            ])
+            
             # Add headless option
             if headless:
                 command.append("--headless")
@@ -1044,12 +1113,14 @@ def browser_setup(request):
             # Create execution results
             execution_results = {
                 "name": review_results.get("name", "Unknown"),
-                "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
+                "timestamp": timestamp,
                 "test_paths": test_paths,
                 "return_code": return_code,
                 "stdout": stdout,
                 "stderr": stderr,
-                "success": return_code == 0
+                "success": return_code == 0,
+                "pytest_html_report": html_report_path,
+                "pytest_json_report": json_report_path
             }
             
             return execution_results
@@ -1286,11 +1357,44 @@ async def main():
             report_summary = report_data['report'].get('executive_summary', {})
             print(f"- Total Tests: {report_summary.get('total_tests', 'N/A')}")
             print(f"- Success Rate: {report_summary.get('success_rate', 'N/A')}")
-        print(f"- HTML Report: {report_data.get('html_report_path', report_data.get('html_report', ''))}")
-        print(f"- JSON Report: {report_data.get('json_report_path', '')}")
+        print(f"- Custom HTML Report: {report_data.get('html_report_path', report_data.get('html_report', ''))}")
+        print(f"- Custom JSON Report: {report_data.get('json_report_path', '')}")
+        
+        # Also show pytest reports if available
+        exec_data = workflow_results['execution_results']
+        if 'pytest_html_report' in exec_data:
+            print(f"- Pytest HTML Report: {exec_data['pytest_html_report']}")
+        if 'pytest_json_report' in exec_data:
+            print(f"- Pytest JSON Report: {exec_data['pytest_json_report']}")
     
     print("\nWorkflow completed!")
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+
+
+# --- Advanced AI Agents ---
+from agents.self_healing_agent import SelfHealingAgent
+from agents.prioritization_agent import PrioritizationAgent
+from agents.cross_browser_agent import CrossBrowserAgent
+from agents.performance_agent import PerformanceAgent
+
+# --- Workflow Enhancements ---
+async def run_self_healing(test_file_path, error_log):
+    agent = SelfHealingAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.analyze_and_heal(test_file_path, error_log)
+
+async def run_test_prioritization(test_files, requirements_config):
+    agent = PrioritizationAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.prioritize_tests(test_files, requirements_config)
+
+async def run_cross_browser_planning(requirements_config):
+    agent = CrossBrowserAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.generate_cross_browser_plan(requirements_config)
+
+async def run_performance_prediction(requirements_config, test_results):
+    agent = PerformanceAgent(ollama_config=main_config.get("ollama_config"))
+    return await agent.predict_performance_bottlenecks(requirements_config, test_results)
 

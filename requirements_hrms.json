@@ -1,0 +1,402 @@
+{
+  "app_name": "orangehrm_demo",
+  "base_url": "https://opensource-demo.orangehrmlive.com",
+  "description": "Human Resource Management System testing requirements with comprehensive business workflow coverage",
+  "application_type": "enterprise_hrms",
+  "priority_areas": [
+    "employee_management",
+    "attendance_tracking",
+    "leave_management",
+    "performance_evaluation",
+    "recruitment_process"
+  ],
+  "test_scenarios": {
+    "admin_login": {
+      "priority": "critical",
+      "description": "Test administrator login and authentication",
+      "test_data": {
+        "admin_credentials": {
+          "username": "Admin",
+          "password": "admin123"
+        },
+        "invalid_credentials": [
+          {
+            "username": "wronguser",
+            "password": "wrongpass"
+          },
+          {
+            "username": "Admin",
+            "password": "wrongpass"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[name='username']",
+        "input[name='password']",
+        "button[type='submit']",
+        ".oxd-main-menu"
+      ]
+    },
+    "employee_management": {
+      "priority": "high",
+      "description": "Test employee creation, modification, and deletion",
+      "test_data": {
+        "new_employees": [
+          {
+            "first_name": "John",
+            "middle_name": "Michael",
+            "last_name": "Doe",
+            "employee_id": "EMP001",
+            "username": "john.doe",
+            "password": "Password123!"
+          },
+          {
+            "first_name": "Jane",
+            "middle_name": "Elizabeth",
+            "last_name": "Smith",
+            "employee_id": "EMP002",
+            "username": "jane.smith",
+            "password": "SecurePass456!"
+          }
+        ],
+        "employee_updates": [
+          {
+            "employee_id": "EMP001",
+            "field": "job_title",
+            "new_value": "Senior Developer"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[name='firstName']",
+        "input[name='lastName']",
+        "input[name='employeeId']",
+        ".oxd-button--secondary"
+      ]
+    },
+    "leave_management": {
+      "priority": "high",
+      "description": "Test leave application, approval, and tracking processes",
+      "test_data": {
+        "leave_applications": [
+          {
+            "leave_type": "Annual",
+            "from_date": "2024-10-01",
+            "to_date": "2024-10-05",
+            "comment": "Family vacation"
+          },
+          {
+            "leave_type": "Sick",
+            "from_date": "2024-09-25",
+            "to_date": "2024-09-26",
+            "comment": "Medical appointment"
+          }
+        ],
+        "leave_types": [
+          "Annual",
+          "Sick",
+          "Maternity",
+          "Personal"
+        ]
+      },
+      "expected_elements": [
+        ".oxd-select-text",
+        ".oxd-date-input",
+        "textarea[placeholder*='comment']",
+        ".oxd-button--medium"
+      ]
+    },
+    "attendance_tracking": {
+      "priority": "medium",
+      "description": "Test time tracking and attendance management",
+      "test_data": {
+        "punch_records": [
+          {
+            "date": "2024-09-22",
+            "punch_in": "09:00",
+            "punch_out": "17:30"
+          },
+          {
+            "date": "2024-09-21",
+            "punch_in": "08:45",
+            "punch_out": "17:15"
+          }
+        ],
+        "attendance_reports": [
+          {
+            "employee": "John Doe",
+            "period": "monthly"
+          }
+        ]
+      },
+      "expected_elements": [
+        ".oxd-time-input",
+        ".attendance-card",
+        ".punch-status"
+      ]
+    },
+    "performance_evaluation": {
+      "priority": "medium",
+      "description": "Test performance review and evaluation processes",
+      "test_data": {
+        "performance_reviews": [
+          {
+            "employee": "John Doe",
+            "review_period": "2024-Q3",
+            "reviewer": "Manager",
+            "rating": "Exceeds Expectations"
+          }
+        ],
+        "kpi_metrics": [
+          {
+            "name": "Project Completion Rate",
+            "target": "95%",
+            "actual": "98%"
+          }
+        ]
+      },
+      "expected_elements": [
+        ".performance-review",
+        ".rating-scale",
+        ".kpi-indicator"
+      ]
+    },
+    "recruitment_process": {
+      "priority": "medium",
+      "description": "Test job posting, candidate management, and hiring workflow",
+      "test_data": {
+        "job_vacancies": [
+          {
+            "job_title": "Software Developer",
+            "department": "IT",
+            "positions": 2,
+            "description": "Develop and maintain web applications"
+          }
+        ],
+        "candidates": [
+          {
+            "first_name": "Alice",
+            "last_name": "Johnson",
+            "email": "alice.johnson@example.com",
+            "phone": "555-0123"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[placeholder*='Job Title']",
+        ".vacancy-list",
+        ".candidate-profile"
+      ]
+    },
+    "payroll_management": {
+      "priority": "low",
+      "description": "Test payroll processing and salary management",
+      "test_data": {
+        "salary_components": [
+          {
+            "component": "Basic Salary",
+            "amount": 5000
+          },
+          {
+            "component": "Housing Allowance",
+            "amount": 1000
+          }
+        ],
+        "pay_periods": [
+          "monthly",
+          "bi-weekly"
+        ]
+      },
+      "expected_elements": [
+        ".salary-component",
+        ".pay-grade",
+        ".payroll-summary"
+      ]
+    }
+  },
+  "business_rules": {
+    "working_hours_per_day": 8,
+    "working_days_per_week": 5,
+    "annual_leave_entitlement": 21,
+    "probation_period_months": 6,
+    "maximum_overtime_hours": 10
+  },
+  "user_roles": {
+    "admin": {
+      "permissions": [
+        "user_management",
+        "system_configuration",
+        "report_access",
+        "data_import_export"
+      ]
+    },
+    "hr_manager": {
+      "permissions": [
+        "employee_management",
+        "leave_approval",
+        "recruitment",
+        "performance_review"
+      ]
+    },
+    "employee": {
+      "permissions": [
+        "view_profile",
+        "apply_leave",
+        "punch_in_out",
+        "view_payslip"
+      ]
+    },
+    "supervisor": {
+      "permissions": [
+        "team_management",
+        "leave_approval",
+        "performance_review",
+        "attendance_monitoring"
+      ]
+    }
+  },
+  "workflow_validations": {
+    "leave_approval_workflow": [
+      "employee_applies",
+      "supervisor_reviews",
+      "hr_approves",
+      "system_updates_balance"
+    ],
+    "recruitment_workflow": [
+      "job_posting",
+      "application_screening",
+      "interview_scheduling",
+      "offer_management",
+      "onboarding"
+    ],
+    "performance_review_workflow": [
+      "self_assessment",
+      "supervisor_review",
+      "hr_validation",
+      "goal_setting"
+    ]
+  },
+  "data_validation_rules": {
+    "employee_id": {
+      "format": "alphanumeric",
+      "max_length": 10,
+      "unique": true
+    },
+    "email": {
+      "format": "email",
+      "unique": true
+    },
+    "phone": {
+      "format": "numeric",
+      "min_length": 10,
+      "max_length": 15
+    },
+    "salary": {
+      "type": "decimal",
+      "min_value": 0,
+      "max_value": 999999.99
+    }
+  },
+  "integration_points": [
+    {
+      "name": "ldap_authentication",
+      "type": "directory_service",
+      "test_mode": false
+    },
+    {
+      "name": "email_notifications",
+      "type": "smtp_service",
+      "test_mode": true
+    },
+    {
+      "name": "payroll_system",
+      "type": "external_api",
+      "mock_data": true
+    },
+    {
+      "name": "biometric_system",
+      "type": "hardware_integration",
+      "test_mode": true
+    }
+  ],
+  "security_requirements": {
+    "password_policy": {
+      "min_length": 8,
+      "require_uppercase": true,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_special_chars": true
+    },
+    "session_management": {
+      "timeout_minutes": 30,
+      "concurrent_sessions": 1
+    },
+    "data_encryption": {
+      "at_rest": true,
+      "in_transit": true
+    },
+    "audit_logging": {
+      "user_actions": true,
+      "data_changes": true,
+      "login_attempts": true
+    }
+  },
+  "performance_requirements": {
+    "page_load_time": 5000,
+    "report_generation_time": 15000,
+    "search_response_time": 3000,
+    "concurrent_users": 100
+  },
+  "browser_compatibility": [
+    "chrome",
+    "firefox",
+    "safari",
+    "edge"
+  ],
+  "test_environment": {
+    "headless": true,
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "timeout": 45000,
+    "retry_attempts": 2
+  },
+  "reporting_requirements": {
+    "html_report": true,
+    "json_report": true,
+    "screenshot_on_failure": true,
+    "video_recording": true,
+    "test_coverage_report": true
+  },
+  "accessibility_requirements": {
+    "wcag_level": "AA",
+    "screen_reader_support": true,
+    "keyboard_navigation": true,
+    "color_contrast": true
+  },
+  "localization_testing": {
+    "supported_languages": [
+      "en_US",
+      "es_ES",
+      "fr_FR",
+      "de_DE"
+    ],
+    "date_formats": [
+      "MM/DD/YYYY",
+      "DD/MM/YYYY",
+      "YYYY-MM-DD"
+    ],
+    "currency_formats": [
+      "USD",
+      "EUR",
+      "GBP"
+    ]
+  },
+  "test_data_management": {
+    "strategy": "database_fixtures",
+    "cleanup_after_test": true,
+    "data_isolation": true,
+    "test_data_refresh": "daily"
+  }
+}
