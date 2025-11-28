@@ -90,7 +90,69 @@ You provide comprehensive analysis that enables intelligent test generation and 
         except Exception as e:
             self.logger.error(f"Enhanced discovery failed: {str(e)}")
             return {"error": str(e)}
-    
+
+    async def analyze_application(
+        self,
+        url: str,
+        analysis_depth: str = "comprehensive",
+        headless: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Analyze a web application for test generation.
+
+        This is a convenience method that wraps the task-based API for simpler use.
+        Called by the API server for test creation requests.
+
+        Args:
+            url: URL of the application to analyze
+            analysis_depth: Depth of analysis ("basic", "standard", "comprehensive")
+            headless: Whether to run browser in headless mode
+
+        Returns:
+            Dict[str, Any]: Discovery results including application profile,
+                           discovered elements, user journeys, and testing recommendations.
+        """
+        try:
+            self.logger.info(f"Analyzing application: {url}")
+
+            task_data = {
+                "type": "enhanced_discovery",
+                "url": url,
+                "analysis_depth": analysis_depth,
+                "headless": headless
+            }
+
+            result = await self._perform_enhanced_discovery(task_data)
+
+            # Return results in a format suitable for API consumption
+            if "error" in result:
+                return result
+
+            discovery_results = result.get("discovery_results", {})
+
+            return {
+                "status": "success",
+                "url": url,
+                "application_profile": discovery_results.get("application_profile", {}),
+                "page_analysis": discovery_results.get("page_analysis", {}),
+                "user_journeys": discovery_results.get("user_journeys", {}),
+                "business_logic": discovery_results.get("business_logic", {}),
+                "technical_analysis": discovery_results.get("technical_analysis", {}),
+                "testing_recommendations": discovery_results.get("testing_recommendations", {}),
+                "risk_assessment": discovery_results.get("risk_assessment", {}),
+                "intelligent_flows": discovery_results.get("intelligent_flows", {}),
+                "summary": result.get("summary", {}),
+                "output_file": result.get("output_file")
+            }
+
+        except Exception as e:
+            self.logger.error(f"Application analysis failed: {str(e)}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "url": url
+            }
+
     async def _perform_enhanced_discovery(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Perform comprehensive enhanced discovery

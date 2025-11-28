@@ -91,7 +91,77 @@ You provide the highest level of test automation intelligence by seamlessly inte
         except Exception as e:
             self.logger.error(f"Integrated test generation failed: {str(e)}")
             return {"error": str(e)}
-    
+
+    async def generate_comprehensive_tests(
+        self,
+        input_data: Dict[str, Any],
+        discovery_results: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Generate comprehensive tests using discovery results.
+
+        This is the main entry point called by the API server.
+
+        Args:
+            input_data: Request input data containing url, app_name, test_types, etc.
+            discovery_results: Results from the discovery agent containing discovered
+                              elements, page structure, and application analysis.
+
+        Returns:
+            Dict[str, Any]: Generated test results including test files, coverage metrics,
+                           and quality assessment.
+        """
+        try:
+            self.logger.info("Starting comprehensive test generation")
+
+            # Build task data from input_data and discovery_results
+            task_data = {
+                "type": "integrated_generation",
+                "url": input_data.get("url"),
+                "app_name": input_data.get("app_name", input_data.get("name", "application")),
+                "test_types": input_data.get("test_types", ["functional", "e2e"]),
+                "framework": input_data.get("framework", "pytest"),
+                "discovery_results": discovery_results,
+                "config": {
+                    "headless": input_data.get("headless", True),
+                    "browser": input_data.get("browser", "chromium"),
+                    "output_format": input_data.get("output_format", "pytest"),
+                    "enable_three_tier": True,
+                    "enable_autogen": True,
+                    "enable_intelligent_flows": True
+                }
+            }
+
+            # Use existing integrated generation workflow
+            result = await self._perform_integrated_generation(task_data)
+
+            # Extract test files and metrics for API response
+            tests = []
+            if "generated_artifacts" in result:
+                artifacts = result["generated_artifacts"]
+                tests = artifacts.get("test_files", [])
+
+            return {
+                "status": "success" if "error" not in result else "error",
+                "tests": tests,
+                "total_tests": len(tests),
+                "discovery_summary": result.get("discovery", {}).get("summary", {}),
+                "quality_score": result.get("quality_metrics", {}).get("overall_score", 0),
+                "coverage_metrics": result.get("quality_metrics", {}).get("coverage", {}),
+                "generated_files": result.get("generated_artifacts", {}).get("files", []),
+                "workflow_summary": result.get("summary", {}),
+                "raw_results": result
+            }
+
+        except Exception as e:
+            self.logger.error(f"Comprehensive test generation failed: {str(e)}")
+            return {
+                "status": "error",
+                "error": str(e),
+                "tests": [],
+                "total_tests": 0
+            }
+
     async def _perform_integrated_generation(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Perform complete integrated test generation workflow
@@ -118,10 +188,18 @@ You provide the highest level of test automation intelligence by seamlessly inte
         }
         
         try:
-            # Phase 1: Enhanced Discovery
-            self.logger.info("Phase 1: Enhanced Application Discovery")
-            discovery_results = await self._execute_enhanced_discovery(url, generation_config)
-            workflow_results["phases"]["discovery"] = discovery_results
+            # Phase 1: Enhanced Discovery (skip if already provided)
+            if task_data.get("discovery_results"):
+                self.logger.info("Phase 1: Using provided discovery results (skipping re-discovery)")
+                discovery_results = task_data["discovery_results"]
+                workflow_results["phases"]["discovery"] = {
+                    "status": "provided",
+                    "results": discovery_results
+                }
+            else:
+                self.logger.info("Phase 1: Enhanced Application Discovery")
+                discovery_results = await self._execute_enhanced_discovery(url, generation_config)
+                workflow_results["phases"]["discovery"] = discovery_results
             
             # Phase 2: Intelligent Flow Analysis
             self.logger.info("Phase 2: Intelligent Flow Analysis")
