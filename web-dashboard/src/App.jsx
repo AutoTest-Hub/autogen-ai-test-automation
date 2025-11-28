@@ -14,6 +14,7 @@ import TestResults from './components/TestResultsSimple'
 import Requirements from './components/RequirementsSimple'
 import Settings from './components/Settings'
 import LoginSimple from './components/LoginSimple'
+import AgentMarketplace from './components/AgentMarketplace'
 
 // API Service
 import { apiService } from './lib/api'
@@ -384,6 +385,22 @@ function App() {
                     } />
                   )}
                   
+                  <Route path="/marketplace" element={
+                    <motion.div
+                      key="marketplace"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <AgentMarketplace
+                        user={user}
+                        currentSubscription={user?.subscription || 'trial'}
+                        onHireAgent={(agent) => console.log('Hired agent:', agent)}
+                      />
+                    </motion.div>
+                  } />
+
                   <Route path="/settings" element={
                     <motion.div
                       key="settings"
@@ -392,8 +409,8 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <Settings 
-                        user={user} 
+                      <Settings
+                        user={user}
                         systemInfo={systemInfo}
                         deploymentMode={deploymentMode}
                         features={features}

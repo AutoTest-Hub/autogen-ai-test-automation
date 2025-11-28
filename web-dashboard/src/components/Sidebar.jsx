@@ -21,7 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   User,
-  Zap
+  Zap,
+  Store
 } from 'lucide-react'
 
 const Sidebar = ({ open, onToggle, user, onLogout }) => {
@@ -55,9 +56,15 @@ const Sidebar = ({ open, onToggle, user, onLogout }) => {
 
     {
       path: '/requirements',
-      icon: Settings,
+      icon: FileText,
       label: 'Templates',
       description: 'Manage Templates'
+    },
+    {
+      path: '/marketplace',
+      icon: Store,
+      label: 'Agent Marketplace',
+      description: 'Browse & Hire AI Agents'
     },
     {
       path: '/settings',
