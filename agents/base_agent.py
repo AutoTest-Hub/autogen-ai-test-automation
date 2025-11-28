@@ -246,6 +246,241 @@ class BaseTestAgent(ABC):
             description=description
         )
         self.logger.info(f"Registered function: {func.__name__}")
+
+    async def request_validation(
+        self,
+        validator_agent: 'BaseTestAgent',
+        artifact: Dict[str, Any],
+        validation_criteria: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Request validation of an artifact from another agent.
+
+        This enables cross-agent validation where one agent can ask
+        another to review and validate its work before proceeding.
+
+        Args:
+            validator_agent: The agent to request validation from
+            artifact: The work artifact to validate (e.g., generated tests, discovery results)
+            validation_criteria: List of criteria to validate against
+
+        Returns:
+            Dict[str, Any]: Validation result including:
+                - is_valid: bool
+                - score: float (0-1)
+                - issues: List of identified issues
+                - suggestions: List of improvement suggestions
+                - approved: bool (overall approval)
+        """
+        try:
+            self.logger.info(f"Requesting validation from {validator_agent.name}")
+
+            # Build validation request message
+            validation_request = {
+                "type": "validation_request",
+                "from_agent": self.name,
+                "artifact_type": artifact.get("type", "unknown"),
+                "artifact_summary": artifact.get("summary", ""),
+                "criteria": validation_criteria,
+                "artifact_data": artifact
+            }
+
+            # Create validation prompt
+            criteria_list = "\n".join([f"- {c}" for c in validation_criteria])
+            validation_prompt = f"""
+Please validate the following artifact from {self.name}:
+
+Artifact Type: {artifact.get("type", "unknown")}
+Summary: {artifact.get("summary", "No summary provided")}
+
+Validation Criteria:
+{criteria_list}
+
+Please review and provide:
+1. Is the artifact valid? (yes/no)
+2. Quality score (0-100)
+3. Any issues found
+4. Suggestions for improvement
+5. Overall approval recommendation
+
+Respond with your validation assessment.
+"""
+
+            # Request validation via chat
+            reply = await self.send_message(
+                validator_agent,
+                validation_prompt,
+                request_reply=True
+            )
+
+            # Parse validation response
+            validation_result = self._parse_validation_response(reply, validation_criteria)
+
+            self.logger.info(
+                f"Validation from {validator_agent.name}: "
+                f"approved={validation_result['approved']}, score={validation_result['score']}"
+            )
+
+            return validation_result
+
+        except Exception as e:
+            self.logger.error(f"Validation request failed: {e}")
+            return {
+                "is_valid": False,
+                "score": 0.0,
+                "issues": [f"Validation failed: {str(e)}"],
+                "suggestions": [],
+                "approved": False,
+                "error": str(e)
+            }
+
+    def _parse_validation_response(
+        self,
+        response: str,
+        criteria: List[str]
+    ) -> Dict[str, Any]:
+        """Parse validation response from validator agent"""
+        result = {
+            "is_valid": True,
+            "score": 0.75,  # Default moderate score
+            "issues": [],
+            "suggestions": [],
+            "approved": True,
+            "raw_response": response
+        }
+
+        if not response:
+            result["is_valid"] = False
+            result["approved"] = False
+            result["score"] = 0.0
+            result["issues"].append("No response from validator")
+            return result
+
+        response_lower = response.lower()
+
+        # Check for rejection indicators
+        rejection_keywords = ["invalid", "rejected", "fail", "not acceptable", "major issues"]
+        for keyword in rejection_keywords:
+            if keyword in response_lower:
+                result["is_valid"] = False
+                result["approved"] = False
+                result["score"] = max(result["score"] - 0.3, 0.0)
+
+        # Check for approval indicators
+        approval_keywords = ["valid", "approved", "pass", "acceptable", "good quality"]
+        for keyword in approval_keywords:
+            if keyword in response_lower:
+                result["score"] = min(result["score"] + 0.1, 1.0)
+
+        # Extract issues (lines with "issue" or starting with "-")
+        for line in response.split("\n"):
+            line = line.strip()
+            if line.startswith("-") or "issue" in line.lower():
+                if len(line) > 5:  # Avoid empty bullet points
+                    result["issues"].append(line.lstrip("- "))
+
+        # Extract suggestions (lines with "suggest" or "recommend")
+        for line in response.split("\n"):
+            line = line.strip()
+            if "suggest" in line.lower() or "recommend" in line.lower():
+                if len(line) > 10:
+                    result["suggestions"].append(line)
+
+        # Final approval decision
+        result["approved"] = result["is_valid"] and result["score"] >= 0.6
+
+        return result
+
+    async def collaborate_with(
+        self,
+        collaborator: 'BaseTestAgent',
+        task: Dict[str, Any],
+        max_rounds: int = 3
+    ) -> Dict[str, Any]:
+        """
+        Collaborate with another agent on a task.
+
+        This enables iterative collaboration where agents can work together,
+        sharing feedback and refining outputs.
+
+        Args:
+            collaborator: The agent to collaborate with
+            task: The task to collaborate on
+            max_rounds: Maximum collaboration rounds
+
+        Returns:
+            Dict[str, Any]: Collaboration results
+        """
+        try:
+            self.logger.info(f"Starting collaboration with {collaborator.name}")
+
+            collaboration_results = {
+                "rounds": [],
+                "final_output": None,
+                "consensus_reached": False
+            }
+
+            current_output = None
+
+            for round_num in range(max_rounds):
+                self.logger.info(f"Collaboration round {round_num + 1}/{max_rounds}")
+
+                # This agent processes the task
+                if current_output is None:
+                    # Initial processing
+                    if hasattr(self, 'process_task'):
+                        current_output = await self.process_task(task)
+                    else:
+                        current_output = {"status": "initial", "data": task}
+
+                # Request feedback from collaborator
+                feedback_prompt = f"""
+Please review and provide feedback on the following output:
+
+{json.dumps(current_output, indent=2, default=str)[:2000]}
+
+Provide specific feedback and suggestions for improvement.
+If you approve, indicate "APPROVED" in your response.
+"""
+
+                feedback = await self.send_message(
+                    collaborator,
+                    feedback_prompt,
+                    request_reply=True
+                )
+
+                round_result = {
+                    "round": round_num + 1,
+                    "output_summary": str(current_output)[:500],
+                    "feedback": feedback
+                }
+                collaboration_results["rounds"].append(round_result)
+
+                # Check for approval/consensus
+                if feedback and "approved" in feedback.lower():
+                    collaboration_results["consensus_reached"] = True
+                    collaboration_results["final_output"] = current_output
+                    self.logger.info(f"Consensus reached in round {round_num + 1}")
+                    break
+
+                # Update task with feedback for next round
+                task["previous_output"] = current_output
+                task["feedback"] = feedback
+
+            if not collaboration_results["consensus_reached"]:
+                collaboration_results["final_output"] = current_output
+                self.logger.info("Max rounds reached without consensus")
+
+            return collaboration_results
+
+        except Exception as e:
+            self.logger.error(f"Collaboration failed: {e}")
+            return {
+                "rounds": [],
+                "final_output": None,
+                "consensus_reached": False,
+                "error": str(e)
+            }
     
     def save_work_artifact(self, filename: str, content: str, artifact_type: str = "text"):
         """Save work artifact to agent's work directory"""
