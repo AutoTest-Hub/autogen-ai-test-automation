@@ -7,9 +7,7 @@ import './App.css'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import Applications from './components/Applications'
-import CreateTestRealTime from './components/CreateTestRealTime'
-import CreateTestRealTimeFixed from './components/CreateTestRealTimeFixed'
-import CreateTestWorking from './components/CreateTestWorking'
+import CreateTestUnified from './components/CreateTestUnified'
 import TestManagementNew from './components/TestManagementNew'
 import UnifiedTestManagement from './components/UnifiedTestManagement'
 import TestExecution from './components/TestExecution'
@@ -275,7 +273,7 @@ function App() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <CreateTestWorking
+                      <CreateTestUnified
                         user={user}
                         deploymentMode={deploymentMode}
                         apiService={apiService}
