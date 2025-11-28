@@ -223,13 +223,37 @@ async def rate_limit_middleware(request: Request, call_next):
         current_requests = redis_client.incr(rate_limit_key)
         if current_requests == 1:
             redis_client.expire(rate_limit_key, 60)  # 1 minute window
-        
-        # Check rate limits (adjust based on subscription plan)
-        max_requests = 1000  # Default limit per minute
+
+        # Subscription-based rate limits per minute
+        SUBSCRIPTION_RATE_LIMITS = {
+            "free": 10,           # Free tier: 10 requests/minute
+            "trial": 50,          # Trial: 50 requests/minute
+            "starter": 100,       # Starter: 100 requests/minute
+            "professional": 500,  # Professional: 500 requests/minute
+            "enterprise": 2000,   # Enterprise: 2000 requests/minute
+            "unlimited": 10000    # Unlimited: 10000 requests/minute
+        }
+
+        # Get subscription tier from token or default to trial
+        subscription_tier = "trial"
+        if customer_id:
+            tier_key = f"subscription_tier:{customer_id}"
+            cached_tier = redis_client.get(tier_key)
+            if cached_tier:
+                subscription_tier = cached_tier
+
+        max_requests = SUBSCRIPTION_RATE_LIMITS.get(subscription_tier, 50)
+
         if current_requests > max_requests:
             return JSONResponse(
                 status_code=429,
-                content={"detail": "Rate limit exceeded"}
+                content={
+                    "detail": "Rate limit exceeded",
+                    "limit": max_requests,
+                    "tier": subscription_tier,
+                    "retry_after": 60 - datetime.now().second
+                },
+                headers={"Retry-After": str(60 - datetime.now().second)}
             )
     except Exception as e:
         logger.warning(f"Rate limiting error: {e}")
@@ -402,6 +426,56 @@ if DEPLOYMENT_MODE == DeploymentMode.SAAS:
     app.add_middleware(
         TrustedHostMiddleware,
         allowed_hosts=["*.yourdomain.com", "localhost", "127.0.0.1"]
+    )
+
+# =====================================================
+# EXCEPTION HANDLERS
+# =====================================================
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler for unhandled errors"""
+    error_id = str(uuid.uuid4())[:8]
+    logger.error(f"Unhandled error [{error_id}]: {exc}", exc_info=True)
+
+    # Log to audit if available
+    if db_manager:
+        try:
+            with db_manager.get_session() as session:
+                from database.models_secure import AuditLogs
+                audit_log = AuditLogs(
+                    user_id=None,
+                    action="SYSTEM_ERROR",
+                    resource_type="api",
+                    resource_id=error_id,
+                    ip_address=request.client.host,
+                    user_agent=request.headers.get("user-agent", ""),
+                    metadata={"error": str(exc), "path": str(request.url)}
+                )
+                session.add(audit_log)
+                session.commit()
+        except Exception as log_error:
+            logger.warning(f"Failed to log error to audit: {log_error}")
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "An unexpected error occurred. Please try again later.",
+            "error_id": error_id,
+            "support": "Contact support with error_id for assistance"
+        }
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """HTTP exception handler with structured response"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": exc.detail,
+            "status_code": exc.status_code,
+            "path": str(request.url.path)
+        }
     )
 
 # =====================================================
