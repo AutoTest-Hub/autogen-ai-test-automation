@@ -1,8 +1,8 @@
 import asyncio
 import json
-from agents.base_agent import BaseAgent
+from agents.base_agent import BaseTestAgent
 
-class CrossBrowserAgent(BaseAgent):
+class CrossBrowserAgent(BaseTestAgent):
     def __init__(self, api_key=None, ollama_config=None):
         super().__init__(api_key, ollama_config)
 

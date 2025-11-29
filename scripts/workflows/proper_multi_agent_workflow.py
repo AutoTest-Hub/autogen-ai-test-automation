@@ -34,6 +34,7 @@ from agents.real_browser_discovery_agent_fixed import RealBrowserDiscoveryAgent
 from agents.test_creation_agent import EnhancedTestCreationAgent
 from agents.review_agent import ReviewAgent
 from agents.execution_agent import ExecutionAgent
+from agents.self_healing_agent import SelfHealingAgent
 from agents.reporting_agent import ReportingAgent
 
 # Import enhanced agents and utilities
@@ -72,6 +73,7 @@ class ProperMultiAgentWorkflow:
         self.test_creation_agent = EnhancedTestCreationAgent(local_ai_provider=self.local_ai_provider)
         self.review_agent = ReviewAgent(local_ai_provider=self.local_ai_provider)
         self.execution_agent = ExecutionAgent(local_ai_provider=self.local_ai_provider)
+        self.self_healing_agent = SelfHealingAgent(local_ai_provider=self.local_ai_provider)
         self.reporting_agent = ReportingAgent(local_ai_provider=self.local_ai_provider)
         
         # Initialize enhanced agents and utilities
@@ -1033,115 +1035,88 @@ def browser_setup(request):
                 execution_results = await self._execute_tests_directly(review_results, headless)
             
             return execution_results
+            # Check for failures
+            summary = execution_results.get("summary", {})
+            failed_tests = execution_results.get("execution_results", {}).get("failed_tests", [])
+            
+            if not failed_tests:
+                self.logger.info("All tests passed on first run!")
+                return execution_results.get("execution_results", {})
+            
+            self.logger.info(f"Found {len(failed_tests)} failed tests. Attempting self-healing...")
+            
+            # 2. Self-Healing Loop
+            healed_tests = []
+            
+            # Get detailed results to find error logs
+            test_results = execution_results.get("execution_results", {}).get("test_results", [])
+            
+            for test_path in failed_tests:
+                self.logger.info(f"Attempting to heal: {test_path}")
+                
+                # Find error log for this test
+                error_log = "Unknown error"
+                for result in test_results:
+                    if result.get("test_file") == test_path:
+                        # Combine output and stderr for context
+                        error_log = result.get("output", "") + "\n" + result.get("stderr", "")
+                        # Try to extract specific error if possible, or just use the whole log
+                        if "errors" in result and result["errors"]:
+                            error_log += "\nErrors: " + "\n".join(result["errors"])
+                        break
+                
+                # Call Self-Healing Agent
+                healing_task = {
+                    "task_type": "heal_test",
+                    "test_file": test_path,
+                    "error_log": error_log
+                }
+                
+                healing_result = await self.self_healing_agent.process_task(healing_task)
+                
+                if healing_result.get("status") == "healed":
+                    self.logger.info(f"Successfully healed {test_path}. Re-executing...")
+                    healed_tests.append(test_path)
+                    
+                    # Re-execute the specific test
+                    retry_task = {
+                        "task_type": "execute_tests",
+                        "test_files": [test_path],
+                        "headless": headless
+                    }
+                    
+                    retry_result = await self.execution_agent.process_task(retry_task)
+                    retry_summary = retry_result.get("summary", {})
+                    
+                    if retry_summary.get("passed", 0) > 0:
+                        self.logger.info(f"Healed test {test_path} PASSED on retry!")
+                        # Update main execution results to reflect success
+                        # Note: This is a simplified merge. In a real system, we'd update the full report structure.
+                        execution_results["execution_results"]["summary"]["passed"] += 1
+                        execution_results["execution_results"]["summary"]["failed"] -= 1
+                        # Remove from failed list in summary (optional, for display)
+                    else:
+                        self.logger.warning(f"Healed test {test_path} FAILED again on retry.")
+                else:
+                    self.logger.warning(f"Could not heal {test_path}: {healing_result.get('reason')}")
+            
+            # Recalculate success rate
+            final_summary = execution_results["execution_results"]["summary"]
+            total = final_summary["total_tests"]
+            passed = final_summary["passed"]
+            if total > 0:
+                final_summary["success_rate"] = round((passed / total) * 100, 2)
+            
+            return execution_results.get("execution_results", {})
             
         except Exception as e:
-            self.logger.error(f"Error executing tests: {str(e)}")
-            return await self._execute_tests_directly(review_results, headless)
-    
-    async def _execute_tests_directly(self, review_results: Dict[str, Any], headless: bool = True) -> Dict[str, Any]:
-        """
-        Execute tests directly
-        
-        Args:
-            review_results: Review results
-            headless: Whether to run the browser in headless mode
-            
-        Returns:
-            Dict[str, Any]: Execution results
-        """
-        try:
-            # Get test paths from multiple sources
-            test_paths = []
-            
-            # Check for login_test
-            login_test_path = review_results.get("login_test")
-            if login_test_path and os.path.exists(login_test_path):
-                test_paths.append(login_test_path)
-            
-            # Check for generated_test_files
-            generated_files = review_results.get("generated_test_files", [])
-            for test_file in generated_files:
-                if test_file and os.path.exists(test_file):
-                    test_paths.append(test_file)
-            
-            # If no specific test paths, look for all test files in tests directory
-            if not test_paths:
-                tests_dir = Path("tests")
-                if tests_dir.exists():
-                    for test_file in tests_dir.glob("test_*.py"):
-                        test_paths.append(str(test_file))
-            
-            if not test_paths:
-                raise ValueError("No test files found to execute")
-            
-            # Execute tests
-            import subprocess
-            
-            # Create command
-            command = ["python", "-m", "pytest"]
-            command.extend(test_paths)
-            command.append("-v")
-            
-            # Add HTML and JSON report generation
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            html_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.html"
-            json_report_path = f"work_dir/reporting_agent/pytest_report_{timestamp}.json"
-            
-            # Ensure the reporting directory exists
-            os.makedirs("work_dir/reporting_agent", exist_ok=True)
-            
-            command.extend([
-                "--html", html_report_path,
-                "--self-contained-html",
-                "--json-report",
-                "--json-report-file", json_report_path
-            ])
-            
-            # Add headless option
-            if headless:
-                command.append("--headless")
-            else:
-                command.append("--no-headless")
-            
-            # Execute command
-            self.logger.info(f"Executing command: {' '.join(command)}")
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True
-            )
-            
-            # Get output
-            stdout, stderr = process.communicate()
-            
-            # Check return code
-            return_code = process.returncode
-            
-            # Create execution results
-            execution_results = {
-                "name": review_results.get("name", "Unknown"),
-                "timestamp": timestamp,
-                "test_paths": test_paths,
-                "return_code": return_code,
-                "stdout": stdout,
-                "stderr": stderr,
-                "success": return_code == 0,
-                "pytest_html_report": html_report_path,
-                "pytest_json_report": json_report_path
-            }
-            
-            return execution_results
-            
-        except Exception as e:
-            self.logger.error(f"Error executing tests directly: {str(e)}")
+            self.logger.error(f"Error in execution/healing loop: {str(e)}")
             return {
                 "error": str(e),
-                "name": review_results.get("name", "Unknown"),
-                "timestamp": datetime.now().strftime("%Y%m%d_%H%M%S"),
-                "success": False,
-                "return_code": -1
+                "success": False
             }
+    
+
     
     async def _generate_report(self, execution_results: Dict[str, Any], review_results: Dict[str, Any]) -> Dict[str, Any]:
         """

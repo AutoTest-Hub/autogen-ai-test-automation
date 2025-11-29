@@ -604,7 +604,13 @@ If you approve, indicate "APPROVED" in your response.
                 "success": False
             }
     
-    async def generate_local_ai_response_async(self, prompt: str, system_prompt: Optional[str] = None) -> Dict[str, Any]:
+    async def generate_local_ai_response_async(
+        self, 
+        prompt: str, 
+        system_prompt: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Async version of local AI response generation"""
         if not self.use_local_ai:
             raise RuntimeError("Local AI is not available. Use external LLM instead.")
@@ -616,7 +622,9 @@ If you approve, indicate "APPROVED" in your response.
             result = await self.local_ai_provider.generate_response_async(
                 prompt=prompt,
                 model_type=self.model_type,
-                system_prompt=system_prompt or self.config.get("system_message")
+                system_prompt=system_prompt or self.config.get("system_message"),
+                temperature=temperature,
+                max_tokens=max_tokens
             )
             
             # Update agent metrics
@@ -747,7 +755,7 @@ If you approve, indicate "APPROVED" in your response.
         for attempt in range(self.max_retries):
             try:
                 if self.use_local_ai:
-                    result = await self._generate_local_ai_response(
+                    result = await self.generate_local_ai_response_async(
                         prompt, effective_system_prompt, temperature, max_tokens
                     )
                 else:

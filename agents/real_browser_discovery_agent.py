@@ -151,7 +151,21 @@ class RealBrowserDiscoveryAgent(BaseTestAgent):
                         
                         function getOptimalSelector(element) {
                             if (element.id) return `#${element.id}`;
+                            
+                            // Prioritize modern testing attributes (React, Cypress, etc.)
+                            const testAttributes = ['data-testid', 'data-test-id', 'data-cy', 'data-test', 'data-automation-id'];
+                            for (const attr of testAttributes) {
+                                if (element.hasAttribute(attr)) {
+                                    return `[${attr}="${element.getAttribute(attr)}"]`;
+                                }
+                            }
+                            
                             if (element.name) return `[name="${element.name}"]`;
+                            
+                            // Try with aria-label
+                            if (element.hasAttribute('aria-label')) {
+                                return `[aria-label="${element.getAttribute('aria-label')}"]`;
+                            }
                             
                             // Try with classes if available
                             if (element.className) {
@@ -216,6 +230,14 @@ class RealBrowserDiscoveryAgent(BaseTestAgent):
                         function getOptimalSelector(element) {
                             if (element.id) return `#${element.id}`;
                             
+                            // Prioritize modern testing attributes (React, Cypress, etc.)
+                            const testAttributes = ['data-testid', 'data-test-id', 'data-cy', 'data-test', 'data-automation-id'];
+                            for (const attr of testAttributes) {
+                                if (element.hasAttribute(attr)) {
+                                    return `[${attr}="${element.getAttribute(attr)}"]`;
+                                }
+                            }
+                            
                             // Try with text content for buttons
                             const text = element.innerText || element.value;
                             if (text && text.length < 25) {
@@ -223,6 +245,11 @@ class RealBrowserDiscoveryAgent(BaseTestAgent):
                             }
                             
                             if (element.name) return `[name="${element.name}"]`;
+                            
+                            // Try with aria-label
+                            if (element.hasAttribute('aria-label')) {
+                                return `[aria-label="${element.getAttribute('aria-label')}"]`;
+                            }
                             
                             // Try with classes if available
                             if (element.className) {

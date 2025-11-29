@@ -13,6 +13,7 @@ from datetime import datetime
 
 from .base_agent import BaseTestAgent
 from config.settings import AgentRole, TestFramework
+from models.local_ai_provider import ModelType
 
 
 class ReviewAgent(BaseTestAgent):
@@ -59,6 +60,9 @@ You are the Review Agent, an expert in test automation code review and quality a
             system_message=system_message,
             **kwargs
         )
+        
+        self.local_ai_provider = kwargs.get("local_ai_provider")
+
         
         # Register review functions
         self.register_function(
@@ -207,7 +211,73 @@ You are the Review Agent, an expert in test automation code review and quality a
             }
     
     async def _review_code_snippet(self, code: str, filename: str = "code_snippet") -> Dict[str, Any]:
-        """Review a code snippet"""
+        """Review a code snippet using LLM if available, otherwise fallback to heuristics"""
+        
+        if self.local_ai_provider:
+            return await self._review_with_llm(code, filename)
+            
+        return self._heuristic_code_review(code, filename)
+
+    async def _review_with_llm(self, code: str, filename: str) -> Dict[str, Any]:
+        """Perform intelligent code review using LLM"""
+        self.logger.info(f"Performing LLM review for {filename}")
+        
+        prompt = f"""
+        Perform a comprehensive code review of the following Python Playwright test code.
+        
+        File: {filename}
+        
+        Code:
+        ```python
+        {code}
+        ```
+        
+        Review Criteria:
+        1. Code Correctness: Syntax, imports, proper API usage (sync vs async)
+        2. Best Practices: Page Object Model usage, explicit waits, meaningful assertions
+        3. Reliability: Selector stability, error handling, cleanup
+        4. Maintainability: Readability, documentation, variable naming
+        
+        Return a JSON object with the following structure:
+        {{
+            "score": <0-10 score>,
+            "issues": ["list", "of", "issues"],
+            "strengths": ["list", "of", "strengths"],
+            "recommendations": ["list", "of", "recommendations"],
+            "metrics": {{
+                "complexity": "low/medium/high",
+                "maintainability": "low/medium/high"
+            }}
+        }}
+        """
+        
+        try:
+            response = await self.local_ai_provider.generate_response_async(
+                prompt=prompt,
+                model_type=ModelType.REVIEW,
+                system_prompt="You are a senior test automation architect. Be critical but constructive."
+            )
+            
+            if response.get("success"):
+                content = response.get("response", "")
+                # Extract JSON from response
+                if "```json" in content:
+                    content = content.split("```json")[1].split("```")[0].strip()
+                elif "```" in content:
+                    content = content.split("```")[1].split("```")[0].strip()
+                    
+                review_data = json.loads(content)
+                review_data["filename"] = filename
+                return review_data
+                
+        except Exception as e:
+            self.logger.error(f"LLM review failed: {e}")
+            
+        # Fallback if LLM fails
+        return self._heuristic_code_review(code, filename)
+
+    def _heuristic_code_review(self, code: str, filename: str) -> Dict[str, Any]:
+        """Original heuristic review logic"""
         review = {
             "filename": filename,
             "score": 8,  # Default good score

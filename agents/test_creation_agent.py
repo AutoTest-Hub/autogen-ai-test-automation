@@ -229,36 +229,78 @@ class EnhancedTestCreationAgent(BaseTestAgent):
             elements_context += "- No specific elements discovered. Use generic selectors if needed.\n"
 
         prompt = f"""
-        Generate a complete, runnable Python Playwright test using pytest for the following scenario.
+        Generate a SYNCHRONOUS Python Playwright test using pytest and pytest-playwright plugin.
         
-        Target Application Base URL: {url}
+        CRITICAL REQUIREMENTS:
+        1. Use SYNCHRONOUS function (def, NOT async def)
+        2. Do NOT use async/await keywords
+        3. Do NOT create any fixtures - the `page` fixture is provided by pytest-playwright plugin
+        4. The `page` parameter in the test function comes from pytest-playwright plugin automatically
+        5. Use discovered element selectors provided below
         
-        Test Case Details:
+        Target Application URL: {url}
+        
+        Test Case:
         Name: {test_case.get('name', 'Unnamed Test')}
         Description: {test_case.get('description', 'No description provided.')}
-        Steps to perform:
+        Steps:
         {json.dumps(steps, indent=2)}
         
         {elements_context}
         
-        Requirements for the generated Python Playwright test code:
-        1.  Use the `page` fixture provided by `pytest-playwright`.
-        2.  Import `pytest` and `logging`.
-        3.  Define a test class `Test<TestCaseName>` and a test method `test_<test_case_name>`.
-        4.  Use the provided `Target Application Base URL` for `page.goto()`.
-        5.  Integrate the `page_obj` (Page Object Model instance) if relevant page objects are available (e.g., `LoginPage`, `DashboardPage`). Assume page objects are in `pages/` directory. If no specific page object is obvious, use direct Playwright actions.
-        6.  Use the `Available Elements` and their selectors to interact with the page. Prioritize `id`, then `name`, then `css` or `text` selectors.
-        7.  Include meaningful assertions (`expect(page).to_have_url()`, `expect(locator).to_be_visible()`, etc.) for each significant step to verify the application's state.
-        8.  Handle dynamic waiting using Playwright's built-in `wait_for_selector`, `wait_for_url`, `wait_for_load_state`, or `expect` assertions. Avoid `page.wait_for_timeout()` unless absolutely necessary for UI settling.
-        9.  Add logging statements to indicate test progress and outcomes.
-        10. Ensure the code is syntactically correct and follows Python best practices.
-        11. Return ONLY the Python code, without any surrounding markdown fences (```python ... ```).
+        CODE STRUCTURE REQUIREMENTS:
+        1. Import these ONLY: `import pytest`, `import logging`, `from playwright.sync_api import Page, expect`
+        2. Do NOT import `sync_playwright` or any other playwright modules
+        3. Do NOT define any fixtures (no @pytest.fixture decorator)
+        4. Test function signature: `def test_{test_case.get('name', 'test').lower().replace(' ', '_')}(page: Page):`
+        5. The `page` parameter is injected by pytest-playwright - do NOT create it
+        
+        IMPLEMENTATION REQUIREMENTS:
+        1. NO async/await - use SYNCHRONOUS Playwright API only
+        2. Use discovered selectors from "Available Elements" section above
+        3. Navigate: `page.goto("{url}")`
+        4. Actions: `page.fill(selector, value)`, `page.click(selector)`, etc.
+        5. Assertions: `expect(page).to_have_url(url)`, `expect(page.locator(selector)).to_be_visible()`, etc.
+        6. Logging: `logging.info("description")`
+        7. Waits: Use `expect()` with implicit waits, or `page.wait_for_selector()` if needed
+        8. Return ONLY Python code - NO markdown fences, NO explanations
+        
+        SYNTAX RULES (CRITICAL - MUST FOLLOW):
+        1. NEVER use `or` operator in method calls like: `page.fill(selector) or fallback` - this is INVALID
+        2. NEVER use `0r` (zero-r) - this is a typo
+        3. NEVER add explanatory text after code on the same line
+        4. Each statement must be complete and syntactically valid Python
+        5. Use ONLY ONE selector per action - do NOT provide fallback selectors
+        6. If unsure about selector, use the FIRST discovered selector from the list
+        
+        CORRECT EXAMPLE:
+        ```
+        import pytest
+        import logging
+        from playwright.sync_api import Page, expect
+        
+        def test_login(page: Page):
+            logging.info("Starting test")
+            page.goto("https://example.com/login")
+            page.fill("#username", "tomsmith")
+            page.fill("#password", "SuperSecretPassword!")
+            page.click("button[type='submit']")
+            expect(page).to_have_url("https://example.com/secure")
+            logging.info("Test passed")
+        ```
+        
+        WRONG EXAMPLE (DO NOT DO THIS):
+        ```
+        @pytest.fixture
+        def page():  # WRONG - do not create fixtures
+            ...
+        ```
         """
         
         response = await self.local_ai_provider.generate_response_async(
             prompt=prompt,
             model_type=ModelType.CODE_GENERATION,
-            system_prompt="You are a senior test automation engineer. Write clean, robust Playwright Python code."
+            system_prompt="You are a senior test automation engineer. Write clean, syntactically correct Playwright Python code. NEVER use 'or' operator in method calls. Each line must be valid Python."
         )
         
         if response.get("success"):
@@ -268,7 +310,19 @@ class EnhancedTestCreationAgent(BaseTestAgent):
                 code = code.split("```python", 1)[1].rsplit("```", 1)[0].strip()
             elif "```" in code:
                 code = code.split("```", 1)[1].rsplit("```", 1)[0].strip()
-            return code
+            
+            # VALIDATION: Check for syntax errors before returning
+            try:
+                import ast
+                ast.parse(code)
+                self.logger.info("Generated code passed syntax validation")
+                return code
+            except SyntaxError as e:
+                self.logger.error(f"Generated code has syntax error: {e}")
+                self.logger.error(f"Problematic code:\n{code}")
+                # Fall back to template-based generation
+                self.logger.warning("Falling back to template due to syntax error")
+                return None
             
         return None
 

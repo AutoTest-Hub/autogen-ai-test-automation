@@ -1,0 +1,131 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.5, pytest-7.4.0, pluggy-1.5.0 -- /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.11.5', 'Platform': 'macOS-15.6.1-arm64-arm-64bit', 'Packages': {'pytest': '7.4.0', 'pluggy': '1.5.0'}, 'Plugins': {'playwright': '0.7.2', 'anyio': '4.9.0', 'html': '3.2.0', 'json-report': '1.5.0', 'metadata': '3.1.1', 'asyncio': '0.21.1', 'base-url': '2.1.0'}, 'JAVA_HOME': '/Users/ravijammi/.sdkman/candidates/java/current', 'Base URL': ''}
+rootdir: /Users/ravijammi/autogen-ai-test-automation
+configfile: pytest.ini
+plugins: playwright-0.7.2, anyio-4.9.0, html-3.2.0, json-report-1.5.0, metadata-3.1.1, asyncio-0.21.1, base-url-2.1.0
+asyncio: mode=Mode.STRICT
+collecting ... collected 2 items
+
+tests/test_self_healing_real.py::TestSelfHealingAgentReal::test_analyze_and_heal_success 2025-11-29 09:02:36,223 - agent.SelfHealingAgent - INFO - Using local AI models for SelfHealingAgent
+2025-11-29 09:02:36,223 - agent.SelfHealingAgent - INFO - Initialized SelfHealingAgent with role execution
+2025-11-29 09:02:36,223 - agent.SelfHealingAgent - INFO - Registered function: analyze_and_heal
+2025-11-29 09:02:36,227 - agent.SelfHealingAgent - INFO - Agent state updated: analyzing
+2025-11-29 09:02:36,227 - agent.SelfHealingAgent - WARNING - LLM call attempt 1 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+2025-11-29 09:02:36,227 - agent.SelfHealingAgent - INFO - Retrying in 1s...
+2025-11-29 09:02:37,228 - agent.SelfHealingAgent - WARNING - LLM call attempt 2 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+2025-11-29 09:02:37,229 - agent.SelfHealingAgent - INFO - Retrying in 2s...
+2025-11-29 09:02:39,230 - agent.SelfHealingAgent - WARNING - LLM call attempt 3 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Result: {'status': 'unfixable', 'reason': 'Analysis failed', 'analysis': None}
+FAILED
+tests/test_self_healing_real.py::TestSelfHealingAgentReal::test_analyze_unfixable 2025-11-29 09:02:39,266 - agent.SelfHealingAgent - INFO - Using local AI models for SelfHealingAgent
+2025-11-29 09:02:39,266 - agent.SelfHealingAgent - INFO - Initialized SelfHealingAgent with role execution
+2025-11-29 09:02:39,266 - agent.SelfHealingAgent - INFO - Registered function: analyze_and_heal
+2025-11-29 09:02:39,267 - agent.SelfHealingAgent - INFO - Agent state updated: analyzing
+2025-11-29 09:02:39,267 - agent.SelfHealingAgent - WARNING - LLM call attempt 1 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+2025-11-29 09:02:39,267 - agent.SelfHealingAgent - INFO - Retrying in 1s...
+2025-11-29 09:02:40,268 - agent.SelfHealingAgent - WARNING - LLM call attempt 2 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+2025-11-29 09:02:40,269 - agent.SelfHealingAgent - INFO - Retrying in 2s...
+2025-11-29 09:02:42,270 - agent.SelfHealingAgent - WARNING - LLM call attempt 3 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Calling generate_local_ai_response_async
+DEBUG: Exception in generate_llm_response: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+DEBUG: Result: {'status': 'unfixable', 'reason': 'Analysis failed', 'analysis': None}
+PASSED
+
+=================================== FAILURES ===================================
+____________ TestSelfHealingAgentReal.test_analyze_and_heal_success ____________
+
+self = <tests.test_self_healing_real.TestSelfHealingAgentReal object at 0x1117a1210>
+agent = SelfHealingAgent(name=SelfHealingAgent, role=execution)
+mock_local_ai = <MagicMock spec='LocalAIProvider' id='4588179088'>
+tmp_path = PosixPath('/private/var/folders/pn/sbb2jg5s5jb9pdpz1dmj98k40000gn/T/pytest-of-ravijammi/pytest-5/test_analyze_and_heal_success0')
+
+        @pytest.mark.asyncio
+        async def test_analyze_and_heal_success(self, agent, mock_local_ai, tmp_path):
+            # Create a dummy broken test file
+            broken_test_content = """
+    def test_login(page):
+        page.click("#wrong-selector")
+    """
+            test_file = tmp_path / "test_broken.py"
+            test_file.write_text(broken_test_content)
+    
+            error_log = "TimeoutError: Timeout 30000ms exceeded. waiting for selector '#wrong-selector'"
+    
+            # Mock LLM responses
+            # 1. Analysis response
+            analysis_data = {
+                "error_type": "TimeoutError",
+                "root_cause": "Selector not found",
+                "is_fixable": True,
+                "reason": "Selector seems incorrect"
+            }
+            analysis_response = {
+                "success": True,
+                "response": json.dumps(analysis_data)
+            }
+    
+            # 2. Strategy response
+            strategy_data = {
+                "proposed_changes": [
+                    {
+                        "original_code_snippet": '#wrong-selector',
+                        "new_code": '#correct-selector',
+                        "line_number_hint": 2
+                    }
+                ],
+                "rationale": "Updated to correct selector"
+            }
+            strategy_response = {
+                "success": True,
+                "response": json.dumps(strategy_data)
+            }
+    
+            # Setup mock side effects for generate_response_async (called by generate_llm_response_async)
+            # Note: BaseTestAgent calls generate_response_async on the provider
+            mock_local_ai.generate_response_async.side_effect = [analysis_response, strategy_response]
+    
+            # Run the method
+            result = await agent.analyze_and_heal(str(test_file), error_log)
+    
+            print(f"DEBUG: Result: {result}")
+    
+            # Verify result
+>           assert result["status"] == "healed", f"Failed with reason: {result.get('reason')}"
+E           AssertionError: Failed with reason: Analysis failed
+E           assert 'unfixable' == 'healed'
+E             - healed
+E             + unfixable
+
+tests/test_self_healing_real.py:70: AssertionError
+------------------------------ Captured log setup ------------------------------
+INFO     agent.SelfHealingAgent:base_agent.py:94 Using local AI models for SelfHealingAgent
+INFO     agent.SelfHealingAgent:base_agent.py:122 Initialized SelfHealingAgent with role execution
+INFO     agent.SelfHealingAgent:base_agent.py:295 Registered function: analyze_and_heal
+------------------------------ Captured log call -------------------------------
+INFO     agent.SelfHealingAgent:base_agent.py:209 Agent state updated: analyzing
+WARNING  agent.SelfHealingAgent:base_agent.py:782 LLM call attempt 1 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+INFO     agent.SelfHealingAgent:base_agent.py:787 Retrying in 1s...
+WARNING  agent.SelfHealingAgent:base_agent.py:782 LLM call attempt 2 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+INFO     agent.SelfHealingAgent:base_agent.py:787 Retrying in 2s...
+WARNING  agent.SelfHealingAgent:base_agent.py:782 LLM call attempt 3 failed: BaseTestAgent.generate_local_ai_response_async() takes from 2 to 3 positional arguments but 5 were given
+=============================== warnings summary ===============================
+../Library/Python/3.11/lib/python/site-packages/pydantic/_internal/_config.py:323
+  /Users/ravijammi/Library/Python/3.11/lib/python/site-packages/pydantic/_internal/_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_self_healing_real.py::TestSelfHealingAgentReal::test_analyze_and_heal_success
+==================== 1 failed, 1 passed, 1 warning in 6.39s ====================

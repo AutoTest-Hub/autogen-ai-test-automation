@@ -1,41 +1,22 @@
 import pytest
-from playwright.sync_api import sync_playwright
+import logging
+from playwright.sync_api import Page, expect
 
-@pytest.mark.asyncio
-async def test_invalid_login(page):
-    async with page as browser:
-        await browser.goto("https://the-internet.herokuapp.com/login")  # Navigate to login page
+def test_invalid_login(page: Page):
+    logging.info("Starting invalid login attempt")
+    
+    page.goto("https://the-internet.herokuapp.com/login")  # Navigate to the target URL
+    
+    try:
+        username = "nonexistentuser"
+        password = "invalidpassword"
         
-        logging.info("Navigated to the Login Page.")
+        logging.info(f"Attempting login with {username} and {password}")
+        page.fill("#username", username)  # Enter invalid username (assuming '#username' is the selector for input field)
+        page.fill("#password", password)  # Enter invalid password (assuming '#password' is the selector for input field)
         
-        invalid_username = "wronguser"
-        invalid_password = "wrongpass"
-        
-        await page.fill('input[type="text"]', invalid_username)  # Enter invalid username
-        await page.fill('input[type="password"]', invalid_password)  # Enter invalid password
-        
-        logging.info("Entered the Invalid Credentials.")
-        
-        try:
-            await browser.click("#login-button")  # Click login button with id selector
-            
-            logging.info("Clicked on Login Button, expecting error message to appear...")
-            
-            await page.wait_for_selector(".error", timeout=10_000)  # Wait for the error element (assumed class ".error" is used by application)
-            
-        except Exception as e:
-            logging.error("Error occurred while clicking login button.")
-        
-        try:
-            await page.wait_for_url(f"/login?invalid=credentials")  # Wait for URL change indicating failed authentication (assuming this is the redirect)
-            
-        except Exception as e:
-            logging.error("Error occurred while waiting for invalid credentials error in URL.")
-        
-        try:
-            await page.wait_for_selector(".alert-danger", timeout=10_000)  # Wait for specific error message element (assuming class ".alert-danger" is used by application)
-            
-        except Exception as e:
-            logging.error("Error occurred while waiting for the expected error message.")
-        
-        assert "Invalid username or password." in await page.inner_html(".alert-danger")  # Verify that an appropriate error message appears on screen
+        expect(page).to_have_url("https://the0-internet.herokuapp.com/login")  # This should not happen, but we are simulating an error here without async code or await keywords
+    except Exception as e:
+        logging.info("Error encountered during login attempt.")
+    
+    expect(page).to_have_content("Invalid username and password")  # Verify the correct error message is displayed (assuming this selector)
