@@ -1,0 +1,9 @@
+Test Run ID,File Name,File Size (bytes),Lines of Code,Syntax Valid,Executable,Has Playwright,Has Test Function,Has Assertions,Quality Score,File Path,Created Time,Issues
+TR_20250926_003,test_product_catalog_browsing.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_product_catalog_browsing.py,15:36:22,None
+TR_20250926_003,test_shopping_cart_management.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_shopping_cart_management.py,15:36:23,None
+TR_20250926_003,test_checkout_process.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_checkout_process.py,15:36:24,None
+TR_20250926_003,test_payment_processing.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_payment_processing.py,15:36:25,None
+TR_20250926_003,test_order_management.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_order_management.py,15:36:26,None
+TR_20250926_003,test_user_registration.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_user_registration.py,15:36:27,None
+TR_20250926_003,test_search_functionality.py,1950,66,YES,YES,YES,YES,YES,95%,/opt/.../tests/test_search_functionality.py,15:36:28,None
+TR_20250926_003,conftest.py,850,35,YES,YES,YES,NO,NO,90%,/opt/.../tests/conftest.py,15:36:29,Configuration file

@@ -1,0 +1,814 @@
+import React, { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  FileText,
+  Search,
+  Download,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  BarChart3,
+  TrendingUp,
+  Calendar,
+  Filter
+} from 'lucide-react'
+import { apiService } from '../lib/api'
+
+const TestResults = ({ user }) => {
+  const [executions, setExecutions] = useState([])
+  const [filteredExecutions, setFilteredExecutions] = useState([])
+  const [selectedExecution, setSelectedExecution] = useState(null)
+  const [executionDetails, setExecutionDetails] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [realTimeExecutions, setRealTimeExecutions] = useState(new Map())
+  const [wsConnection, setWsConnection] = useState(null)
+  const [testSuites, setTestSuites] = useState([])
+  const [activeTab, setActiveTab] = useState('suites')
+  const [mainTab, setMainTab] = useState('test-suites')
+
+  useEffect(() => {
+    loadTestSuites()
+    loadExecutions()
+    setupWebSocketConnection()
+    
+    return () => {
+      if (wsConnection) {
+        wsConnection.close()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    filterExecutions()
+  }, [executions, searchTerm, statusFilter, realTimeExecutions])
+
+  const setupWebSocketConnection = () => {
+    if (!user?.id) return
+
+    try {
+      const ws = new WebSocket(`ws://localhost:8000/api/v1/ws/execution-updates/${user.id}`)
+      
+      ws.onopen = () => {
+        console.log('Test execution WebSocket connected')
+        setWsConnection(ws)
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data)
+          handleExecutionUpdate(message)
+        } catch (error) {
+          console.error('Error parsing execution update:', error)
+        }
+      }
+
+      ws.onclose = () => {
+        console.log('Test execution WebSocket disconnected')
+        setWsConnection(null)
+        // Attempt reconnection after 3 seconds
+        setTimeout(setupWebSocketConnection, 3000)
+      }
+
+      ws.onerror = (error) => {
+        console.error('Test execution WebSocket error:', error)
+      }
+
+    } catch (error) {
+      console.error('Error setting up WebSocket:', error)
+    }
+  }
+
+  const handleExecutionUpdate = (message) => {
+    switch (message.type) {
+      case 'execution_started':
+        setRealTimeExecutions(prev => new Map(prev.set(message.execution_id, {
+          ...message.execution,
+          status: 'running',
+          progress: 0
+        })))
+        break
+        
+      case 'execution_progress':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          const existing = updated.get(message.execution_id) || {}
+          updated.set(message.execution_id, {
+            ...existing,
+            progress: message.progress,
+            current_test: message.current_test,
+            tests_completed: message.tests_completed,
+            tests_passed: message.tests_passed,
+            tests_failed: message.tests_failed
+          })
+          return updated
+        })
+        break
+        
+      case 'execution_completed':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          updated.set(message.execution_id, {
+            ...updated.get(message.execution_id),
+            status: 'completed',
+            progress: 100,
+            end_time: message.end_time,
+            results: message.results
+          })
+          return updated
+        })
+        // Refresh executions list to get the final results
+        setTimeout(loadExecutions, 1000)
+        break
+        
+      case 'execution_failed':
+        setRealTimeExecutions(prev => {
+          const updated = new Map(prev)
+          updated.set(message.execution_id, {
+            ...updated.get(message.execution_id),
+            status: 'failed',
+            error: message.error,
+            end_time: message.end_time
+          })
+          return updated
+        })
+        setTimeout(loadExecutions, 1000)
+        break
+    }
+  }
+
+  const loadTestSuites = async () => {
+    try {
+      // Load existing test suites (mock data for now)
+      const mockSuites = []
+      
+      // Check for latest test suite from localStorage
+      const latestSuiteData = localStorage.getItem('latest_test_suite')
+      if (latestSuiteData) {
+        try {
+          const latestSuite = JSON.parse(latestSuiteData)
+          mockSuites.push(latestSuite)
+          // Clear it after loading to avoid duplicates
+          localStorage.removeItem('latest_test_suite')
+        } catch (e) {
+          console.error('Error parsing latest test suite:', e)
+        }
+      }
+      
+      // Add default HRMS demo if no suites exist
+      if (mockSuites.length === 0) {
+        mockSuites.push({
+          id: '294971fc-903e-4c58-9135-b07bc261827d',
+          name: 'HRMS Demo Test Suite',
+          application_name: 'HRMS Demo',
+          application_url: 'https://opensource-demo.orangehrmlive.com',
+          application_type: 'HRMS',
+          status: 'ready',
+          created_at: new Date().toISOString(),
+          test_count: 12,
+          coverage: 87,
+          last_execution: null,
+          features: [
+            'Employee Management',
+            'Leave Management', 
+            'Attendance Tracking',
+            'Performance Reviews',
+            'Recruitment Process',
+            'User Authentication'
+          ],
+          files: [
+            { name: 'hrms_login_test.py', type: 'test_file', size: '2.4 KB' },
+            { name: 'employee_management_test.py', type: 'test_file', size: '3.1 KB' },
+            { name: 'leave_management_test.py', type: 'test_file', size: '2.8 KB' },
+            { name: 'test_config.json', type: 'config', size: '1.2 KB' },
+            { name: 'page_objects.py', type: 'support', size: '4.5 KB' }
+          ]
+        })
+      }
+      
+      setTestSuites(mockSuites)
+    } catch (error) {
+      console.error('Failed to load test suites:', error)
+    }
+  }
+
+  const loadExecutions = async () => {
+    try {
+      const response = await apiService.getTestExecutions()
+      setExecutions(response.executions || [])
+    } catch (error) {
+      console.error('Failed to load executions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filterExecutions = () => {
+    // Merge real-time executions with stored executions
+    const allExecutions = [...executions]
+    
+    // Add real-time executions that aren't in the stored list
+    realTimeExecutions.forEach((rtExecution, executionId) => {
+      const existingIndex = allExecutions.findIndex(exec => exec.id === executionId)
+      if (existingIndex >= 0) {
+        // Update existing execution with real-time data
+        allExecutions[existingIndex] = { ...allExecutions[existingIndex], ...rtExecution }
+      } else {
+        // Add new real-time execution
+        allExecutions.unshift({ id: executionId, ...rtExecution })
+      }
+    })
+
+    let filtered = allExecutions
+
+    if (searchTerm) {
+      filtered = filtered.filter(execution =>
+        execution.execution_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        execution.test_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        execution.request?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        execution.request?.url?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(execution => execution.status === statusFilter)
+    }
+
+    // Sort by creation time (newest first)
+    filtered.sort((a, b) => {
+      const timeA = new Date(a.created_at || a.start_time || 0)
+      const timeB = new Date(b.created_at || b.start_time || 0)
+      return timeB - timeA
+    })
+
+    setFilteredExecutions(filtered)
+  }
+
+  const loadExecutionDetails = async (executionId) => {
+    try {
+      const details = await apiService.getTestResults(executionId)
+      setExecutionDetails(details)
+    } catch (error) {
+      console.error('Failed to load execution details:', error)
+      setExecutionDetails(null)
+    }
+  }
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />
+      case 'failed': return <XCircle className="w-4 h-4 text-red-500" />
+      case 'running': return <Clock className="w-4 h-4 text-blue-500 animate-spin" />
+      case 'timeout': return <AlertCircle className="w-4 h-4 text-orange-500" />
+      default: return <Clock className="w-4 h-4 text-yellow-500" />
+    }
+  }
+
+  const getStatusBadge = (status) => {
+    const variants = {
+      completed: 'default',
+      failed: 'destructive',
+      running: 'secondary',
+      timeout: 'outline',
+      pending: 'outline'
+    }
+    return <Badge variant={variants[status] || 'outline'}>{status}</Badge>
+  }
+
+  const formatDuration = (startTime, endTime) => {
+    if (!endTime) return 'Running...'
+    const duration = new Date(endTime) - new Date(startTime)
+    return `${Math.round(duration / 1000)}s`
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString()
+  }
+
+  const ExecutionDetailsDialog = ({ execution, details }) => (
+    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          {getStatusIcon(execution.status)}
+          {execution.request?.name || 'Test Execution'}
+        </DialogTitle>
+        <DialogDescription>
+          Execution ID: {execution.execution_id}
+        </DialogDescription>
+      </DialogHeader>
+
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
+          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Execution Info</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  <strong>URL:</strong> {execution.request?.url}
+                </div>
+                <div className="text-sm">
+                  <strong>Started:</strong> {formatDate(execution.start_time)}
+                </div>
+                <div className="text-sm">
+                  <strong>Duration:</strong> {formatDuration(execution.start_time, execution.end_time)}
+                </div>
+                <div className="text-sm">
+                  <strong>Status:</strong> {getStatusBadge(execution.status)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="text-sm">
+                  <strong>Headless:</strong> {execution.request?.headless ? 'Yes' : 'No'}
+                </div>
+                <div className="text-sm">
+                  <strong>Template:</strong> {execution.request?.requirements_config?.application_type || 'None'}
+                </div>
+                <div className="text-sm">
+                  <strong>User:</strong> {execution.user}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {execution.results_summary && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Results Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {execution.results_summary.summary?.total_tests || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Total Tests</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {execution.results_summary.summary?.success_rate || 0}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">Success Rate</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      {execution.results_summary.summary?.execution_time || 0}s
+                    </div>
+                    <div className="text-xs text-muted-foreground">Execution Time</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="results" className="space-y-4">
+          {details ? (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Test Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs bg-muted p-4 rounded overflow-x-auto">
+                    {details.stdout || 'No output available'}
+                  </pre>
+                </CardContent>
+              </Card>
+              
+              {details.stderr && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm text-red-600">Errors</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <pre className="text-xs bg-red-50 p-4 rounded overflow-x-auto text-red-800">
+                      {details.stderr}
+                    </pre>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">Loading detailed results...</p>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Execution Logs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {execution.progress ? (
+                  <div className="text-sm font-mono">
+                    <div>Phase: {execution.progress.phase}</div>
+                    <div>Progress: {Math.round((execution.progress.progress || 0) * 100)}%</div>
+                    <div>Message: {execution.progress.message}</div>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No logs available</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="files" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Generated Files</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4" />
+                  <span>HTML Report</span>
+                  <Button size="sm" variant="outline">
+                    <Download className="w-3 h-3 mr-1" />
+                    Download
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4" />
+                  <span>JSON Report</span>
+                  <Button size="sm" variant="outline">
+                    <Download className="w-3 h-3 mr-1" />
+                    Download
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="w-4 h-4" />
+                  <span>Test Files (ZIP)</span>
+                  <Button size="sm" variant="outline">
+                    <Download className="w-3 h-3 mr-1" />
+                    Download
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </DialogContent>
+  )
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Test Results</h1>
+        </div>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-48" />
+                    <div className="h-3 bg-muted rounded w-32" />
+                  </div>
+                  <div className="h-6 bg-muted rounded w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center"
+      >
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Test Management & Results</h1>
+          <p className="text-muted-foreground">
+            Manage your test suites and view execution results
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Main Tabs */}
+      <Tabs value={mainTab} onValueChange={setMainTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="test-suites">Test Suites</TabsTrigger>
+          <TabsTrigger value="execution-history">Execution History</TabsTrigger>
+        </TabsList>
+
+        {/* Test Suites Tab */}
+        <TabsContent value="test-suites" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Generated Test Suites</h2>
+              <Button onClick={() => window.location.hash = '#/create-test'}>
+                Create New Tests
+              </Button>
+            </div>
+
+            {testSuites.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Test Suites Found</h3>
+                  <p className="text-muted-foreground text-center mb-4">
+                    You haven't created any test suites yet. Start by creating your first AI-powered test suite.
+                  </p>
+                  <Button onClick={() => window.location.hash = '#/create-test'}>
+                    Create Your First Test Suite
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {testSuites.map((suite) => (
+                  <Card key={suite.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {suite.name}
+                            <Badge variant={suite.status === 'ready' ? 'default' : 'secondary'}>
+                              {suite.status}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>{suite.description}</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <Button size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Execute Tests
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Created:</span>
+                          <div className="font-medium">{new Date(suite.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Test Cases:</span>
+                          <div className="font-medium">{suite.test_cases?.length || 0}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Coverage:</span>
+                          <div className="font-medium">{suite.coverage || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Files:</span>
+                          <div className="font-medium">{suite.files?.length || 0}</div>
+                        </div>
+                      </div>
+                      
+                      {suite.files && suite.files.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-medium mb-2">Generated Files:</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {suite.files.map((file, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {file.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </TabsContent>
+
+        {/* Execution History Tab */}
+        <TabsContent value="execution-history" className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex justify-between items-center"
+          >
+            <div>
+              <h2 className="text-xl font-semibold">Test Execution History</h2>
+              <p className="text-muted-foreground">View and analyze your test execution results</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="gap-1">
+                <BarChart3 className="w-3 h-3" />
+                {executions.length} executions
+              </Badge>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export All
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-4"
+          >
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search executions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+                <TabsTrigger value="failed">Failed</TabsTrigger>
+                <TabsTrigger value="running">Running</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </motion.div>
+
+          {/* Results Table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+        <Card>
+          <CardHeader>
+            <CardTitle>Execution History</CardTitle>
+            <CardDescription>
+              {filteredExecutions.length} of {executions.length} executions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredExecutions.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No test results found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {executions.length === 0 
+                    ? "You haven't run any tests yet." 
+                    : "No executions match your current filters."
+                  }
+                </p>
+                <Button onClick={() => window.location.href = '/execute'}>
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Start Your First Test
+                </Button>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Test Name</TableHead>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Started</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredExecutions.map((execution, index) => (
+                    <TableRow
+                      key={execution.execution_id || `execution-${index}`}
+                      className="group"
+                    >
+                      <TableCell className="font-medium">
+                        {execution.request?.name || 'Unnamed Test'}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {execution.request?.url}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(execution.status)}
+                          {getStatusBadge(execution.status)}
+                          {execution.status === 'running' && execution.progress !== undefined && (
+                            <div className="flex items-center gap-2 ml-2">
+                              <div className="w-16 bg-gray-200 rounded-full h-2">
+                                <div 
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${execution.progress}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-gray-500">{execution.progress}%</span>
+                            </div>
+                          )}
+                        </div>
+                        {execution.status === 'running' && execution.current_test && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            Running: {execution.current_test}
+                          </div>
+                        )}
+                        {execution.status === 'running' && execution.tests_completed !== undefined && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {execution.tests_completed}/{execution.tests_total || '?'} tests completed
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(execution.start_time)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {formatDuration(execution.start_time, execution.end_time)}
+                      </TableCell>
+                      <TableCell>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedExecution(execution)
+                                loadExecutionDetails(execution.execution_id)
+                              }}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              View
+                            </Button>
+                          </DialogTrigger>
+                          {selectedExecution?.execution_id === execution.execution_id && (
+                            <ExecutionDetailsDialog 
+                              execution={selectedExecution} 
+                              details={executionDetails}
+                            />
+                          )}
+                        </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+export default TestResults

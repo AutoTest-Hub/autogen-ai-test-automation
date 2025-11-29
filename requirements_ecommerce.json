@@ -1,0 +1,238 @@
+{
+  "app_name": "ecommerce_demo",
+  "base_url": "https://demo.automationexercise.com",
+  "description": "E-commerce application testing requirements with comprehensive user journey coverage",
+  "application_type": "ecommerce",
+  "priority_areas": [
+    "product_browsing",
+    "shopping_cart",
+    "checkout_process",
+    "user_authentication",
+    "payment_processing"
+  ],
+  "test_scenarios": {
+    "user_registration": {
+      "priority": "high",
+      "description": "Test user registration and account creation",
+      "test_data": {
+        "valid_users": [
+          {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "password": "SecurePass123!"
+          },
+          {
+            "name": "Jane Smith",
+            "email": "jane.smith@example.com",
+            "password": "MyPassword456!"
+          }
+        ],
+        "invalid_users": [
+          {
+            "name": "",
+            "email": "invalid-email",
+            "password": "123"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[name='name']",
+        "input[name='email']",
+        "input[name='password']",
+        "button[type='submit']"
+      ]
+    },
+    "user_login": {
+      "priority": "high",
+      "description": "Test user authentication and login functionality",
+      "test_data": {
+        "valid_credentials": [
+          {
+            "email": "test@example.com",
+            "password": "password123"
+          }
+        ],
+        "invalid_credentials": [
+          {
+            "email": "wrong@example.com",
+            "password": "wrongpass"
+          }
+        ]
+      },
+      "expected_elements": [
+        "input[name='email']",
+        "input[name='password']",
+        "button[type='submit']"
+      ]
+    },
+    "product_browsing": {
+      "priority": "high",
+      "description": "Test product catalog browsing and search functionality",
+      "test_data": {
+        "search_terms": [
+          "dress",
+          "shirt",
+          "jeans",
+          "shoes"
+        ],
+        "categories": [
+          "Women",
+          "Men",
+          "Kids"
+        ]
+      },
+      "expected_elements": [
+        ".product-image-wrapper",
+        ".productinfo",
+        ".add-to-cart",
+        "input[name='search']"
+      ]
+    },
+    "shopping_cart": {
+      "priority": "high",
+      "description": "Test shopping cart functionality including add, remove, and update",
+      "test_data": {
+        "products": [
+          {
+            "name": "Blue Top",
+            "quantity": 2
+          },
+          {
+            "name": "Men Tshirt",
+            "quantity": 1
+          }
+        ]
+      },
+      "expected_elements": [
+        ".cart_quantity",
+        ".cart_price",
+        ".cart_delete",
+        ".check_out"
+      ]
+    },
+    "checkout_process": {
+      "priority": "critical",
+      "description": "Test complete checkout process from cart to order confirmation",
+      "test_data": {
+        "billing_address": {
+          "first_name": "John",
+          "last_name": "Doe",
+          "address": "123 Main St",
+          "city": "New York",
+          "state": "NY",
+          "zipcode": "10001",
+          "mobile": "1234567890"
+        },
+        "payment_info": {
+          "card_name": "John Doe",
+          "card_number": "4111111111111111",
+          "cvc": "123",
+          "expiry_month": "12",
+          "expiry_year": "2025"
+        }
+      },
+      "expected_elements": [
+        "input[name='first_name']",
+        "input[name='last_name']",
+        "input[name='address1']",
+        "input[name='name_on_card']",
+        "input[name='card_number']"
+      ]
+    },
+    "order_history": {
+      "priority": "medium",
+      "description": "Test order history and tracking functionality",
+      "test_data": {
+        "order_statuses": [
+          "pending",
+          "processing",
+          "shipped",
+          "delivered"
+        ]
+      },
+      "expected_elements": [
+        ".order-history",
+        ".order-status",
+        ".order-details"
+      ]
+    }
+  },
+  "business_rules": {
+    "minimum_order_value": 0,
+    "maximum_cart_items": 100,
+    "supported_payment_methods": [
+      "credit_card",
+      "debit_card"
+    ],
+    "shipping_options": [
+      "standard",
+      "express"
+    ]
+  },
+  "performance_requirements": {
+    "page_load_time": 3000,
+    "search_response_time": 2000,
+    "checkout_completion_time": 30000
+  },
+  "security_requirements": {
+    "password_complexity": true,
+    "ssl_encryption": true,
+    "payment_security": "PCI_DSS"
+  },
+  "browser_compatibility": [
+    "chrome",
+    "firefox",
+    "safari",
+    "edge"
+  ],
+  "test_environment": {
+    "headless": true,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "timeout": 30000,
+    "retry_attempts": 3
+  },
+  "reporting_requirements": {
+    "html_report": true,
+    "json_report": true,
+    "screenshot_on_failure": true,
+    "video_recording": false
+  },
+  "integration_points": [
+    {
+      "name": "payment_gateway",
+      "type": "external_api",
+      "test_mode": true
+    },
+    {
+      "name": "inventory_system",
+      "type": "database",
+      "mock_data": true
+    },
+    {
+      "name": "email_service",
+      "type": "smtp",
+      "test_mode": true
+    }
+  ],
+  "test_data_management": {
+    "strategy": "json_files",
+    "cleanup_after_test": true,
+    "data_isolation": true
+  },
+  "accessibility_requirements": {
+    "wcag_level": "AA",
+    "screen_reader_support": true,
+    "keyboard_navigation": true
+  },
+  "mobile_testing": {
+    "responsive_design": true,
+    "touch_interactions": true,
+    "device_orientations": [
+      "portrait",
+      "landscape"
+    ]
+  }
+}

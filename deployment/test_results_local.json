@@ -1,0 +1,111 @@
+{
+  "cloud_provider": "local",
+  "test_timestamp": "2025-09-26T15:24:05.871610",
+  "tests": {
+    "configuration": {
+      "status": "success",
+      "config": {
+        "DB_HOST": "localhost",
+        "DB_PORT": "5432",
+        "DB_NAME": "test_automation_platform",
+        "DB_USER": "app_user",
+        "DB_PASSWORD": "app_password",
+        "STORAGE_TYPE": "local",
+        "STORAGE_BASE_PATH": "/opt/test-automation-platform/data",
+        "STORAGE_BUCKET": "N/A",
+        "APP_ENV": "development",
+        "APP_HOST": "0.0.0.0",
+        "APP_PORT": "8000",
+        "FRONTEND_PORT": "5173",
+        "JWT_SECRET": "development_jwt_secret_key_32_chars_min",
+        "ENCRYPTION_KEY": "development_encryption_key_32_chars",
+        "LOG_LEVEL": "DEBUG",
+        "MONITORING_ENABLED": "true",
+        "MAX_WORKERS": "2",
+        "TIMEOUT_SECONDS": "300",
+        "MAX_FILE_SIZE_MB": "50",
+        "ENABLE_AUDIT_LOGGING": "true",
+        "ENABLE_RLS_POLICIES": "true",
+        "ENABLE_FILE_ENCRYPTION": "false",
+        "ENABLE_REAL_TIME_UPDATES": "true",
+        "CLOUD_PROVIDER": "local",
+        "REGION": "local",
+        "AVAILABILITY_ZONE": "local",
+        "BACKUP_ENABLED": "false",
+        "BACKUP_SCHEDULE": "\"0 2 * * *\"",
+        "BACKUP_RETENTION_DAYS": "7"
+      },
+      "config_count": 29
+    },
+    "database": {
+      "status": "success",
+      "host": "localhost",
+      "database": "test_automation_platform",
+      "connection_time": 1758914645.918127
+    },
+    "file_storage": {
+      "status": "success",
+      "storage_type": "local",
+      "base_path": "/opt/test-automation-platform/data",
+      "writable": true
+    },
+    "rls_policies": {
+      "status": "success",
+      "rls_enabled": true,
+      "customer_context_working": true,
+      "test_time": 1758914645.9183946
+    },
+    "security": {
+      "status": "success",
+      "security_score": 75.0,
+      "checks": {
+        "jwt_secret": {
+          "configured": true,
+          "length": 39,
+          "secure": true
+        },
+        "encryption_key": {
+          "configured": true,
+          "length": 35,
+          "secure": true
+        },
+        "audit_logging": {
+          "enabled": true,
+          "compliance_ready": true
+        },
+        "file_encryption": {
+          "enabled": false,
+          "recommended_for_cloud": false
+        }
+      },
+      "recommendations": []
+    },
+    "performance": {
+      "status": "success",
+      "performance_score": 100,
+      "settings": {
+        "max_workers": {
+          "value": 2,
+          "optimal": true,
+          "recommendation": "Use 2-8 workers for production"
+        },
+        "timeout": {
+          "value": 300,
+          "reasonable": true,
+          "recommendation": "Use 60-600 seconds for agent processing"
+        },
+        "max_file_size": {
+          "value": 50,
+          "adequate": true,
+          "recommendation": "Allow 10-100MB for test files"
+        },
+        "monitoring": {
+          "enabled": true,
+          "essential_for_production": true
+        }
+      },
+      "cloud_optimized": false
+    }
+  },
+  "overall_status": "success"
+}
