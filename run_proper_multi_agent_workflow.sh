@@ -100,9 +100,9 @@ fi
 echo "=================================================="
 
 if [ "$HEADLESS" = true ]; then
-  python proper_multi_agent_workflow.py --url "$URL" --name "$NAME" --headless
+  python scripts/workflows/proper_multi_agent_workflow.py --url "$URL" --name "$NAME" --headless
 else
-  python proper_multi_agent_workflow.py --url "$URL" --name "$NAME" --no-headless
+  python scripts/workflows/proper_multi_agent_workflow.py --url "$URL" --name "$NAME" --no-headless
 fi
 
 # Check if the workflow was successful

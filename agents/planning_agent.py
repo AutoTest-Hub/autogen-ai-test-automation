@@ -10,6 +10,7 @@ from datetime import datetime
 
 from .base_agent import BaseTestAgent
 from config.settings import AgentRole
+from models.local_ai_provider import ModelType
 
 
 class PlanningAgent(BaseTestAgent):
@@ -114,17 +115,154 @@ Be thorough, analytical, and strategic in your planning approach.
             raise
     
     async def _create_test_plan(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a comprehensive test plan"""
+        """Create a comprehensive test plan using LLM analysis"""
+        requirements = task_data.get("requirements", {})
+        discovery_results = task_data.get("discovery_results", {})
+        url = task_data.get("url", "")
+        name = task_data.get("name", "")
+        
+        self.logger.info(f"Creating test plan for {name} at {url}")
+        
+        # Prepare context for the LLM
+        discovery_summary = "No elements discovered yet."
+        if discovery_results and "elements" in discovery_results:
+            elements = discovery_results["elements"]
+            total_elements = discovery_results.get("total_elements", 0)
+            discovery_summary = f"Discovered {total_elements} elements.\n"
+            
+            # Summarize inputs
+            if "inputs" in elements:
+                inputs = [f"{el.get('type')} (id={el.get('id')}, name={el.get('name')})" for el in elements["inputs"][:10]]
+                discovery_summary += f"Inputs: {', '.join(inputs)}\n"
+            
+            # Summarize buttons
+            if "buttons" in elements:
+                buttons = [f"{el.get('text')} (id={el.get('id')})" for el in elements["buttons"][:10]]
+                discovery_summary += f"Buttons: {', '.join(buttons)}\n"
+                
+            # Summarize links
+            if "links" in elements:
+                links = [f"{el.get('text')} (href={el.get('href')})" for el in elements["links"][:10]]
+                discovery_summary += f"Links: {', '.join(links)}\n"
+
+        prompt = f"""
+        Create a comprehensive test plan for the application "{name}" at {url}.
+        
+        Requirements:
+        {requirements}
+        
+        Discovered Application Structure:
+        {discovery_summary}
+        
+        Based on the discovered elements and requirements, generate a JSON test plan with the following structure:
+        {{
+            "test_scenarios": [
+                {{
+                    "name": "Scenario Name",
+                    "description": "Description",
+                    "priority": "High/Medium/Low",
+                    "test_steps": [
+                        {{
+                            "step": 1,
+                            "action": "Action description (referencing specific discovered elements if possible)",
+                            "expectedResult": "Expected result"
+                        }}
+                    ],
+                    "risk_factors": ["Risk 1", "Risk 2"],
+                    "estimated_duration_minutes": 5,
+                    "required_framework": "playwright"
+                }}
+            ],
+            "risk_assessment": {{
+                "overall_risk": "High/Medium/Low",
+                "high_risk_scenarios": 0,
+                "mitigation_strategies": ["Strategy 1"]
+            }},
+            "execution_strategy": {{
+                "framework": "playwright",
+                "execution_mode": "sequential/parallel"
+            }}
+        }}
+        
+        Return ONLY valid JSON.
+        """
+        
+        try:
+            # Call the Local AI Provider
+            response = await self.local_ai_provider.generate_response_async(
+                prompt=prompt,
+                model_type=ModelType.PLANNING,
+                system_prompt="You are an expert QA Test Planner. Analyze the application structure and requirements to create a detailed, executable test plan."
+            )
+            
+            if response.get("success"):
+                llm_output = response.get("response", "")
+                # Clean up potential markdown code blocks
+                if "```json" in llm_output:
+                    llm_output = llm_output.split("```json")[1].split("```")[0].strip()
+                elif "```" in llm_output:
+                    llm_output = llm_output.split("```")[1].split("```")[0].strip()
+                
+                try:
+                    test_plan = json.loads(llm_output)
+                    
+                    # Add metadata
+                    test_plan["plan_id"] = f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    test_plan["created_at"] = datetime.now().isoformat()
+                    test_plan["url"] = url
+                    test_plan["name"] = name
+                    
+                    # Save the test plan
+                    plan_file = self.save_work_artifact(
+                        f"test_plan_{test_plan['plan_id']}.json",
+                        test_plan,
+                        "json"
+                    )
+                    
+                    return {
+                        "status": "success",
+                        "test_plan": test_plan,
+                        "plan_file": plan_file,
+                        "source": "llm"
+                    }
+                    
+                except json.JSONDecodeError as e:
+                    self.logger.error(f"Failed to parse LLM response as JSON: {e}")
+                    self.logger.debug(f"Raw response: {llm_output}")
+                    # Fallback to default/mock plan if JSON parsing fails
+            
+            # Fallback if LLM fails
+            self.logger.warning("LLM generation failed or returned invalid JSON, falling back to heuristic planning")
+            return await self._create_heuristic_test_plan(task_data)
+            
+        except Exception as e:
+            self.logger.error(f"Error in AI planning: {e}")
+            return await self._create_heuristic_test_plan(task_data)
+
+    async def _create_heuristic_test_plan(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Fallback method using the original heuristic logic"""
         requirements = task_data.get("requirements", {})
         test_files = task_data.get("test_files", [])
-        
-        self.logger.info(f"Creating test plan for {len(test_files)} test files")
         
         # Analyze each test file
         test_scenarios = []
         for test_file in test_files:
             scenario = await self._analyze_test_file(test_file)
             test_scenarios.append(scenario)
+            
+        # If no test files, create a default login scenario based on discovery
+        if not test_scenarios:
+             test_scenarios.append({
+                "name": "Login Test",
+                "description": "Verify login functionality",
+                "priority": "High",
+                "test_steps": [
+                    {"step": 1, "action": "Navigate to login page", "expectedResult": "Login page loaded"},
+                    {"step": 2, "action": "Enter credentials", "expectedResult": "Credentials entered"},
+                    {"step": 3, "action": "Click login", "expectedResult": "Dashboard loaded"}
+                ],
+                "required_framework": "playwright"
+             })
         
         # Create comprehensive test plan
         test_plan = {

@@ -11,7 +11,7 @@ class DashboardPage:
     
     def __init__(self, page: Page):
         self.page = page
-        self.url = "https://demo.testfire.net"
+        self.url = "https://the-internet.herokuapp.com/dashboard"
         
         # Element selectors discovered from application analysis
         self.username_field = "input[name='username']"

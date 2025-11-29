@@ -7,11 +7,17 @@ This script implements a proper multi-agent workflow using the existing agents i
 
 import os
 import sys
+import os
+from pathlib import Path
+
+# Add project root to sys.path
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(project_root))
+
 import json
 import logging
 import argparse
 import asyncio
-from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
@@ -132,13 +138,13 @@ class ProperMultiAgentWorkflow:
             self.logger.info("Step 0: Cleaning up old generated files")
             self._cleanup_work_dir()
             
-            # Step 1: Create test plan
-            self.logger.info("Step 1: Creating test plan")
-            test_plan = await self._create_test_plan(url, name)
-            
-            # Step 2: Discover elements
-            self.logger.info("Step 2: Discovering elements")
+            # Step 1: Discover elements (Moved before Planning)
+            self.logger.info("Step 1: Discovering elements")
             discovery_results = await self._discover_elements(url, headless)
+            
+            # Step 2: Create test plan (Now uses discovery results)
+            self.logger.info("Step 2: Creating test plan")
+            test_plan = await self._create_test_plan(url, name, discovery_results)
             
             # Step 3: Create tests
             self.logger.info("Step 3: Creating tests")
@@ -221,13 +227,14 @@ class ProperMultiAgentWorkflow:
         except Exception as e:
             self.logger.warning(f"Error cleaning work_dir: {str(e)}")
 
-    async def _create_test_plan(self, url: str, name: str) -> Dict[str, Any]:
+    async def _create_test_plan(self, url: str, name: str, discovery_results: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Create a test plan using the planning agent
         
         Args:
             url: URL of the website
             name: Name of the website
+            discovery_results: Results from the discovery agent
             
         Returns:
             Dict[str, Any]: Test plan
@@ -256,7 +263,8 @@ class ProperMultiAgentWorkflow:
                 "name": name,
                 "requirements_text": requirements_text,
                 "requirements_json": requirements_json,
-                "requirements": f"Create a test plan for {name} at {url}"
+                "requirements": f"Create a test plan for {name} at {url}",
+                "discovery_results": discovery_results
             }
             
             # Process task with planning agent

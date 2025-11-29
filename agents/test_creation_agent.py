@@ -26,6 +26,7 @@ from playwright.async_api import async_playwright
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
+from models.local_ai_provider import ModelType
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class EnhancedTestCreationAgent(BaseTestAgent):
         super().__init__(
             role=AgentRole.TEST_CREATION,
             name="EnhancedTestCreationAgent",
-            system_message="You are an Enhanced Test Creation Agent that generates real, executable test code using discovered application data and best practices.",
+            system_message="You are an expert Test Automation Engineer specializing in Playwright and Python. You create robust, maintainable, and production-ready test code.",
             local_ai_provider=local_ai_provider
         )
         
@@ -153,6 +154,125 @@ class EnhancedTestCreationAgent(BaseTestAgent):
             }
     
     async def _create_playwright_test(self, test_case: Dict, app_data: Dict, 
+                                    pages: List, elements: Dict) -> Dict:
+        """Create a Playwright test file using LLM"""
+        test_name = test_case.get("name", "test_case")
+        safe_name = self._sanitize_filename(test_name)
+        
+        self.logger.info(f"Generating Playwright test for: {test_name}")
+        
+        # Try LLM generation first
+        try:
+            llm_code = await self._generate_test_with_llm(test_case, elements, app_data)
+            if llm_code:
+                # Save the test file to the correct tests directory
+                tests_dir = Path("./tests")
+                tests_dir.mkdir(exist_ok=True)
+                
+                test_file_path = tests_dir / f"test_{safe_name}.py"
+                
+                with open(test_file_path, 'w') as f:
+                    f.write(llm_code)
+                
+                self.logger.info(f"Generated Playwright test (LLM): {test_file_path}")
+                
+                return {
+                    "type": "test",
+                    "framework": "playwright",
+                    "path": str(test_file_path),
+                    "name": f"test_{safe_name}.py",
+                    "test_count": 1,
+                    "elements_used": len(elements) # Placeholder, actual count might vary
+                }
+        except Exception as e:
+            self.logger.error(f"LLM test generation failed: {e}")
+            self.logger.info("Falling back to template generation")
+            
+        # Fallback to template generation
+        return await self._create_template_playwright_test(test_case, app_data, pages, elements)
+
+    async def _generate_test_with_llm(self, test_case: Dict, elements: Dict, app_data: Dict) -> str:
+        """Generate test code using LLM"""
+        
+        if not self.local_ai_provider:
+            logger.warning("Local AI provider not configured, cannot generate test with LLM.")
+            return None
+
+        # Prepare context
+        steps = test_case.get("steps", []) # Use 'steps' as per _generate_real_test_code
+        url = app_data.get("base_url", app_data.get("url", "")) # Use base_url or url from app_data
+        
+        # Format elements for prompt
+        elements_context = "Available Elements (discovered from application):\n"
+        
+        # Assuming 'elements' is a dictionary with categories like 'login_elements', 'form_elements', etc.
+        # Flatten and format for the prompt
+        all_discovered_elements = []
+        for category, category_elements in elements.items():
+            if isinstance(category_elements, list):
+                all_discovered_elements.extend(category_elements)
+            elif isinstance(category_elements, dict): # Handle cases where elements might be nested dicts
+                for sub_category, sub_elements in category_elements.items():
+                    if isinstance(sub_elements, list):
+                        all_discovered_elements.extend(sub_elements)
+
+        if all_discovered_elements:
+            for el in all_discovered_elements:
+                el_type = el.get("type", "unknown")
+                el_name = el.get("attributes", {}).get("name") or el.get("attributes", {}).get("id") or el.get("text")
+                el_selectors = el.get("selectors", {})
+                
+                selector_str = ", ".join([f"{k}: '{v}'" for k, v in el_selectors.items() if v])
+                
+                elements_context += f"- Type: {el_type}, Name/Text: '{el_name or 'N/A'}', Selectors: {{{selector_str}}}\n"
+        else:
+            elements_context += "- No specific elements discovered. Use generic selectors if needed.\n"
+
+        prompt = f"""
+        Generate a complete, runnable Python Playwright test using pytest for the following scenario.
+        
+        Target Application Base URL: {url}
+        
+        Test Case Details:
+        Name: {test_case.get('name', 'Unnamed Test')}
+        Description: {test_case.get('description', 'No description provided.')}
+        Steps to perform:
+        {json.dumps(steps, indent=2)}
+        
+        {elements_context}
+        
+        Requirements for the generated Python Playwright test code:
+        1.  Use the `page` fixture provided by `pytest-playwright`.
+        2.  Import `pytest` and `logging`.
+        3.  Define a test class `Test<TestCaseName>` and a test method `test_<test_case_name>`.
+        4.  Use the provided `Target Application Base URL` for `page.goto()`.
+        5.  Integrate the `page_obj` (Page Object Model instance) if relevant page objects are available (e.g., `LoginPage`, `DashboardPage`). Assume page objects are in `pages/` directory. If no specific page object is obvious, use direct Playwright actions.
+        6.  Use the `Available Elements` and their selectors to interact with the page. Prioritize `id`, then `name`, then `css` or `text` selectors.
+        7.  Include meaningful assertions (`expect(page).to_have_url()`, `expect(locator).to_be_visible()`, etc.) for each significant step to verify the application's state.
+        8.  Handle dynamic waiting using Playwright's built-in `wait_for_selector`, `wait_for_url`, `wait_for_load_state`, or `expect` assertions. Avoid `page.wait_for_timeout()` unless absolutely necessary for UI settling.
+        9.  Add logging statements to indicate test progress and outcomes.
+        10. Ensure the code is syntactically correct and follows Python best practices.
+        11. Return ONLY the Python code, without any surrounding markdown fences (```python ... ```).
+        """
+        
+        response = await self.local_ai_provider.generate_response_async(
+            prompt=prompt,
+            model_type=ModelType.CODE_GENERATION,
+            system_prompt="You are a senior test automation engineer. Write clean, robust Playwright Python code."
+        )
+        
+        if response.get("success"):
+            code = response.get("response", "")
+            # Clean markdown fences if present
+            if "```python" in code:
+                code = code.split("```python", 1)[1].rsplit("```", 1)[0].strip()
+            elif "```" in code:
+                code = code.split("```", 1)[1].rsplit("```", 1)[0].strip()
+            return code
+            
+        return None
+
+    async def _create_template_playwright_test(self, test_case: Dict, app_data: Dict, 
                                     pages: List, elements: Dict) -> Dict:
         """Create real Playwright test with discovered elements"""
         
@@ -997,6 +1117,9 @@ class APIClient:
 requests>=2.31.0
 '''
 
+    def _sanitize_filename(self, name: str) -> str:
+        """Sanitize a string to be a valid filename."""
+        return "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip().replace(' ', '_').lower()
 
     async def _discover_real_application_elements(self, application_url: str) -> Dict[str, Any]:
         """Discover real elements from live application using browser automation"""
