@@ -16,6 +16,20 @@ import os
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
+from utils.js_discovery_scripts import (
+    JS_DISCOVER_INPUTS,
+    JS_DISCOVER_BUTTONS,
+    JS_DISCOVER_LINKS,
+    JS_DISCOVER_FORMS,
+    JS_DISCOVER_NAVIGATION,
+    JS_DISCOVER_MAIN_PAGES,
+    JS_ANALYZE_PAGE_ELEMENTS,
+    JS_DISCOVER_LOGIN_ELEMENTS,
+    JS_ANALYZE_LOGIN_FORM,
+    JS_DISCOVER_SHOPPING_ELEMENTS,
+    get_element_count_script,
+    get_element_details_script
+)
 
 # Setup logger
 logger = logging.getLogger(__name__)

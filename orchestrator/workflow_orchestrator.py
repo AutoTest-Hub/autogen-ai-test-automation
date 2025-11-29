@@ -11,9 +11,21 @@ from datetime import datetime, timedelta
 from enum import Enum
 from dataclasses import dataclass, asdict
 import uuid
+import importlib
+import inspect
+from pathlib import Path
 
 from config.settings import settings, AgentRole
 from parsers.unified_parser import UnifiedTestFileParser, ParsedTestFile
+from contracts.agent_contracts import (
+    WorkflowContext,
+    DiscoveryResult,
+    TestPlan,
+    GeneratedTest,
+    ReviewResult,
+    ExecutionResult,
+    create_workflow_context
+)
 
 
 class WorkflowStatus(str, Enum):
@@ -96,7 +108,125 @@ class WorkflowOrchestrator:
             "average_duration": 0.0,
             "agent_utilization": {}
         }
-    
+
+        # Workflow context tracking for context passing between agents
+        self.workflow_contexts: Dict[str, WorkflowContext] = {}
+
+        # Agent registry for automatic discovery
+        self.agent_registry: Dict[str, type] = {}
+
+    def discover_and_register_agents(self, agents_dir: str = "agents", local_ai_provider=None) -> Dict[str, Any]:
+        """
+        Automatically discover and register agent classes from the agents directory.
+
+        This method scans the agents directory for Python modules containing agent classes,
+        instantiates them, and registers them for use in workflows.
+
+        Args:
+            agents_dir: Directory containing agent modules (default: "agents")
+            local_ai_provider: Optional LocalAIProvider instance to inject into agents
+
+        Returns:
+            Dict with discovery results: registered agents, errors, and summary
+        """
+        discovery_result = {
+            "discovered_modules": [],
+            "registered_agents": [],
+            "errors": [],
+            "agent_role_mapping": {}
+        }
+
+        # Map of expected agent class names to their roles
+        agent_role_map = {
+            "PlanningAgent": AgentRole.PLANNING,
+            "EnhancedTestCreationAgent": AgentRole.TEST_CREATION,
+            "ReviewAgent": AgentRole.REVIEW,
+            "ExecutionAgent": AgentRole.EXECUTION,
+            "ReportingAgent": AgentRole.REPORTING,
+            "RealBrowserDiscoveryAgent": AgentRole.DISCOVERY,
+            "DiscoveryAgent": AgentRole.DISCOVERY,
+        }
+
+        try:
+            agents_path = Path(agents_dir)
+            if not agents_path.exists():
+                discovery_result["errors"].append(f"Agents directory not found: {agents_dir}")
+                return discovery_result
+
+            # Scan for Python modules in the agents directory
+            for module_file in agents_path.glob("*.py"):
+                if module_file.name.startswith("_"):
+                    continue  # Skip __init__.py and private modules
+
+                module_name = module_file.stem
+                full_module_name = f"agents.{module_name}"
+
+                try:
+                    # Import the module
+                    module = importlib.import_module(full_module_name)
+                    discovery_result["discovered_modules"].append(full_module_name)
+
+                    # Find agent classes in the module
+                    for name, obj in inspect.getmembers(module):
+                        if inspect.isclass(obj) and name in agent_role_map:
+                            role = agent_role_map[name]
+
+                            # Store in registry
+                            self.agent_registry[name] = obj
+
+                            # Instantiate and register the agent
+                            try:
+                                if local_ai_provider:
+                                    agent_instance = obj(local_ai_provider=local_ai_provider)
+                                else:
+                                    agent_instance = obj()
+
+                                self.register_agent(role, agent_instance)
+                                discovery_result["registered_agents"].append({
+                                    "class": name,
+                                    "role": role.value,
+                                    "module": full_module_name
+                                })
+                                discovery_result["agent_role_mapping"][role.value] = name
+
+                            except Exception as e:
+                                discovery_result["errors"].append({
+                                    "class": name,
+                                    "error": str(e)
+                                })
+
+                except Exception as e:
+                    discovery_result["errors"].append({
+                        "module": full_module_name,
+                        "error": str(e)
+                    })
+
+            self.logger.info(
+                f"Agent discovery complete: {len(discovery_result['registered_agents'])} agents registered"
+            )
+
+        except Exception as e:
+            discovery_result["errors"].append({
+                "error": f"Discovery failed: {str(e)}"
+            })
+
+        return discovery_result
+
+    def get_registered_agents(self) -> Dict[str, Any]:
+        """Get information about all registered agents"""
+        return {
+            "available_agents": {
+                role.value: {
+                    "class": type(agent).__name__,
+                    "capabilities": agent.get_capabilities() if hasattr(agent, 'get_capabilities') else [],
+                    "state": agent.get_state() if hasattr(agent, 'get_state') else "unknown"
+                }
+                for role, agent in self.available_agents.items()
+            },
+            "total_count": len(self.available_agents),
+            "registered_roles": [role.value for role in self.available_agents.keys()]
+        }
+
     def _initialize_workflow_templates(self) -> Dict[str, Dict[str, Any]]:
         """Initialize predefined workflow templates"""
         return {
@@ -288,7 +418,12 @@ class WorkflowOrchestrator:
             
             # Store workflow
             self.active_workflows[workflow_id] = workflow
-            
+
+            # Create workflow context for context passing between agents
+            self.workflow_contexts[workflow_id] = create_workflow_context(workflow_id)
+            self.workflow_contexts[workflow_id].metadata["test_files"] = test_files
+            self.workflow_contexts[workflow_id].metadata["template_name"] = template_name
+
             self.logger.info(f"Created workflow {workflow_id} with {len(steps)} steps")
             return workflow_id
             
@@ -351,41 +486,46 @@ class WorkflowOrchestrator:
             raise
     
     async def _execute_workflow_steps(self, workflow: WorkflowExecution) -> Dict[str, Any]:
-        """Execute all steps in a workflow"""
-        
+        """Execute all steps in a workflow with context passing"""
+
         completed_steps = set()
         failed_steps = set()
         step_results = {}
-        
+
+        # Get workflow context for this workflow
+        workflow_context = self.workflow_contexts.get(workflow.id)
+
         # Create dependency graph
         dependency_graph = {step.id: step.dependencies for step in workflow.steps}
         step_map = {step.id: step for step in workflow.steps}
-        
+
         while len(completed_steps) + len(failed_steps) < len(workflow.steps):
             # Find steps ready to execute
             ready_steps = []
             for step in workflow.steps:
-                if (step.id not in completed_steps and 
+                if (step.id not in completed_steps and
                     step.id not in failed_steps and
                     step.status == WorkflowStepStatus.PENDING and
                     all(dep in completed_steps for dep in step.dependencies)):
                     ready_steps.append(step)
-            
+
             if not ready_steps:
                 # Check if we're stuck due to failed dependencies
-                remaining_steps = [s for s in workflow.steps 
+                remaining_steps = [s for s in workflow.steps
                                  if s.id not in completed_steps and s.id not in failed_steps]
                 if remaining_steps:
                     self.logger.warning(f"Workflow stuck - {len(remaining_steps)} steps cannot execute due to failed dependencies")
                     for step in remaining_steps:
                         step.status = WorkflowStepStatus.SKIPPED
                         failed_steps.add(step.id)
+                        if workflow_context:
+                            workflow_context.add_warning(f"Step '{step.name}' skipped due to failed dependencies")
                 break
-            
-            # Execute ready steps (can be parallel)
+
+            # Execute ready steps (can be parallel) with context
             step_tasks = []
             for step in ready_steps:
-                task = self._execute_workflow_step(step, step_results)
+                task = self._execute_workflow_step(step, step_results, workflow_context)
                 step_tasks.append(task)
             
             # Wait for all ready steps to complete
@@ -420,23 +560,42 @@ class WorkflowOrchestrator:
             "failed_steps": list(failed_steps)
         }
     
-    async def _execute_workflow_step(self, step: WorkflowStep, previous_results: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a single workflow step"""
-        
+    async def _execute_workflow_step(
+        self,
+        step: WorkflowStep,
+        previous_results: Dict[str, Any],
+        workflow_context: Optional[WorkflowContext] = None
+    ) -> Dict[str, Any]:
+        """Execute a single workflow step with context passing"""
+
         self.logger.info(f"Executing step {step.id}: {step.name}")
-        
+
         step.status = WorkflowStepStatus.RUNNING
         step.started_at = datetime.now()
-        
+
         try:
             # Prepare input data
             input_data = step.input_data.copy()
-            
+
             # Add results from dependency steps
             for dep_id in step.dependencies:
                 if dep_id in previous_results:
                     input_data[f"{dep_id}_result"] = previous_results[dep_id]
-            
+
+            # Add workflow context for agents to use
+            if workflow_context:
+                input_data["workflow_context"] = workflow_context.to_dict()
+
+                # Pass relevant context based on the step type
+                if workflow_context.discovery_result:
+                    input_data["discovery_data"] = workflow_context.discovery_result.to_dict()
+                if workflow_context.test_plan:
+                    input_data["test_plan"] = workflow_context.test_plan.to_dict()
+                if workflow_context.generated_tests:
+                    input_data["generated_tests"] = workflow_context.generated_tests.to_dict()
+                if workflow_context.review_result:
+                    input_data["review_result"] = workflow_context.review_result.to_dict()
+
             # Get appropriate agent
             agent = self.available_agents.get(step.agent_role)
             if not agent:
@@ -477,23 +636,67 @@ class WorkflowOrchestrator:
                 })
             
             step.completed_at = datetime.now()
-            
+
+            # Update workflow context with step results
+            if workflow_context:
+                self._update_workflow_context(workflow_context, step, result)
+
             self.logger.info(f"Completed step {step.id} successfully")
             return result
-            
+
         except Exception as e:
             step.completed_at = datetime.now()
             step.error_message = str(e)
-            
+
+            # Add error to workflow context
+            if workflow_context:
+                workflow_context.add_error(step.id, str(e), {"step_name": step.name})
+
             # Retry logic
             if step.retry_count < step.max_retries:
                 step.retry_count += 1
                 self.logger.warning(f"Step {step.id} failed, retrying ({step.retry_count}/{step.max_retries})")
                 await asyncio.sleep(2 ** step.retry_count)  # Exponential backoff
-                return await self._execute_workflow_step(step, previous_results)
-            
+                return await self._execute_workflow_step(step, previous_results, workflow_context)
+
             self.logger.error(f"Step {step.id} failed after {step.retry_count} retries: {e}")
             raise
+
+    def _update_workflow_context(
+        self,
+        context: WorkflowContext,
+        step: WorkflowStep,
+        result: Dict[str, Any]
+    ):
+        """Update workflow context with results from a completed step"""
+        context.current_stage = step.id
+
+        # Update context based on agent role / step type
+        if step.agent_role == AgentRole.DISCOVERY:
+            # Store discovery results in context
+            context.metadata["discovery_raw"] = result
+
+        elif step.agent_role == AgentRole.PLANNING:
+            # Store test plan in context
+            context.metadata["test_plan_raw"] = result
+
+        elif step.agent_role == AgentRole.TEST_CREATION:
+            # Store generated tests in context
+            context.metadata["generated_tests_raw"] = result
+
+        elif step.agent_role == AgentRole.REVIEW:
+            # Store review results in context
+            context.metadata["review_raw"] = result
+
+        elif step.agent_role == AgentRole.EXECUTION:
+            # Store execution results in context
+            context.metadata["execution_raw"] = result
+
+        elif step.agent_role == AgentRole.REPORTING:
+            # Store report in context
+            context.metadata["report_raw"] = result
+
+        self.logger.debug(f"Updated workflow context for stage: {step.id}")
     
     async def _execute_parse_files_task(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute file parsing task"""
@@ -688,24 +891,55 @@ class WorkflowOrchestrator:
     
     def create_custom_template(self, template_name: str, template_config: Dict[str, Any]) -> bool:
         """Create a custom workflow template"""
-        
+
         try:
             # Validate template structure
             required_fields = ["name", "description", "steps"]
             if not all(field in template_config for field in required_fields):
                 raise ValueError(f"Template must contain: {required_fields}")
-            
+
             # Validate steps
             for step in template_config["steps"]:
                 required_step_fields = ["id", "name", "agent_role", "task_type", "dependencies"]
                 if not all(field in step for field in required_step_fields):
                     raise ValueError(f"Each step must contain: {required_step_fields}")
-            
+
             self.workflow_templates[template_name] = template_config
             self.logger.info(f"Created custom workflow template: {template_name}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error creating custom template: {e}")
             return False
+
+    def get_workflow_context(self, workflow_id: str) -> Optional[Dict[str, Any]]:
+        """Get the workflow context for a specific workflow"""
+        context = self.workflow_contexts.get(workflow_id)
+        if context:
+            return context.to_dict()
+
+        # Check if workflow is in history (context may have been cleaned up)
+        for workflow in self.workflow_history:
+            if workflow.id == workflow_id and workflow.metadata.get("final_context"):
+                return workflow.metadata["final_context"]
+
+        return None
+
+    def _cleanup_workflow_context(self, workflow_id: str, preserve_in_metadata: bool = True):
+        """Clean up workflow context after workflow completion"""
+        if workflow_id in self.workflow_contexts:
+            context = self.workflow_contexts[workflow_id]
+
+            # Optionally preserve context in workflow metadata
+            if preserve_in_metadata and workflow_id in self.active_workflows:
+                self.active_workflows[workflow_id].metadata["final_context"] = context.to_dict()
+            elif preserve_in_metadata:
+                for workflow in self.workflow_history:
+                    if workflow.id == workflow_id:
+                        workflow.metadata["final_context"] = context.to_dict()
+                        break
+
+            # Remove from active contexts
+            del self.workflow_contexts[workflow_id]
+            self.logger.debug(f"Cleaned up context for workflow {workflow_id}")
 

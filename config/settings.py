@@ -199,10 +199,35 @@ class AutoGenTestFrameworkSettings(BaseSettings):
                 "name": "reporting_agent",
                 "system_message": "You are the Reporting Agent responsible for analyzing results and generating insights.",
             },
+            AgentRole.DISCOVERY: {
+                "name": "discovery_agent",
+                "system_message": "You are the Discovery Agent responsible for analyzing web applications, discovering UI elements, generating accurate selectors, and mapping user workflows.",
+                "capabilities": [
+                    "real_browser_discovery",
+                    "element_detection",
+                    "selector_generation",
+                    "workflow_mapping",
+                    "application_analysis"
+                ],
+            },
         }
-        
+
         base_config.update(role_configs.get(role, {}))
         return base_config
+
+    def get_discovery_config(self) -> Dict[str, Any]:
+        """Get configuration specific to the Discovery Agent"""
+        return {
+            "browser_type": self.browser_type,
+            "headless": self.headless,
+            "browser_timeout": self.browser_timeout,
+            "screenshot_on_discovery": True,
+            "max_depth": 3,  # Maximum depth for crawling/discovery
+            "max_pages": 10,  # Maximum pages to discover
+            "element_types": ["inputs", "buttons", "links", "forms"],
+            "workflow_types": ["authentication", "shopping", "browsing"],
+            "selector_strategies": ["id", "name", "class", "text", "xpath", "css"],
+        }
 
 
 # Global settings instance
