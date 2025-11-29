@@ -358,10 +358,18 @@ You are the Execution Agent, an expert in test execution and test environment ma
     def _build_execution_command(self, test_file: str, config: Dict[str, Any]) -> List[str]:
         """Build execution command based on test file type"""
         file_path = Path(test_file)
-        
+
         if file_path.suffix == '.py':
-            # Python test file
-            if 'pytest' in open(test_file).read():
+            # Python test file - check if it's pytest-based
+            is_pytest = False
+            try:
+                with open(test_file, 'r') as f:
+                    content = f.read()
+                    is_pytest = 'pytest' in content or 'import pytest' in content
+            except Exception:
+                pass
+
+            if is_pytest:
                 # Pytest-based test
                 cmd = ["python", "-m", "pytest", test_file]
                 if config.get("verbose", False):

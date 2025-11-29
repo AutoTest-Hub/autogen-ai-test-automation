@@ -1,14 +1,25 @@
 """
 Base Agent class for AutoGen Test Automation Framework
 Enhanced with Local AI Provider integration for enterprise deployment
+
+This module provides the foundation for all AI-powered agents in the test automation
+framework. It includes:
+- Unified LLM response generation (local and external)
+- Response caching for performance optimization
+- Retry logic with exponential backoff
+- Proper error handling and metrics tracking
 """
 
 import asyncio
 import json
 import logging
+import os
+import hashlib
+import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from functools import lru_cache
 
 try:
     import autogen
@@ -22,56 +33,92 @@ except ImportError:
 from config.settings import settings, AgentRole, LLMProvider
 from models.local_ai_provider import LocalAIProvider, ModelType
 
+# Try to import external LLM libraries
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+
 
 class BaseTestAgent(ABC):
-    """Base class for all test automation agents"""
-    
+    """
+    Base class for all test automation agents.
+
+    Provides unified LLM access with support for:
+    - Local AI (Ollama) for enterprise/offline deployment
+    - External LLMs (OpenAI, Anthropic) for cloud deployment
+    - Response caching for repeated queries
+    - Retry logic with exponential backoff
+    - Comprehensive error handling and metrics
+    """
+
+    # Class-level response cache for performance
+    _response_cache: Dict[str, Dict[str, Any]] = {}
+    _cache_max_size: int = 100
+    _cache_ttl_seconds: int = 3600  # 1 hour default TTL
+
     def __init__(
-        self, 
+        self,
         role: AgentRole,
         name: Optional[str] = None,
         system_message: Optional[str] = None,
         llm_provider: Optional[LLMProvider] = None,
         local_ai_provider: Optional[LocalAIProvider] = None,
+        enable_caching: bool = True,
+        max_retries: int = 3,
         **kwargs
     ):
         self.role = role
         self.name = name or f"{role.value}_agent"
         self.llm_provider = llm_provider or settings.default_llm_provider
         self.logger = logging.getLogger(f"agent.{self.name}")
-        
+
+        # LLM configuration
+        self.enable_caching = enable_caching
+        self.max_retries = max_retries
+
         # Initialize local AI provider for enterprise deployment
         self.local_ai_provider = local_ai_provider or LocalAIProvider()
         self.model_type = self._get_model_type_for_role(role)
-        
+
         # Check if local AI is available, fallback to external if needed
         self.use_local_ai = self.local_ai_provider.is_available()
         if self.use_local_ai:
             self.logger.info(f"Using local AI models for {self.name}")
         else:
             self.logger.warning(f"Local AI not available for {self.name}, using external LLM")
-        
+
         # Get agent configuration
         self.config = settings.get_agent_config(role)
         if system_message:
             self.config["system_message"] = system_message
-        
+
         # Update config with any additional kwargs
         self.config.update(kwargs)
-        
+
         # Initialize the AutoGen agent
         self.agent = self._create_autogen_agent()
-        
+
         # Agent state and metrics
         self.state = {
             "status": "initialized",
             "tasks_completed": 0,
             "errors": 0,
+            "llm_calls": 0,
+            "cache_hits": 0,
+            "total_tokens": 0,
             "last_activity": datetime.now(),
             "local_ai_enabled": self.use_local_ai,
             "model_type": self.model_type.value if self.model_type else None
         }
-        
+
         self.logger.info(f"Initialized {self.name} with role {role.value}")
     
     def _get_model_type_for_role(self, role: AgentRole) -> Optional[ModelType]:
@@ -603,7 +650,383 @@ If you approve, indicate "APPROVED" in your response.
             "errors": self.state["errors"],
             "last_activity": self.state["last_activity"].isoformat()
         }
-    
+
+    # =========================================================================
+    # UNIFIED LLM RESPONSE GENERATION
+    # =========================================================================
+
+    def _get_cache_key(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Generate a cache key for the given prompt and system prompt"""
+        content = f"{system_prompt or ''}:{prompt}"
+        return hashlib.md5(content.encode()).hexdigest()
+
+    def _get_cached_response(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """Get cached response if available and not expired"""
+        if not self.enable_caching:
+            return None
+
+        if cache_key in self._response_cache:
+            cached = self._response_cache[cache_key]
+            # Check if cache entry is still valid
+            if time.time() - cached.get("cached_at", 0) < self._cache_ttl_seconds:
+                self.state["cache_hits"] += 1
+                self.logger.debug(f"Cache hit for key {cache_key[:8]}...")
+                return cached.get("response")
+
+            # Remove expired entry
+            del self._response_cache[cache_key]
+
+        return None
+
+    def _cache_response(self, cache_key: str, response: Dict[str, Any]):
+        """Cache a response for future use"""
+        if not self.enable_caching:
+            return
+
+        # Enforce cache size limit
+        if len(self._response_cache) >= self._cache_max_size:
+            # Remove oldest entries
+            oldest_keys = sorted(
+                self._response_cache.keys(),
+                key=lambda k: self._response_cache[k].get("cached_at", 0)
+            )[:10]
+            for key in oldest_keys:
+                del self._response_cache[key]
+
+        self._response_cache[cache_key] = {
+            "response": response,
+            "cached_at": time.time()
+        }
+
+    async def generate_llm_response(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        use_cache: bool = True,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        response_format: Optional[str] = None  # "json" for JSON responses
+    ) -> Dict[str, Any]:
+        """
+        Generate a response using the configured LLM provider.
+
+        This is the primary method for agents to get LLM responses. It handles:
+        - Response caching for repeated queries
+        - Retry logic with exponential backoff
+        - Automatic fallback between local and external LLMs
+        - Structured JSON response parsing when requested
+
+        Args:
+            prompt: The prompt to send to the LLM
+            system_prompt: Optional system prompt (defaults to agent's system message)
+            use_cache: Whether to use caching (default: True)
+            temperature: Override default temperature
+            max_tokens: Override default max tokens
+            response_format: Set to "json" to parse response as JSON
+
+        Returns:
+            Dict containing:
+                - response: The LLM response text
+                - success: Boolean indicating success
+                - model: Model used
+                - cached: Whether response was from cache
+                - error: Error message if failed
+        """
+        # Use agent's system message if not provided
+        effective_system_prompt = system_prompt or self.config.get("system_message", "")
+
+        # Check cache first
+        if use_cache:
+            cache_key = self._get_cache_key(prompt, effective_system_prompt)
+            cached_response = self._get_cached_response(cache_key)
+            if cached_response:
+                return {**cached_response, "cached": True}
+
+        # Try to generate response with retries
+        last_error = None
+        for attempt in range(self.max_retries):
+            try:
+                if self.use_local_ai:
+                    result = await self._generate_local_ai_response(
+                        prompt, effective_system_prompt, temperature, max_tokens
+                    )
+                else:
+                    result = await self._generate_external_llm_response(
+                        prompt, effective_system_prompt, temperature, max_tokens
+                    )
+
+                if result.get("success"):
+                    # Parse JSON if requested
+                    if response_format == "json":
+                        result = self._parse_json_response(result)
+
+                    # Cache successful response
+                    if use_cache:
+                        self._cache_response(cache_key, result)
+
+                    # Update metrics
+                    self.state["llm_calls"] += 1
+                    self.state["last_activity"] = datetime.now()
+
+                    return {**result, "cached": False}
+
+                last_error = result.get("error", "Unknown error")
+
+            except Exception as e:
+                last_error = str(e)
+                self.logger.warning(f"LLM call attempt {attempt + 1} failed: {e}")
+
+            # Exponential backoff before retry
+            if attempt < self.max_retries - 1:
+                wait_time = 2 ** attempt
+                self.logger.info(f"Retrying in {wait_time}s...")
+                await asyncio.sleep(wait_time)
+
+        # All retries failed
+        self.state["errors"] += 1
+        return {
+            "response": "",
+            "success": False,
+            "error": f"All {self.max_retries} attempts failed. Last error: {last_error}",
+            "cached": False
+        }
+
+    def generate_llm_response_sync(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        use_cache: bool = True,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        response_format: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Synchronous version of generate_llm_response"""
+        return asyncio.get_event_loop().run_until_complete(
+            self.generate_llm_response(
+                prompt, system_prompt, use_cache, temperature, max_tokens, response_format
+            )
+        )
+
+    async def _generate_local_ai_response(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Generate response using local AI (Ollama)"""
+        if not self.model_type:
+            raise ValueError("No model type configured for this agent")
+
+        try:
+            result = await self.local_ai_provider.generate_response_async(
+                prompt=prompt,
+                model_type=self.model_type,
+                system_prompt=system_prompt
+            )
+
+            return {
+                "response": result.get("response", ""),
+                "success": result.get("success", False),
+                "model": result.get("model", "local"),
+                "model_type": self.model_type.value,
+                "response_time": result.get("response_time", 0),
+                "error": result.get("error")
+            }
+
+        except Exception as e:
+            self.logger.error(f"Local AI generation failed: {e}")
+            return {
+                "response": "",
+                "success": False,
+                "error": str(e)
+            }
+
+    async def _generate_external_llm_response(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Generate response using external LLM (OpenAI, Anthropic, etc.)"""
+        llm_config = self.config.get("llm_config", {})
+        provider = self.llm_provider
+
+        try:
+            if provider == LLMProvider.OPENAI:
+                return await self._call_openai(
+                    prompt, system_prompt, llm_config, temperature, max_tokens
+                )
+            elif provider == LLMProvider.ANTHROPIC:
+                return await self._call_anthropic(
+                    prompt, system_prompt, llm_config, temperature, max_tokens
+                )
+            else:
+                # Fallback to OpenAI-compatible API
+                return await self._call_openai(
+                    prompt, system_prompt, llm_config, temperature, max_tokens
+                )
+
+        except Exception as e:
+            self.logger.error(f"External LLM generation failed: {e}")
+            return {
+                "response": "",
+                "success": False,
+                "error": str(e)
+            }
+
+    async def _call_openai(
+        self,
+        prompt: str,
+        system_prompt: str,
+        llm_config: Dict[str, Any],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Call OpenAI API"""
+        if not OPENAI_AVAILABLE:
+            return {
+                "response": "",
+                "success": False,
+                "error": "OpenAI library not installed. Run: pip install openai"
+            }
+
+        api_key = llm_config.get("api_key") or os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            return {
+                "response": "",
+                "success": False,
+                "error": "OpenAI API key not configured"
+            }
+
+        try:
+            client = openai.AsyncOpenAI(api_key=api_key)
+            start_time = time.time()
+
+            response = await client.chat.completions.create(
+                model=llm_config.get("model", "gpt-4o"),
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=temperature or llm_config.get("temperature", 0.1),
+                max_tokens=max_tokens or llm_config.get("max_tokens", 4000)
+            )
+
+            response_time = time.time() - start_time
+            content = response.choices[0].message.content
+
+            # Track token usage
+            if response.usage:
+                self.state["total_tokens"] += response.usage.total_tokens
+
+            return {
+                "response": content,
+                "success": True,
+                "model": response.model,
+                "response_time": response_time,
+                "tokens_used": response.usage.total_tokens if response.usage else 0
+            }
+
+        except Exception as e:
+            return {
+                "response": "",
+                "success": False,
+                "error": f"OpenAI API error: {str(e)}"
+            }
+
+    async def _call_anthropic(
+        self,
+        prompt: str,
+        system_prompt: str,
+        llm_config: Dict[str, Any],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Call Anthropic API"""
+        if not ANTHROPIC_AVAILABLE:
+            return {
+                "response": "",
+                "success": False,
+                "error": "Anthropic library not installed. Run: pip install anthropic"
+            }
+
+        api_key = llm_config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            return {
+                "response": "",
+                "success": False,
+                "error": "Anthropic API key not configured"
+            }
+
+        try:
+            client = anthropic.AsyncAnthropic(api_key=api_key)
+            start_time = time.time()
+
+            response = await client.messages.create(
+                model=llm_config.get("model", "claude-3-5-sonnet-20241022"),
+                max_tokens=max_tokens or llm_config.get("max_tokens", 4000),
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+
+            response_time = time.time() - start_time
+            content = response.content[0].text if response.content else ""
+
+            # Track token usage
+            if response.usage:
+                self.state["total_tokens"] += response.usage.input_tokens + response.usage.output_tokens
+
+            return {
+                "response": content,
+                "success": True,
+                "model": response.model,
+                "response_time": response_time,
+                "tokens_used": (response.usage.input_tokens + response.usage.output_tokens) if response.usage else 0
+            }
+
+        except Exception as e:
+            return {
+                "response": "",
+                "success": False,
+                "error": f"Anthropic API error: {str(e)}"
+            }
+
+    def _parse_json_response(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Parse LLM response as JSON"""
+        response_text = result.get("response", "")
+
+        try:
+            # Try to extract JSON from the response
+            # Handle cases where JSON is wrapped in markdown code blocks
+            if "```json" in response_text:
+                start = response_text.find("```json") + 7
+                end = response_text.find("```", start)
+                response_text = response_text[start:end].strip()
+            elif "```" in response_text:
+                start = response_text.find("```") + 3
+                end = response_text.find("```", start)
+                response_text = response_text[start:end].strip()
+
+            parsed = json.loads(response_text)
+            result["parsed_json"] = parsed
+            result["json_parse_success"] = True
+
+        except json.JSONDecodeError as e:
+            self.logger.warning(f"Failed to parse JSON response: {e}")
+            result["json_parse_success"] = False
+            result["json_parse_error"] = str(e)
+
+        return result
+
+    def clear_cache(self):
+        """Clear the response cache for this agent"""
+        self._response_cache.clear()
+        self.logger.info("Response cache cleared")
+
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name}, role={self.role.value})"
     

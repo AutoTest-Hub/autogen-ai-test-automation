@@ -481,15 +481,350 @@ Be thorough, analytical, and strategic in your planning approach.
         }
     
     async def _analyze_requirements(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze requirements in detail"""
-        # Implementation for detailed requirements analysis
-        return {"status": "completed", "analysis": "Requirements analyzed"}
-    
+        """Analyze requirements in detail using LLM intelligence"""
+        requirements = task_data.get("requirements", "")
+        discovery_data = task_data.get("discovery_data", {})
+
+        # Use LLM for intelligent analysis
+        result = await self._analyze_requirements_with_llm(requirements, discovery_data)
+
+        return {
+            "status": "completed",
+            "analysis": result
+        }
+
     async def _assess_risk(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Assess risks for specific scenarios"""
-        # Implementation for risk assessment
-        return {"status": "completed", "risks": "Risks assessed"}
-    
+        """Assess risks for specific scenarios using LLM intelligence"""
+        test_plan = task_data.get("test_plan", {})
+        scenarios = task_data.get("scenarios", [])
+
+        # Use LLM for intelligent risk assessment
+        result = await self._assess_risk_with_llm(test_plan, scenarios)
+
+        return {
+            "status": "completed",
+            "risks": result
+        }
+
+    # =========================================================================
+    # LLM-POWERED INTELLIGENT METHODS
+    # =========================================================================
+
+    async def _analyze_requirements_with_llm(
+        self,
+        requirements: str,
+        discovery_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to intelligently analyze requirements and discovery data.
+
+        This method leverages the LLM to:
+        - Understand the semantic meaning of requirements
+        - Map requirements to discovered application elements
+        - Identify test scenarios that should be covered
+        - Provide intelligent complexity and risk assessment
+        """
+        # Build context from discovery data
+        pages_info = discovery_data.get("pages", [])
+        elements_info = discovery_data.get("elements", {})
+        workflows_info = discovery_data.get("workflows", [])
+
+        prompt = f"""
+Analyze the following test requirements and application discovery data to create a comprehensive test analysis.
+
+## Requirements:
+{requirements if requirements else "No specific requirements provided. Analyze based on discovered application structure."}
+
+## Discovered Application Structure:
+### Pages Found: {len(pages_info)}
+{json.dumps(pages_info[:5], indent=2) if pages_info else "No pages discovered yet"}
+
+### Interactive Elements:
+{json.dumps(dict(list(elements_info.items())[:3]), indent=2) if isinstance(elements_info, dict) else "No elements discovered yet"}
+
+### Identified Workflows:
+{json.dumps(workflows_info[:3], indent=2) if workflows_info else "No workflows identified yet"}
+
+## Analysis Required:
+Provide a detailed analysis in JSON format with the following structure:
+{{
+    "requirement_summary": "Brief summary of the testing requirements",
+    "test_scenarios": [
+        {{
+            "name": "Scenario name",
+            "description": "What this scenario tests",
+            "priority": "High/Medium/Low",
+            "type": "functional/integration/e2e/security/performance",
+            "steps": ["Step 1", "Step 2", ...],
+            "expected_results": ["Result 1", "Result 2", ...]
+        }}
+    ],
+    "coverage_analysis": {{
+        "covered_areas": ["List of areas that will be tested"],
+        "gaps": ["List of potential testing gaps"],
+        "recommendations": ["Recommendations for additional coverage"]
+    }},
+    "complexity_assessment": {{
+        "overall_complexity": "Low/Medium/High",
+        "complexity_score": 1-10,
+        "reasoning": "Why this complexity level"
+    }},
+    "risk_factors": [
+        {{
+            "risk": "Description of risk",
+            "likelihood": "Low/Medium/High",
+            "impact": "Low/Medium/High",
+            "mitigation": "How to mitigate"
+        }}
+    ],
+    "recommended_approach": {{
+        "framework": "playwright/selenium/api",
+        "execution_strategy": "sequential/parallel",
+        "estimated_effort_hours": number,
+        "reasoning": "Why this approach"
+    }}
+}}
+
+Be thorough and specific. Base your analysis on the actual discovered application structure when available.
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.3  # Lower temperature for more deterministic analysis
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            elif response.get("success"):
+                # If JSON parsing failed, return the raw response with a note
+                return {
+                    "raw_analysis": response.get("response", ""),
+                    "parse_error": "Could not parse as JSON",
+                    "requirement_summary": "Analysis completed but structured parsing failed"
+                }
+            else:
+                self.logger.warning(f"LLM analysis failed: {response.get('error')}")
+                # Fall back to basic analysis
+                return self._fallback_requirement_analysis(requirements, discovery_data)
+
+        except Exception as e:
+            self.logger.error(f"Error in LLM requirement analysis: {e}")
+            return self._fallback_requirement_analysis(requirements, discovery_data)
+
+    def _fallback_requirement_analysis(
+        self,
+        requirements: str,
+        discovery_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Fallback analysis when LLM is unavailable"""
+        return {
+            "requirement_summary": "Basic analysis (LLM unavailable)",
+            "test_scenarios": [],
+            "coverage_analysis": {
+                "covered_areas": [],
+                "gaps": ["Full analysis requires LLM"],
+                "recommendations": ["Enable LLM for intelligent analysis"]
+            },
+            "complexity_assessment": {
+                "overall_complexity": "Unknown",
+                "complexity_score": 5,
+                "reasoning": "Unable to perform intelligent analysis"
+            },
+            "risk_factors": [],
+            "recommended_approach": {
+                "framework": "playwright",
+                "execution_strategy": "sequential",
+                "estimated_effort_hours": 8,
+                "reasoning": "Default recommendation"
+            }
+        }
+
+    async def _assess_risk_with_llm(
+        self,
+        test_plan: Dict[str, Any],
+        scenarios: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to intelligently assess risks in the test plan.
+        """
+        prompt = f"""
+Analyze the following test plan and scenarios to provide a comprehensive risk assessment.
+
+## Test Plan Summary:
+{json.dumps(test_plan, indent=2, default=str)[:2000]}
+
+## Test Scenarios:
+{json.dumps(scenarios[:10], indent=2, default=str) if scenarios else "No scenarios provided"}
+
+## Risk Assessment Required:
+Provide a detailed risk assessment in JSON format:
+{{
+    "overall_risk_level": "Low/Medium/High/Critical",
+    "risk_score": 1-10,
+    "key_risks": [
+        {{
+            "risk_id": "RISK-001",
+            "category": "security/performance/functional/data/integration",
+            "description": "Detailed description of the risk",
+            "likelihood": "Low/Medium/High",
+            "impact": "Low/Medium/High/Critical",
+            "affected_scenarios": ["Scenario names affected"],
+            "mitigation_strategy": "How to mitigate this risk",
+            "contingency_plan": "What to do if risk materializes"
+        }}
+    ],
+    "risk_matrix": {{
+        "high_priority": ["Risks requiring immediate attention"],
+        "medium_priority": ["Risks to monitor closely"],
+        "low_priority": ["Risks with minimal impact"]
+    }},
+    "recommendations": [
+        "Specific recommendations to reduce overall risk"
+    ],
+    "confidence_level": "How confident is this assessment (Low/Medium/High)"
+}}
+
+Consider common testing risks including:
+- Security vulnerabilities
+- Performance bottlenecks
+- Data integrity issues
+- Integration failures
+- Environment dependencies
+- Test data quality
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.3
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            elif response.get("success"):
+                return {
+                    "raw_assessment": response.get("response", ""),
+                    "overall_risk_level": "Unknown",
+                    "risk_score": 5
+                }
+            else:
+                return self._fallback_risk_assessment(test_plan, scenarios)
+
+        except Exception as e:
+            self.logger.error(f"Error in LLM risk assessment: {e}")
+            return self._fallback_risk_assessment(test_plan, scenarios)
+
+    def _fallback_risk_assessment(
+        self,
+        test_plan: Dict[str, Any],
+        scenarios: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Fallback risk assessment when LLM is unavailable"""
+        return {
+            "overall_risk_level": "Medium",
+            "risk_score": 5,
+            "key_risks": [
+                {
+                    "risk_id": "RISK-001",
+                    "category": "general",
+                    "description": "Unable to perform intelligent risk assessment",
+                    "likelihood": "Medium",
+                    "impact": "Medium",
+                    "mitigation_strategy": "Enable LLM for detailed analysis"
+                }
+            ],
+            "recommendations": ["Enable LLM for comprehensive risk assessment"],
+            "confidence_level": "Low"
+        }
+
+    async def _generate_test_strategy_with_llm(
+        self,
+        requirements: str,
+        discovery_data: Dict[str, Any],
+        constraints: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to generate an intelligent test strategy.
+        """
+        prompt = f"""
+Create a comprehensive test strategy based on the following inputs.
+
+## Requirements:
+{requirements if requirements else "General application testing"}
+
+## Application Discovery Data:
+Pages: {len(discovery_data.get('pages', []))}
+Elements: {len(discovery_data.get('elements', {}))}
+Workflows: {len(discovery_data.get('workflows', []))}
+
+## Constraints:
+{json.dumps(constraints, indent=2) if constraints else "No specific constraints"}
+
+## Generate Test Strategy:
+Provide a detailed test strategy in JSON format:
+{{
+    "strategy_name": "Name for this strategy",
+    "objectives": ["Primary testing objectives"],
+    "scope": {{
+        "in_scope": ["What will be tested"],
+        "out_of_scope": ["What will not be tested"],
+        "assumptions": ["Key assumptions"]
+    }},
+    "test_levels": [
+        {{
+            "level": "unit/integration/system/e2e",
+            "coverage_target": percentage,
+            "approach": "Description of approach"
+        }}
+    ],
+    "test_types": [
+        {{
+            "type": "functional/security/performance/usability",
+            "priority": "High/Medium/Low",
+            "techniques": ["Testing techniques to use"]
+        }}
+    ],
+    "execution_plan": {{
+        "phases": ["Phase descriptions"],
+        "parallelization": "How tests can be parallelized",
+        "environment_requirements": ["Required environments"]
+    }},
+    "success_criteria": {{
+        "pass_rate": percentage,
+        "coverage_threshold": percentage,
+        "performance_targets": {{}}
+    }},
+    "resource_requirements": {{
+        "estimated_hours": number,
+        "team_skills": ["Required skills"],
+        "tools": ["Required tools"]
+    }}
+}}
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.4
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            else:
+                return {
+                    "strategy_name": "Default Strategy",
+                    "objectives": ["Basic test coverage"],
+                    "execution_plan": {"phases": ["Setup", "Execute", "Report"]}
+                }
+
+        except Exception as e:
+            self.logger.error(f"Error generating test strategy: {e}")
+            return {"error": str(e)}
+
     def get_capabilities(self) -> List[str]:
         """Get planning agent capabilities"""
         return [

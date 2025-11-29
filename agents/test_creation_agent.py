@@ -1,25 +1,28 @@
-
-# Real Browser Discovery Integration
-from playwright.async_api import async_playwright
-import json
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
-
 #!/usr/bin/env python3
 """
 Enhanced Test Creation Agent
 ===========================
 This enhanced version generates real working test code instead of templates,
 integrating properly with Discovery Agent data.
+
+Features:
+- Real browser discovery integration via Playwright
+- LLM-powered intelligent test generation
+- Page Object Model pattern generation
+- Multi-framework support (Playwright, Selenium, API)
 """
 
 import asyncio
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from urllib.parse import urljoin, urlparse
+
+from playwright.async_api import async_playwright
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
@@ -262,21 +265,29 @@ class Test{clean_class_name}:
         
         elif "enter" in step_lower and "username" in step_lower:
             return '''            # Enter username using page object
-            page_obj.fill_username("Admin")
+            # Credentials loaded from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            page_obj.fill_username(username)
             page.wait_for_timeout(200)'''
-        
+
         elif "enter" in step_lower and "password" in step_lower:
             return '''            # Enter password using page object
-            page_obj.fill_password("admin123")
+            # Credentials loaded from environment variables
+            password = os.getenv("TEST_PASSWORD", "")
+            page_obj.fill_password(password)
             page.wait_for_timeout(200)'''
-        
+
         elif "login" in step_lower and ("valid" in step_lower or "complete" in step_lower):
             return '''            # Perform complete login using page object
-            page_obj.login("Admin", "admin123")
+            # Credentials loaded from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            password = os.getenv("TEST_PASSWORD", "")
+            page_obj.login(username, password)
             page.wait_for_timeout(1000)'''
-        
+
         elif "login" in step_lower and "invalid" in step_lower:
             return '''            # Perform invalid login using page object
+            # Using invalid credentials for negative test
             page_obj.login("invalid_user", "invalid_pass")
             page.wait_for_timeout(1000)'''
         
@@ -890,11 +901,15 @@ class TestAPIAutomation:
         """Test API authentication endpoints"""
         try:
             logger.info("🔍 Testing API authentication")
-            
+
+            # Load credentials from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            password = os.getenv("TEST_PASSWORD", "")
+
             # Test login endpoint
             login_data = {{
-                "username": "testuser",
-                "password": "testpass"
+                "username": username,
+                "password": password
             }}
             
             response = self.api_client.post("/auth/login", json=login_data)
@@ -1336,19 +1351,224 @@ requests>=2.31.0
             "timestamp": int(time.time())
         }
 
-    def get_capabilities(self) -> List[str]:
-        """Get enhanced capabilities including Selenium and API"""
-        return [
-            "real_code_generation",
-            "discovery_integration",
-            "page_object_models",
-            "test_utilities",
-            "playwright_tests",
-            "selenium_tests",
-            "api_tests",
-            "assertions_and_validations",
-            "selenium_webdriver_tests",
-            "api_requests_tests",
-            "multi_framework_support"
-        ]
+    # =========================================================================
+    # LLM-POWERED INTELLIGENT TEST GENERATION
+    # =========================================================================
+
+    async def generate_test_with_llm(
+        self,
+        test_case: Dict[str, Any],
+        elements: Dict[str, Any],
+        framework: str = "playwright"
+    ) -> Dict[str, Any]:
+        """
+        Generate test code using LLM with full context.
+
+        This method leverages the LLM to:
+        - Understand the semantic meaning of test steps
+        - Generate appropriate assertions based on expected behavior
+        - Create meaningful test data
+        - Handle edge cases intelligently
+        """
+        test_name = test_case.get("name", "test_case")
+        test_description = test_case.get("description", "")
+        test_steps = test_case.get("steps", [])
+        expected_results = test_case.get("expected_results", [])
+
+        prompt = f"""
+Generate a complete, executable {framework.upper()} test for the following scenario.
+
+## Test Case:
+Name: {test_name}
+Description: {test_description}
+
+## Test Steps:
+{json.dumps(test_steps, indent=2)}
+
+## Expected Results:
+{json.dumps(expected_results, indent=2)}
+
+## Available Elements (from discovery):
+{json.dumps(elements, indent=2)[:3000]}
+
+## Requirements:
+1. Use the exact selectors from discovered elements where available
+2. Add meaningful assertions for each step
+3. Include proper error handling with try/except blocks
+4. Add wait conditions for dynamic elements
+5. Follow Page Object Model pattern if appropriate
+6. Include data-driven test data where appropriate
+7. Add descriptive logging for debugging
+8. Handle potential failures gracefully
+
+## Output Format:
+Generate complete, executable Python/{framework} test code with:
+- All necessary imports
+- Proper test function/class structure
+- Meaningful comments explaining each section
+- Robust element selection using multiple fallback strategies
+
+Return ONLY the Python code, no explanations.
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                temperature=0.3,
+                max_tokens=4000
+            )
+
+            if response.get("success"):
+                code = response.get("response", "")
+                # Clean up the code (remove markdown blocks if present)
+                code = self._clean_generated_code(code)
+
+                return {
+                    "status": "success",
+                    "test_name": test_name,
+                    "code": code,
+                    "framework": framework,
+                    "llm_generated": True
+                }
+            else:
+                self.logger.warning(f"LLM test generation failed: {response.get('error')}")
+                return await self._fallback_test_generation(test_case, elements, framework)
+
+        except Exception as e:
+            self.logger.error(f"Error in LLM test generation: {e}")
+            return await self._fallback_test_generation(test_case, elements, framework)
+
+    async def _fallback_test_generation(
+        self,
+        test_case: Dict[str, Any],
+        elements: Dict[str, Any],
+        framework: str
+    ) -> Dict[str, Any]:
+        """Fallback to template-based generation when LLM is unavailable"""
+        if framework == "playwright":
+            return await self._create_playwright_test(test_case, {}, [], elements)
+        elif framework == "selenium":
+            return await self._create_selenium_test(test_case, {}, [], elements)
+        else:
+            return await self._create_api_test(test_case, {})
+
+    def _clean_generated_code(self, code: str) -> str:
+        """Clean up LLM-generated code"""
+        # Remove markdown code blocks
+        if "```python" in code:
+            start = code.find("```python") + 9
+            end = code.rfind("```")
+            if end > start:
+                code = code[start:end]
+        elif "```" in code:
+            start = code.find("```") + 3
+            end = code.rfind("```")
+            if end > start:
+                code = code[start:end]
+
+        return code.strip()
+
+    async def generate_assertions_with_llm(
+        self,
+        test_step: str,
+        element_state: Dict[str, Any],
+        expected_behavior: str
+    ) -> List[str]:
+        """
+        Use LLM to generate intelligent assertions for a test step.
+        """
+        prompt = f"""
+Generate comprehensive assertions for the following test step.
+
+## Test Step:
+{test_step}
+
+## Element State:
+{json.dumps(element_state, indent=2)}
+
+## Expected Behavior:
+{expected_behavior}
+
+## Requirements:
+Generate assertions that verify:
+1. Element visibility and state
+2. Content/text correctness
+3. Attribute values
+4. URL/navigation changes if applicable
+5. Error conditions
+
+Return a JSON array of assertion statements (Python assertions using pytest or unittest style).
+Example format:
+["assert page.locator('#element').is_visible()", "assert 'Success' in page.content()"]
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.2
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                assertions = response.get("parsed_json", [])
+                if isinstance(assertions, list):
+                    return assertions
+            return [f"# Assertion for: {test_step}", "assert True  # TODO: Add specific assertion"]
+
+        except Exception as e:
+            self.logger.error(f"Error generating assertions: {e}")
+            return ["assert True  # LLM assertion generation failed"]
+
+    async def generate_test_data_with_llm(
+        self,
+        test_scenario: str,
+        field_types: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to generate intelligent test data for a scenario.
+        """
+        prompt = f"""
+Generate appropriate test data for the following scenario.
+
+## Test Scenario:
+{test_scenario}
+
+## Field Types Required:
+{json.dumps(field_types, indent=2)}
+
+## Requirements:
+1. Generate realistic but fake data
+2. Include both valid and edge case values
+3. Consider boundary conditions
+4. Do not use any real personal information
+5. Include empty/null cases where appropriate
+
+Return a JSON object with test data sets:
+{{
+    "valid_data": {{}},
+    "edge_cases": [{{}}],
+    "invalid_data": [{{}}],
+    "boundary_values": {{}}
+}}
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.5
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            return {
+                "valid_data": {},
+                "edge_cases": [],
+                "invalid_data": [],
+                "boundary_values": {}
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error generating test data: {e}")
+            return {"error": str(e)}
 

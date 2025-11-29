@@ -1,0 +1,45 @@
+# Test Data Configuration Example
+# Copy this file to test_data.yaml and update with your actual test values
+#
+# IMPORTANT: Never commit actual credentials to version control!
+# Use environment variables (TEST_USERNAME, TEST_PASSWORD) for sensitive data.
+
+# Default test credentials
+# These can be overridden by environment variables: TEST_USERNAME, TEST_PASSWORD
+default_credentials:
+  username: ""  # Set via TEST_USERNAME env var
+  password: ""  # Set via TEST_PASSWORD env var
+
+# Named credential sets for different test scenarios
+credential_sets:
+  admin:
+    username: ""  # Admin user credentials
+    password: ""
+  standard_user:
+    username: ""  # Standard user credentials
+    password: ""
+  readonly_user:
+    username: ""  # Read-only user credentials
+    password: ""
+
+# Test data values for various scenarios
+test_values:
+  # Form test data
+  sample_email: "test@example.com"
+  sample_phone: "+1234567890"
+  sample_address: "123 Test Street"
+
+  # Product test data
+  sample_product_name: "Test Product"
+  sample_product_id: "PROD-001"
+
+  # Search test data
+  sample_search_query: "test search"
+
+# Placeholder patterns used in generated test code
+# These indicate where credentials should be injected at runtime
+placeholders:
+  username: "${TEST_USERNAME}"
+  password: "${TEST_PASSWORD}"
+  email: "${TEST_EMAIL}"
+  api_key: "${TEST_API_KEY}"
