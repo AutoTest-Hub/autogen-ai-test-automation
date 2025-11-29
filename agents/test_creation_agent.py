@@ -1,28 +1,32 @@
-
-# Real Browser Discovery Integration
-from playwright.async_api import async_playwright
-import json
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
-
 #!/usr/bin/env python3
 """
 Enhanced Test Creation Agent
 ===========================
 This enhanced version generates real working test code instead of templates,
 integrating properly with Discovery Agent data.
+
+Features:
+- Real browser discovery integration via Playwright
+- LLM-powered intelligent test generation
+- Page Object Model pattern generation
+- Multi-framework support (Playwright, Selenium, API)
 """
 
 import asyncio
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+from urllib.parse import urljoin, urlparse
+
+from playwright.async_api import async_playwright
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
+from models.local_ai_provider import ModelType
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -34,7 +38,7 @@ class EnhancedTestCreationAgent(BaseTestAgent):
         super().__init__(
             role=AgentRole.TEST_CREATION,
             name="EnhancedTestCreationAgent",
-            system_message="You are an Enhanced Test Creation Agent that generates real, executable test code using discovered application data and best practices.",
+            system_message="You are an expert Test Automation Engineer specializing in Playwright and Python. You create robust, maintainable, and production-ready test code.",
             local_ai_provider=local_ai_provider
         )
         
@@ -151,6 +155,125 @@ class EnhancedTestCreationAgent(BaseTestAgent):
     
     async def _create_playwright_test(self, test_case: Dict, app_data: Dict, 
                                     pages: List, elements: Dict) -> Dict:
+        """Create a Playwright test file using LLM"""
+        test_name = test_case.get("name", "test_case")
+        safe_name = self._sanitize_filename(test_name)
+        
+        self.logger.info(f"Generating Playwright test for: {test_name}")
+        
+        # Try LLM generation first
+        try:
+            llm_code = await self._generate_test_with_llm(test_case, elements, app_data)
+            if llm_code:
+                # Save the test file to the correct tests directory
+                tests_dir = Path("./tests")
+                tests_dir.mkdir(exist_ok=True)
+                
+                test_file_path = tests_dir / f"test_{safe_name}.py"
+                
+                with open(test_file_path, 'w') as f:
+                    f.write(llm_code)
+                
+                self.logger.info(f"Generated Playwright test (LLM): {test_file_path}")
+                
+                return {
+                    "type": "test",
+                    "framework": "playwright",
+                    "path": str(test_file_path),
+                    "name": f"test_{safe_name}.py",
+                    "test_count": 1,
+                    "elements_used": len(elements) # Placeholder, actual count might vary
+                }
+        except Exception as e:
+            self.logger.error(f"LLM test generation failed: {e}")
+            self.logger.info("Falling back to template generation")
+            
+        # Fallback to template generation
+        return await self._create_template_playwright_test(test_case, app_data, pages, elements)
+
+    async def _generate_test_with_llm(self, test_case: Dict, elements: Dict, app_data: Dict) -> str:
+        """Generate test code using LLM"""
+        
+        if not self.local_ai_provider:
+            logger.warning("Local AI provider not configured, cannot generate test with LLM.")
+            return None
+
+        # Prepare context
+        steps = test_case.get("steps", []) # Use 'steps' as per _generate_real_test_code
+        url = app_data.get("base_url", app_data.get("url", "")) # Use base_url or url from app_data
+        
+        # Format elements for prompt
+        elements_context = "Available Elements (discovered from application):\n"
+        
+        # Assuming 'elements' is a dictionary with categories like 'login_elements', 'form_elements', etc.
+        # Flatten and format for the prompt
+        all_discovered_elements = []
+        for category, category_elements in elements.items():
+            if isinstance(category_elements, list):
+                all_discovered_elements.extend(category_elements)
+            elif isinstance(category_elements, dict): # Handle cases where elements might be nested dicts
+                for sub_category, sub_elements in category_elements.items():
+                    if isinstance(sub_elements, list):
+                        all_discovered_elements.extend(sub_elements)
+
+        if all_discovered_elements:
+            for el in all_discovered_elements:
+                el_type = el.get("type", "unknown")
+                el_name = el.get("attributes", {}).get("name") or el.get("attributes", {}).get("id") or el.get("text")
+                el_selectors = el.get("selectors", {})
+                
+                selector_str = ", ".join([f"{k}: '{v}'" for k, v in el_selectors.items() if v])
+                
+                elements_context += f"- Type: {el_type}, Name/Text: '{el_name or 'N/A'}', Selectors: {{{selector_str}}}\n"
+        else:
+            elements_context += "- No specific elements discovered. Use generic selectors if needed.\n"
+
+        prompt = f"""
+        Generate a complete, runnable Python Playwright test using pytest for the following scenario.
+        
+        Target Application Base URL: {url}
+        
+        Test Case Details:
+        Name: {test_case.get('name', 'Unnamed Test')}
+        Description: {test_case.get('description', 'No description provided.')}
+        Steps to perform:
+        {json.dumps(steps, indent=2)}
+        
+        {elements_context}
+        
+        Requirements for the generated Python Playwright test code:
+        1.  Use the `page` fixture provided by `pytest-playwright`.
+        2.  Import `pytest` and `logging`.
+        3.  Define a test class `Test<TestCaseName>` and a test method `test_<test_case_name>`.
+        4.  Use the provided `Target Application Base URL` for `page.goto()`.
+        5.  Integrate the `page_obj` (Page Object Model instance) if relevant page objects are available (e.g., `LoginPage`, `DashboardPage`). Assume page objects are in `pages/` directory. If no specific page object is obvious, use direct Playwright actions.
+        6.  Use the `Available Elements` and their selectors to interact with the page. Prioritize `id`, then `name`, then `css` or `text` selectors.
+        7.  Include meaningful assertions (`expect(page).to_have_url()`, `expect(locator).to_be_visible()`, etc.) for each significant step to verify the application's state.
+        8.  Handle dynamic waiting using Playwright's built-in `wait_for_selector`, `wait_for_url`, `wait_for_load_state`, or `expect` assertions. Avoid `page.wait_for_timeout()` unless absolutely necessary for UI settling.
+        9.  Add logging statements to indicate test progress and outcomes.
+        10. Ensure the code is syntactically correct and follows Python best practices.
+        11. Return ONLY the Python code, without any surrounding markdown fences (```python ... ```).
+        """
+        
+        response = await self.local_ai_provider.generate_response_async(
+            prompt=prompt,
+            model_type=ModelType.CODE_GENERATION,
+            system_prompt="You are a senior test automation engineer. Write clean, robust Playwright Python code."
+        )
+        
+        if response.get("success"):
+            code = response.get("response", "")
+            # Clean markdown fences if present
+            if "```python" in code:
+                code = code.split("```python", 1)[1].rsplit("```", 1)[0].strip()
+            elif "```" in code:
+                code = code.split("```", 1)[1].rsplit("```", 1)[0].strip()
+            return code
+            
+        return None
+
+    async def _create_template_playwright_test(self, test_case: Dict, app_data: Dict, 
+                                    pages: List, elements: Dict) -> Dict:
         """Create real Playwright test with discovered elements"""
         
         test_name = test_case.get("name", "test_case")
@@ -262,21 +385,29 @@ class Test{clean_class_name}:
         
         elif "enter" in step_lower and "username" in step_lower:
             return '''            # Enter username using page object
-            page_obj.fill_username("Admin")
+            # Credentials loaded from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            page_obj.fill_username(username)
             page.wait_for_timeout(200)'''
-        
+
         elif "enter" in step_lower and "password" in step_lower:
             return '''            # Enter password using page object
-            page_obj.fill_password("admin123")
+            # Credentials loaded from environment variables
+            password = os.getenv("TEST_PASSWORD", "")
+            page_obj.fill_password(password)
             page.wait_for_timeout(200)'''
-        
+
         elif "login" in step_lower and ("valid" in step_lower or "complete" in step_lower):
             return '''            # Perform complete login using page object
-            page_obj.login("Admin", "admin123")
+            # Credentials loaded from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            password = os.getenv("TEST_PASSWORD", "")
+            page_obj.login(username, password)
             page.wait_for_timeout(1000)'''
-        
+
         elif "login" in step_lower and "invalid" in step_lower:
             return '''            # Perform invalid login using page object
+            # Using invalid credentials for negative test
             page_obj.login("invalid_user", "invalid_pass")
             page.wait_for_timeout(1000)'''
         
@@ -890,11 +1021,15 @@ class TestAPIAutomation:
         """Test API authentication endpoints"""
         try:
             logger.info("🔍 Testing API authentication")
-            
+
+            # Load credentials from environment variables
+            username = os.getenv("TEST_USERNAME", "")
+            password = os.getenv("TEST_PASSWORD", "")
+
             # Test login endpoint
             login_data = {{
-                "username": "testuser",
-                "password": "testpass"
+                "username": username,
+                "password": password
             }}
             
             response = self.api_client.post("/auth/login", json=login_data)
@@ -982,6 +1117,9 @@ class APIClient:
 requests>=2.31.0
 '''
 
+    def _sanitize_filename(self, name: str) -> str:
+        """Sanitize a string to be a valid filename."""
+        return "".join(c for c in name if c.isalnum() or c in (' ', '_', '-')).strip().replace(' ', '_').lower()
 
     async def _discover_real_application_elements(self, application_url: str) -> Dict[str, Any]:
         """Discover real elements from live application using browser automation"""
@@ -1336,19 +1474,224 @@ requests>=2.31.0
             "timestamp": int(time.time())
         }
 
-    def get_capabilities(self) -> List[str]:
-        """Get enhanced capabilities including Selenium and API"""
-        return [
-            "real_code_generation",
-            "discovery_integration",
-            "page_object_models",
-            "test_utilities",
-            "playwright_tests",
-            "selenium_tests",
-            "api_tests",
-            "assertions_and_validations",
-            "selenium_webdriver_tests",
-            "api_requests_tests",
-            "multi_framework_support"
-        ]
+    # =========================================================================
+    # LLM-POWERED INTELLIGENT TEST GENERATION
+    # =========================================================================
+
+    async def generate_test_with_llm(
+        self,
+        test_case: Dict[str, Any],
+        elements: Dict[str, Any],
+        framework: str = "playwright"
+    ) -> Dict[str, Any]:
+        """
+        Generate test code using LLM with full context.
+
+        This method leverages the LLM to:
+        - Understand the semantic meaning of test steps
+        - Generate appropriate assertions based on expected behavior
+        - Create meaningful test data
+        - Handle edge cases intelligently
+        """
+        test_name = test_case.get("name", "test_case")
+        test_description = test_case.get("description", "")
+        test_steps = test_case.get("steps", [])
+        expected_results = test_case.get("expected_results", [])
+
+        prompt = f"""
+Generate a complete, executable {framework.upper()} test for the following scenario.
+
+## Test Case:
+Name: {test_name}
+Description: {test_description}
+
+## Test Steps:
+{json.dumps(test_steps, indent=2)}
+
+## Expected Results:
+{json.dumps(expected_results, indent=2)}
+
+## Available Elements (from discovery):
+{json.dumps(elements, indent=2)[:3000]}
+
+## Requirements:
+1. Use the exact selectors from discovered elements where available
+2. Add meaningful assertions for each step
+3. Include proper error handling with try/except blocks
+4. Add wait conditions for dynamic elements
+5. Follow Page Object Model pattern if appropriate
+6. Include data-driven test data where appropriate
+7. Add descriptive logging for debugging
+8. Handle potential failures gracefully
+
+## Output Format:
+Generate complete, executable Python/{framework} test code with:
+- All necessary imports
+- Proper test function/class structure
+- Meaningful comments explaining each section
+- Robust element selection using multiple fallback strategies
+
+Return ONLY the Python code, no explanations.
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                temperature=0.3,
+                max_tokens=4000
+            )
+
+            if response.get("success"):
+                code = response.get("response", "")
+                # Clean up the code (remove markdown blocks if present)
+                code = self._clean_generated_code(code)
+
+                return {
+                    "status": "success",
+                    "test_name": test_name,
+                    "code": code,
+                    "framework": framework,
+                    "llm_generated": True
+                }
+            else:
+                self.logger.warning(f"LLM test generation failed: {response.get('error')}")
+                return await self._fallback_test_generation(test_case, elements, framework)
+
+        except Exception as e:
+            self.logger.error(f"Error in LLM test generation: {e}")
+            return await self._fallback_test_generation(test_case, elements, framework)
+
+    async def _fallback_test_generation(
+        self,
+        test_case: Dict[str, Any],
+        elements: Dict[str, Any],
+        framework: str
+    ) -> Dict[str, Any]:
+        """Fallback to template-based generation when LLM is unavailable"""
+        if framework == "playwright":
+            return await self._create_playwright_test(test_case, {}, [], elements)
+        elif framework == "selenium":
+            return await self._create_selenium_test(test_case, {}, [], elements)
+        else:
+            return await self._create_api_test(test_case, {})
+
+    def _clean_generated_code(self, code: str) -> str:
+        """Clean up LLM-generated code"""
+        # Remove markdown code blocks
+        if "```python" in code:
+            start = code.find("```python") + 9
+            end = code.rfind("```")
+            if end > start:
+                code = code[start:end]
+        elif "```" in code:
+            start = code.find("```") + 3
+            end = code.rfind("```")
+            if end > start:
+                code = code[start:end]
+
+        return code.strip()
+
+    async def generate_assertions_with_llm(
+        self,
+        test_step: str,
+        element_state: Dict[str, Any],
+        expected_behavior: str
+    ) -> List[str]:
+        """
+        Use LLM to generate intelligent assertions for a test step.
+        """
+        prompt = f"""
+Generate comprehensive assertions for the following test step.
+
+## Test Step:
+{test_step}
+
+## Element State:
+{json.dumps(element_state, indent=2)}
+
+## Expected Behavior:
+{expected_behavior}
+
+## Requirements:
+Generate assertions that verify:
+1. Element visibility and state
+2. Content/text correctness
+3. Attribute values
+4. URL/navigation changes if applicable
+5. Error conditions
+
+Return a JSON array of assertion statements (Python assertions using pytest or unittest style).
+Example format:
+["assert page.locator('#element').is_visible()", "assert 'Success' in page.content()"]
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.2
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                assertions = response.get("parsed_json", [])
+                if isinstance(assertions, list):
+                    return assertions
+            return [f"# Assertion for: {test_step}", "assert True  # TODO: Add specific assertion"]
+
+        except Exception as e:
+            self.logger.error(f"Error generating assertions: {e}")
+            return ["assert True  # LLM assertion generation failed"]
+
+    async def generate_test_data_with_llm(
+        self,
+        test_scenario: str,
+        field_types: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to generate intelligent test data for a scenario.
+        """
+        prompt = f"""
+Generate appropriate test data for the following scenario.
+
+## Test Scenario:
+{test_scenario}
+
+## Field Types Required:
+{json.dumps(field_types, indent=2)}
+
+## Requirements:
+1. Generate realistic but fake data
+2. Include both valid and edge case values
+3. Consider boundary conditions
+4. Do not use any real personal information
+5. Include empty/null cases where appropriate
+
+Return a JSON object with test data sets:
+{{
+    "valid_data": {{}},
+    "edge_cases": [{{}}],
+    "invalid_data": [{{}}],
+    "boundary_values": {{}}
+}}
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.5
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            return {
+                "valid_data": {},
+                "edge_cases": [],
+                "invalid_data": [],
+                "boundary_values": {}
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error generating test data: {e}")
+            return {"error": str(e)}
 

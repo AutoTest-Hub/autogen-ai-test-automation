@@ -1,0 +1,11 @@
+Test Run ID,Test Case ID,Test Case Name,Status,Duration (min),Step 1 Result,Step 2 Result,Step 3 Result,Step 4 Result,Step 5 Result,Step 6 Result,Issues Found,Screenshots,Logs,Tester Notes
+TR_20250926_003,TC001,Platform Startup & Health Check,PASS,5,PASS,PASS,PASS,PASS,N/A,N/A,None,N/A,Platform logs,Started successfully
+TR_20250926_003,TC002,User Authentication,PASS,2,PASS,PASS,PASS,PASS,PASS,PASS,None,Login successful,Auth logs,Demo credentials work
+TR_20250926_003,TC003,Test Creation Initiation,PASS,3,PASS,PASS,PASS,PASS,PASS,N/A,None,Test creation UI,E-commerce demo selected
+TR_20250926_003,TC004,Discovery Agent Validation,PASS,2,PASS,PASS,PASS,PASS,PASS,N/A,None,Agent logs,Found 7 scenarios
+TR_20250926_003,TC005,Test Generation Agent Validation,PASS,3,PASS,PASS,PASS,PASS,PASS,N/A,None,Generation logs,Created 7 test cases
+TR_20250926_003,TC006,Code Generation Agent Validation,PASS,5,PASS,PASS,PASS,PASS,PASS,PASS,None,File system,8 files generated
+TR_20250926_003,TC007,Validation Agent Verification,PASS,2,PASS,PASS,PASS,PASS,PASS,N/A,None,Validation logs,All tests validated
+TR_20250926_003,TC008,Database Storage Verification,PASS,10,PASS,PASS,PASS,PASS,PASS,N/A,RLS fixed,DB queries,Metadata saved correctly
+TR_20250926_003,TC009,File Execution Validation,PASS,8,PASS,PASS,PASS,PARTIAL,PASS,PASS,Template logic only,Test execution,Files executable
+TR_20250926_003,TC010,End-to-End Workflow Validation,PASS,10,PASS,PASS,PASS,PASS,PASS,N/A,None,Full workflow,Hybrid architecture working

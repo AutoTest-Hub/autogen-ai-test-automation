@@ -16,6 +16,20 @@ import os
 
 from agents.base_agent import BaseTestAgent
 from config.settings import AgentRole
+from utils.js_discovery_scripts import (
+    JS_DISCOVER_INPUTS,
+    JS_DISCOVER_BUTTONS,
+    JS_DISCOVER_LINKS,
+    JS_DISCOVER_FORMS,
+    JS_DISCOVER_NAVIGATION,
+    JS_DISCOVER_MAIN_PAGES,
+    JS_ANALYZE_PAGE_ELEMENTS,
+    JS_DISCOVER_LOGIN_ELEMENTS,
+    JS_ANALYZE_LOGIN_FORM,
+    JS_DISCOVER_SHOPPING_ELEMENTS,
+    get_element_count_script,
+    get_element_details_script
+)
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -717,7 +731,9 @@ class RealBrowserDiscoveryAgent(BaseTestAgent):
         if "login" in desc_lower or "sign in" in desc_lower:
             if "button" in desc_lower:
                 search_patterns.extend([
-                    "button:has-text(/login|sign in/i)",
+                    "button:has-text('Login')",
+                    "button:has-text('Sign in')",
+                    "button:has-text('Log in')",
                     "input[type='submit'][value*='Login' i]",
                     "[data-testid*='login' i]",
                     "#login, .login-btn, .signin-btn"

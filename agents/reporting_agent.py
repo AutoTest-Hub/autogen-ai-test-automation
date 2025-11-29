@@ -15,6 +15,18 @@ import base64
 from .base_agent import BaseTestAgent
 from config.settings import AgentRole, TestFramework
 
+# PDF generation support
+PDF_GENERATION_AVAILABLE = False
+try:
+    from weasyprint import HTML as WeasyHTML
+    PDF_GENERATION_AVAILABLE = True
+except ImportError:
+    try:
+        from xhtml2pdf import pisa
+        PDF_GENERATION_AVAILABLE = True
+    except ImportError:
+        pass
+
 
 class ReportingAgent(BaseTestAgent):
     """Agent responsible for generating test reports and analytics"""
@@ -167,17 +179,32 @@ You are the Reporting Agent, an expert in test reporting and analytics. Your res
         html_report = self._create_html_report(report)
         html_filename = f"test_report_{report['report_id']}.html"
         html_path = self.save_work_artifact(html_filename, html_report)
-        
+
         # Create JSON report
         json_filename = f"test_report_{report['report_id']}.json"
         json_path = self.save_work_artifact(json_filename, json.dumps(report, indent=2))
-        
-        return {
+
+        # Create PDF report if requested and library is available
+        pdf_path = None
+        if report_config.get("generate_pdf", False):
+            pdf_result = self._create_pdf_report(html_report, report['report_id'])
+            if pdf_result.get("success"):
+                pdf_path = pdf_result.get("path")
+            else:
+                self.logger.warning(f"PDF generation failed: {pdf_result.get('error')}")
+
+        result = {
             "report": report,
             "html_report_path": html_path,
             "json_report_path": json_path,
-            "report_id": report["report_id"]
+            "report_id": report["report_id"],
+            "pdf_generation_available": PDF_GENERATION_AVAILABLE
         }
+
+        if pdf_path:
+            result["pdf_report_path"] = pdf_path
+
+        return result
     
     def _generate_executive_summary(self, execution_data: Dict[str, Any], review_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate executive summary"""
@@ -546,7 +573,63 @@ You are the Reporting Agent, an expert in test reporting and analytics. Your res
             test_results_table=test_results_table,
             recommendations_html=recommendations_html
         )
-    
+
+    def _create_pdf_report(self, html_content: str, report_id: str) -> Dict[str, Any]:
+        """
+        Create PDF report from HTML content.
+
+        Attempts to use weasyprint first, falls back to xhtml2pdf if available.
+        Returns a dict with success status and path or error message.
+        """
+        if not PDF_GENERATION_AVAILABLE:
+            return {
+                "success": False,
+                "error": "PDF generation not available. Install 'weasyprint' or 'xhtml2pdf': pip install weasyprint"
+            }
+
+        pdf_filename = f"test_report_{report_id}.pdf"
+        work_dir = f"./work_dir/{self.name}"
+        os.makedirs(work_dir, exist_ok=True)
+        pdf_path = os.path.join(work_dir, pdf_filename)
+
+        try:
+            # Try weasyprint first (better quality)
+            try:
+                from weasyprint import HTML as WeasyHTML
+                html_doc = WeasyHTML(string=html_content)
+                html_doc.write_pdf(pdf_path)
+                self.logger.info(f"Generated PDF report using weasyprint: {pdf_path}")
+                return {"success": True, "path": pdf_path}
+            except ImportError:
+                pass
+
+            # Fallback to xhtml2pdf
+            try:
+                from xhtml2pdf import pisa
+                with open(pdf_path, "w+b") as pdf_file:
+                    pisa_status = pisa.CreatePDF(html_content, dest=pdf_file)
+                    if pisa_status.err:
+                        return {
+                            "success": False,
+                            "error": f"xhtml2pdf conversion error: {pisa_status.err}"
+                        }
+                self.logger.info(f"Generated PDF report using xhtml2pdf: {pdf_path}")
+                return {"success": True, "path": pdf_path}
+            except ImportError:
+                pass
+
+            return {
+                "success": False,
+                "error": "No PDF library available"
+            }
+
+        except Exception as e:
+            self.logger.error(f"PDF generation failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
     def _extract_key_findings(self, execution_data: Dict[str, Any], review_data: Dict[str, Any]) -> List[str]:
         """Extract key findings from data"""
         findings = []

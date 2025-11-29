@@ -550,8 +550,251 @@ def check_security_issues(code: str) -> List[str]:
     
     if "password" in code.lower() and "=" in code:
         issues.append("Potential security risk: hardcoded password")
-    
+
     return issues
+
+
+# =============================================================================
+# LLM-POWERED INTELLIGENT REVIEW METHODS
+# =============================================================================
+
+class IntelligentReviewMixin:
+    """Mixin class providing LLM-powered review capabilities"""
+
+    async def review_with_llm(
+        self,
+        code: str,
+        requirements: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to perform semantic code review.
+
+        This method goes beyond string matching to actually understand:
+        - Whether the test validates the requirement
+        - If assertions are meaningful and complete
+        - If the test flow makes logical sense
+        - Missing edge cases and error scenarios
+        """
+        import json
+
+        prompt = f"""
+Perform a comprehensive code review of the following test code against the requirements.
+
+## Test Code:
+```python
+{code}
+```
+
+## Original Requirements:
+{json.dumps(requirements, indent=2, default=str)}
+
+## Additional Context:
+{json.dumps(context, indent=2, default=str) if context else "None provided"}
+
+## Review Criteria:
+Analyze the code and provide detailed feedback on:
+
+1. **Requirement Coverage** (1-10): Does the test actually verify the requirement?
+2. **Assertion Quality** (1-10): Are the assertions meaningful and complete?
+3. **Logic Flow** (1-10): Does the test flow make logical sense?
+4. **Error Handling** (1-10): Are error scenarios properly handled?
+5. **Maintainability** (1-10): Is the code readable and maintainable?
+6. **Security** (1-10): Are there any security concerns?
+
+Provide your review in JSON format:
+{{
+    "overall_score": 1-10,
+    "requirement_verified": true/false,
+    "requirement_coverage_explanation": "Detailed explanation",
+    "scores": {{
+        "requirement_coverage": 1-10,
+        "assertion_quality": 1-10,
+        "logic_flow": 1-10,
+        "error_handling": 1-10,
+        "maintainability": 1-10,
+        "security": 1-10
+    }},
+    "issues": [
+        {{
+            "severity": "critical/major/minor/suggestion",
+            "category": "logic/assertion/security/style/performance",
+            "description": "Description of the issue",
+            "line_hint": "approximate location or context",
+            "suggested_fix": "How to fix it"
+        }}
+    ],
+    "strengths": ["List of things done well"],
+    "missing_scenarios": ["Edge cases or scenarios not covered"],
+    "improvement_suggestions": [
+        {{
+            "priority": "high/medium/low",
+            "suggestion": "What to improve",
+            "code_example": "Example code if applicable"
+        }}
+    ],
+    "overall_assessment": "Summary paragraph of the review"
+}}
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.3
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return {
+                    "status": "success",
+                    "review": response.get("parsed_json", {}),
+                    "llm_powered": True
+                }
+            elif response.get("success"):
+                return {
+                    "status": "partial",
+                    "raw_review": response.get("response", ""),
+                    "llm_powered": True,
+                    "parse_error": "Could not parse structured response"
+                }
+            else:
+                return await self._fallback_code_review(code)
+
+        except Exception as e:
+            logging.error(f"LLM review failed: {e}")
+            return await self._fallback_code_review(code)
+
+    async def _fallback_code_review(self, code: str) -> Dict[str, Any]:
+        """Fallback to basic review when LLM is unavailable"""
+        return {
+            "status": "fallback",
+            "llm_powered": False,
+            "review": await self._review_code_snippet(code),
+            "note": "LLM unavailable - using basic heuristic review"
+        }
+
+    async def validate_requirement_coverage_with_llm(
+        self,
+        test_code: str,
+        requirements: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Use LLM to validate if test code covers all requirements.
+        """
+        import json
+
+        prompt = f"""
+Analyze if the following test code adequately covers the specified requirements.
+
+## Test Code:
+```python
+{test_code}
+```
+
+## Requirements to Verify:
+{json.dumps(requirements, indent=2, default=str)}
+
+## Analysis Required:
+For each requirement, determine:
+1. Is it covered by the test? (yes/partial/no)
+2. Which test assertions verify it?
+3. What's missing for complete coverage?
+
+Return JSON:
+{{
+    "overall_coverage_percentage": 0-100,
+    "requirements_analysis": [
+        {{
+            "requirement_id": "ID or description",
+            "coverage_status": "covered/partial/not_covered",
+            "covering_assertions": ["List of assertions that cover this"],
+            "gaps": ["What's missing"],
+            "confidence": "high/medium/low"
+        }}
+    ],
+    "uncovered_requirements": ["List of requirements not covered"],
+    "recommendations": ["How to improve coverage"]
+}}
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.2
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                return response.get("parsed_json", {})
+            return {
+                "overall_coverage_percentage": 0,
+                "requirements_analysis": [],
+                "error": "Could not perform LLM analysis"
+            }
+
+        except Exception as e:
+            logging.error(f"Requirement coverage validation failed: {e}")
+            return {"error": str(e)}
+
+    async def suggest_improvements_with_llm(
+        self,
+        code: str,
+        review_results: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Use LLM to generate specific code improvements.
+        """
+        import json
+
+        prompt = f"""
+Based on the code review results, generate specific code improvements.
+
+## Original Code:
+```python
+{code}
+```
+
+## Review Results:
+{json.dumps(review_results, indent=2, default=str)}
+
+## Generate Improvements:
+For each issue found, provide specific code fixes.
+
+Return JSON array:
+[
+    {{
+        "issue": "What issue this addresses",
+        "priority": "critical/high/medium/low",
+        "original_code": "The problematic code snippet",
+        "improved_code": "The fixed code snippet",
+        "explanation": "Why this improvement helps"
+    }}
+]
+"""
+
+        try:
+            response = await self.generate_llm_response(
+                prompt=prompt,
+                response_format="json",
+                temperature=0.3
+            )
+
+            if response.get("success") and response.get("json_parse_success"):
+                improvements = response.get("parsed_json", [])
+                if isinstance(improvements, list):
+                    return improvements
+            return []
+
+        except Exception as e:
+            logging.error(f"Improvement suggestion failed: {e}")
+            return []
+
+
+# Extend ReviewAgent with LLM capabilities
+ReviewAgent.review_with_llm = IntelligentReviewMixin.review_with_llm
+ReviewAgent.validate_requirement_coverage_with_llm = IntelligentReviewMixin.validate_requirement_coverage_with_llm
+ReviewAgent.suggest_improvements_with_llm = IntelligentReviewMixin.suggest_improvements_with_llm
+ReviewAgent._fallback_code_review = IntelligentReviewMixin._fallback_code_review
 
 
 if __name__ == "__main__":

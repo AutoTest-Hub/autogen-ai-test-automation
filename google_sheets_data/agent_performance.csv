@@ -1,0 +1,9 @@
+Test Run ID,Agent Name,Status,Start Time,End Time,Duration (sec),Scenarios Found,Quality Score,Activities Logged,Output Files,Database Records,Issues,Notes
+TR_20250926_003,Discovery Agent,Completed,15:32:15,15:33:45,90,7,90%,12,0,0,None,Found relevant e-commerce scenarios
+TR_20250926_003,Test Generation Agent,Completed,15:33:45,15:35:45,120,7,85%,15,0,0,None,Generated structured test cases
+TR_20250926_003,Code Generation Agent,Completed,15:35:45,15:38:45,180,7,95%,18,8,1,None,Created Playwright test files
+TR_20250926_003,Validation Agent,Completed,15:38:45,15:39:45,60,7,90%,8,0,0,None,Validated all generated tests
+TR_20250926_002,Discovery Agent,Completed,15:02:15,15:03:45,90,7,90%,12,0,0,None,Good performance
+TR_20250926_002,Test Generation Agent,Completed,15:03:45,15:05:45,120,7,85%,15,0,0,None,Generated test cases
+TR_20250926_002,Code Generation Agent,Completed,15:05:45,15:08:45,180,7,95%,18,7,0,None,Files created but DB failed
+TR_20250926_002,Validation Agent,Completed,15:08:45,15:09:45,60,7,90%,8,0,0,None,Validation completed

@@ -12,7 +12,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib directories (but allow web-dashboard/src/lib)
+/lib/
 lib64/
 parts/
 sdist/
@@ -221,3 +222,5 @@ test_results/
 # Old log files - should not be committed
 test_execution_*.log
 test_evidence_*.png
+web-dashboard/node_modules/
+node_modules/

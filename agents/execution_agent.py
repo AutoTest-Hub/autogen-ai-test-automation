@@ -358,10 +358,18 @@ You are the Execution Agent, an expert in test execution and test environment ma
     def _build_execution_command(self, test_file: str, config: Dict[str, Any]) -> List[str]:
         """Build execution command based on test file type"""
         file_path = Path(test_file)
-        
+
         if file_path.suffix == '.py':
-            # Python test file
-            if 'pytest' in open(test_file).read():
+            # Python test file - check if it's pytest-based
+            is_pytest = False
+            try:
+                with open(test_file, 'r') as f:
+                    content = f.read()
+                    is_pytest = 'pytest' in content or 'import pytest' in content
+            except Exception:
+                pass
+
+            if is_pytest:
                 # Pytest-based test
                 cmd = ["python", "-m", "pytest", test_file]
                 if config.get("verbose", False):
@@ -530,26 +538,187 @@ You are the Execution Agent, an expert in test execution and test environment ma
         browser_setup = {
             "playwright": False,
             "selenium": False,
+            "selenium_drivers": {},
             "errors": []
         }
-        
+
+        # Set up Playwright browsers
         try:
-            # Install Playwright browsers
             process = await asyncio.create_subprocess_exec(
                 "python", "-m", "playwright", "install",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             stdout, stderr = await process.communicate()
-            
+
             if process.returncode == 0:
                 browser_setup["playwright"] = True
+                self.logger.info("Playwright browsers installed successfully")
             else:
                 browser_setup["errors"].append(f"Playwright setup failed: {stderr.decode('utf-8')}")
         except Exception as e:
             browser_setup["errors"].append(f"Playwright setup error: {str(e)}")
-        
+
+        # Set up Selenium WebDriver using webdriver-manager
+        try:
+            selenium_result = await self._setup_selenium_webdriver()
+            browser_setup["selenium"] = selenium_result.get("success", False)
+            browser_setup["selenium_drivers"] = selenium_result.get("drivers", {})
+            if selenium_result.get("errors"):
+                browser_setup["errors"].extend(selenium_result["errors"])
+        except Exception as e:
+            browser_setup["errors"].append(f"Selenium WebDriver setup error: {str(e)}")
+
         return browser_setup
+
+    async def _setup_selenium_webdriver(self) -> Dict[str, Any]:
+        """
+        Set up Selenium WebDriver using webdriver-manager.
+
+        This automatically downloads and sets up the correct browser drivers
+        for Chrome, Firefox, and Edge.
+        """
+        result = {
+            "success": False,
+            "drivers": {},
+            "errors": []
+        }
+
+        try:
+            # First check if webdriver-manager is installed
+            try:
+                import importlib
+                importlib.import_module('webdriver_manager')
+            except ImportError:
+                # Try to install webdriver-manager
+                self.logger.info("Installing webdriver-manager...")
+                process = await asyncio.create_subprocess_exec(
+                    "pip", "install", "webdriver-manager",
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, stderr = await process.communicate()
+                if process.returncode != 0:
+                    result["errors"].append(f"Failed to install webdriver-manager: {stderr.decode('utf-8')}")
+                    return result
+
+            # Set up Chrome WebDriver
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
+                from selenium.webdriver.chrome.service import Service as ChromeService
+
+                chrome_driver_path = ChromeDriverManager().install()
+                result["drivers"]["chrome"] = {
+                    "path": chrome_driver_path,
+                    "available": True
+                }
+                self.logger.info(f"Chrome WebDriver installed: {chrome_driver_path}")
+            except Exception as e:
+                result["drivers"]["chrome"] = {"available": False, "error": str(e)}
+                self.logger.warning(f"Chrome WebDriver setup failed: {e}")
+
+            # Set up Firefox WebDriver (GeckoDriver)
+            try:
+                from webdriver_manager.firefox import GeckoDriverManager
+                from selenium.webdriver.firefox.service import Service as FirefoxService
+
+                firefox_driver_path = GeckoDriverManager().install()
+                result["drivers"]["firefox"] = {
+                    "path": firefox_driver_path,
+                    "available": True
+                }
+                self.logger.info(f"Firefox WebDriver installed: {firefox_driver_path}")
+            except Exception as e:
+                result["drivers"]["firefox"] = {"available": False, "error": str(e)}
+                self.logger.warning(f"Firefox WebDriver setup failed: {e}")
+
+            # Set up Edge WebDriver
+            try:
+                from webdriver_manager.microsoft import EdgeChromiumDriverManager
+                from selenium.webdriver.edge.service import Service as EdgeService
+
+                edge_driver_path = EdgeChromiumDriverManager().install()
+                result["drivers"]["edge"] = {
+                    "path": edge_driver_path,
+                    "available": True
+                }
+                self.logger.info(f"Edge WebDriver installed: {edge_driver_path}")
+            except Exception as e:
+                result["drivers"]["edge"] = {"available": False, "error": str(e)}
+                self.logger.warning(f"Edge WebDriver setup failed: {e}")
+
+            # Mark as successful if at least one driver was set up
+            available_drivers = [d for d in result["drivers"].values() if d.get("available")]
+            result["success"] = len(available_drivers) > 0
+
+            if result["success"]:
+                self.logger.info(f"Selenium WebDriver setup complete: {len(available_drivers)} driver(s) available")
+
+        except Exception as e:
+            result["errors"].append(f"WebDriver setup failed: {str(e)}")
+
+        return result
+
+    def get_selenium_driver(self, browser: str = "chrome", headless: bool = True) -> Optional[Any]:
+        """
+        Get a configured Selenium WebDriver instance.
+
+        Args:
+            browser: Browser to use ("chrome", "firefox", "edge")
+            headless: Whether to run in headless mode
+
+        Returns:
+            Configured WebDriver instance or None if unavailable
+        """
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options as ChromeOptions
+            from selenium.webdriver.firefox.options import Options as FirefoxOptions
+            from selenium.webdriver.edge.options import Options as EdgeOptions
+
+            if browser.lower() == "chrome":
+                from webdriver_manager.chrome import ChromeDriverManager
+                from selenium.webdriver.chrome.service import Service as ChromeService
+
+                options = ChromeOptions()
+                if headless:
+                    options.add_argument("--headless")
+                options.add_argument("--no-sandbox")
+                options.add_argument("--disable-dev-shm-usage")
+                options.add_argument("--disable-gpu")
+
+                service = ChromeService(ChromeDriverManager().install())
+                return webdriver.Chrome(service=service, options=options)
+
+            elif browser.lower() == "firefox":
+                from webdriver_manager.firefox import GeckoDriverManager
+                from selenium.webdriver.firefox.service import Service as FirefoxService
+
+                options = FirefoxOptions()
+                if headless:
+                    options.add_argument("--headless")
+
+                service = FirefoxService(GeckoDriverManager().install())
+                return webdriver.Firefox(service=service, options=options)
+
+            elif browser.lower() == "edge":
+                from webdriver_manager.microsoft import EdgeChromiumDriverManager
+                from selenium.webdriver.edge.service import Service as EdgeService
+
+                options = EdgeOptions()
+                if headless:
+                    options.add_argument("--headless")
+
+                service = EdgeService(EdgeChromiumDriverManager().install())
+                return webdriver.Edge(service=service, options=options)
+
+            else:
+                self.logger.error(f"Unsupported browser: {browser}")
+                return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to create {browser} WebDriver: {e}")
+            return None
     
     def _calculate_execution_summary(self, test_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Calculate execution summary from test results"""

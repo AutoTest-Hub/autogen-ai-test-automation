@@ -1,3 +1,91 @@
+# AI Test Automation SaaS Platform
+
+![AI Test Automation](https://i.imgur.com/8D9jJ9B.png)
+
+**The future of software quality assurance is here.** This is a production-ready, AI-powered SaaS platform for autonomous test automation. It leverages a multi-agent system to provide intelligent test planning, discovery, creation, execution, and reporting, with advanced AI features for self-healing, prioritization, and performance prediction.
+
+## 🚀 Key Features
+
+- **Enhanced Three-Tier System**: Intelligent test generation with basic, intelligent, and advanced tiers.
+- **Multi-Agent Collaboration**: Autonomous agents for planning, discovery, creation, review, execution, and reporting.
+- **Requirements-Driven Configuration**: Use JSON files to define application-specific testing needs.
+- **Advanced AI Capabilities**:
+  - **Self-Healing Tests**: Automatically fix broken tests.
+  - **Intelligent Prioritization**: Focus on the most critical tests.
+  - **Cross-Browser Intelligence**: Generate smart cross-browser plans.
+  - **Performance Prediction**: Identify potential performance bottlenecks.
+- **Production-Ready Infrastructure**:
+  - **REST API**: Programmatic access with authentication and rate limiting.
+  - **Web Dashboard**: Modern React-based UI for test management.
+  - **Containerized**: Docker and Kubernetes support for easy deployment.
+  - **Scalable**: Designed for high availability and performance.
+- **Local AI Integration**: Supports local AI models with Ollama for enterprise deployment.
+
+## 📊 System Architecture
+
+![System Architecture](https://i.imgur.com/s4oXw2Y.png)
+
+The platform is built on a microservices architecture with the following components:
+
+- **Web Dashboard**: React frontend for user interaction.
+- **API Backend**: FastAPI-based service layer for business logic.
+- **AI Agents**: Multi-agent system for intelligent test automation.
+- **Database**: PostgreSQL for persistent data storage.
+- **Cache**: Redis for caching and session management.
+- **Local AI**: Ollama for running local language models.
+- **Monitoring**: Prometheus and Grafana for observability.
+
+## 🔧 Getting Started
+
+### Prerequisites
+
+- Docker and Docker Compose
+- or Kubernetes cluster with `kubectl`
+
+### Deployment
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/AutoTest-Hub/autogen-ai-test-automation.git
+    cd autogen-ai-test-automation
+    ```
+
+2.  **Run the deployment script**:
+    ```bash
+    # For Docker Compose
+    ./scripts/deploy.sh
+
+    # For Kubernetes
+    ./scripts/deploy.sh kubernetes
+    ```
+
+3.  **Access the platform**:
+    - **Web Dashboard**: `http://localhost:3000`
+    - **API Backend**: `http://localhost:8000`
+    - **API Docs**: `http://localhost:8000/docs`
+
+### Default Credentials
+
+- **Admin**: `admin` / `admin123`
+- **Demo**: `demo` / `demo123`
+
+## 📖 Documentation
+
+- **[API Documentation](api/README.md)**: Detailed information about the REST API.
+- **[Deployment Guide](docs/DEPLOYMENT.md)**: In-depth deployment instructions.
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: Comprehensive system architecture.
+- **[Contribution Guide](CONTRIBUTING.md)**: How to contribute to the project.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contribution Guide](CONTRIBUTING.md) for more details.
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
 # 🤖 AutoGen AI Test Automation Framework
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

@@ -295,3 +295,30 @@ Contributors will be recognized in:
 
 Thank you for contributing to the AutoGen AI Test Automation Framework! 🚀
 
+---
+
+# Contributing to the SaaS Platform
+
+This section provides guidelines for contributing to the SaaS platform components, including the API and web dashboard.
+
+## Frontend (Web Dashboard)
+
+- **Framework**: React, Vite
+- **Styling**: Tailwind CSS
+- **Code Style**: Airbnb
+
+## Backend (API)
+
+- **Framework**: Python, FastAPI
+- **Code Style**: PEP 8
+
+## Commit Messages
+
+Please use the following format for your commit messages:
+
+```
+feat(api): Add new endpoint for user management
+fix(web): Fix login form validation
+docs(api): Update API documentation
+```
+
