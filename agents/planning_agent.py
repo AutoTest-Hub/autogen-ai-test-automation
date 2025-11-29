@@ -1,6 +1,12 @@
 """
 Planning Agent for AutoGen Test Automation Framework
 Responsible for analyzing requirements and creating comprehensive test strategies
+
+This agent uses LLM-powered analysis for:
+- Intelligent requirement parsing and understanding
+- Context-aware test planning with discovery data integration
+- Risk assessment based on application complexity
+- Dynamic effort estimation
 """
 
 import json
@@ -54,17 +60,25 @@ Be thorough, analytical, and strategic in your planning approach.
     
     def _register_planning_functions(self):
         """Register planning-specific functions"""
-        
+
+        # Note: These functions are now wrappers that delegate to LLM-powered methods
+        # The actual LLM calls are in the async methods below
+
         def analyze_requirements(requirements_text: str) -> Dict[str, Any]:
-            """Analyze test requirements and extract key information"""
-            # This would be implemented with more sophisticated NLP
-            return {
-                "requirements_analyzed": True,
-                "complexity_score": 0.7,
-                "estimated_effort_hours": 8,
-                "risk_level": "medium"
-            }
-        
+            """Analyze test requirements and extract key information (sync wrapper)"""
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If already in async context, return placeholder
+                    # The actual analysis will be done via async methods
+                    return {"pending": True, "message": "Use async analyze_requirements_with_llm instead"}
+                return loop.run_until_complete(
+                    self.analyze_requirements_with_llm(requirements_text)
+                )
+            except RuntimeError:
+                return {"pending": True, "message": "Use async analyze_requirements_with_llm instead"}
+
         def create_test_matrix(scenarios: List[str]) -> Dict[str, Any]:
             """Create a test coverage matrix"""
             return {
@@ -72,19 +86,232 @@ Be thorough, analytical, and strategic in your planning approach.
                 "total_scenarios": len(scenarios),
                 "coverage_percentage": 85
             }
-        
+
         def assess_risk(test_plan: Dict[str, Any]) -> Dict[str, Any]:
-            """Assess risks in the test plan"""
-            return {
-                "risk_assessment_complete": True,
-                "high_risk_areas": ["authentication", "payment_processing"],
-                "mitigation_strategies": ["additional_validation", "error_handling"]
-            }
-        
+            """Assess risks in the test plan (sync wrapper)"""
+            import asyncio
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    return {"pending": True, "message": "Use async assess_risk_with_llm instead"}
+                return loop.run_until_complete(
+                    self.assess_risk_with_llm(test_plan)
+                )
+            except RuntimeError:
+                return {"pending": True, "message": "Use async assess_risk_with_llm instead"}
+
         # Register functions with the agent
         self.register_function(analyze_requirements, "Analyze test requirements and extract key information")
         self.register_function(create_test_matrix, "Create a comprehensive test coverage matrix")
         self.register_function(assess_risk, "Assess risks and create mitigation strategies")
+
+    # =========================================================================
+    # LLM-Powered Analysis Methods
+    # =========================================================================
+
+    async def analyze_requirements_with_llm(
+        self,
+        requirements_text: str,
+        discovery_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Analyze test requirements using LLM for intelligent understanding.
+
+        This replaces the hardcoded analysis with actual AI-powered reasoning.
+
+        Args:
+            requirements_text: Raw requirements text to analyze
+            discovery_data: Optional discovery data from DiscoveryAgent
+
+        Returns:
+            Dict with complexity_score, estimated_effort_hours, risk_level, etc.
+        """
+        self.logger.info("Analyzing requirements with LLM...")
+
+        # Build context from discovery data if available
+        discovery_context = ""
+        if discovery_data:
+            pages = discovery_data.get("discovered_pages", [])
+            elements = discovery_data.get("discovered_elements", {})
+            discovery_context = f"""
+## Application Context (from Discovery):
+- Discovered Pages: {len(pages)}
+- Page URLs: {[p.get('url', 'unknown') for p in pages[:5]]}
+- Total Interactive Elements: {len(elements.get('elements', [])) if isinstance(elements, dict) else len(elements)}
+- Element Types Found: {self._summarize_elements(elements)}
+"""
+
+        prompt = f"""Analyze the following test requirements and provide a structured assessment.
+
+## Requirements:
+{requirements_text}
+{discovery_context}
+
+Analyze these requirements and return a JSON response with the following structure:
+{{
+    "requirements_analyzed": true,
+    "complexity_score": <float 0.0-1.0 based on requirements complexity>,
+    "estimated_effort_hours": <integer estimate of hours needed>,
+    "risk_level": "<low|medium|high|critical>",
+    "key_features": [<list of main features to test>],
+    "test_types_needed": [<list like "functional", "integration", "ui", "api">],
+    "priority_areas": [<list of high-priority test areas>],
+    "potential_challenges": [<list of testing challenges identified>],
+    "recommended_approach": "<brief strategy recommendation>"
+}}
+
+Consider:
+1. Number and complexity of features mentioned
+2. Integration points and dependencies
+3. Security-sensitive areas (auth, payments, data handling)
+4. UI complexity vs API complexity
+5. Data validation requirements
+
+Return ONLY valid JSON, no additional text."""
+
+        response = await self.generate_llm_response(
+            prompt=prompt,
+            response_format="json",
+            temperature=0.3  # Lower temperature for more consistent analysis
+        )
+
+        if response.get("success") and isinstance(response.get("response"), dict):
+            result = response["response"]
+            result["llm_provider"] = response.get("provider", "unknown")
+            result["analysis_method"] = "llm_powered"
+            self.logger.info(f"LLM analysis complete: complexity={result.get('complexity_score')}, risk={result.get('risk_level')}")
+            return result
+        else:
+            # Fallback to heuristic analysis if LLM fails
+            self.logger.warning("LLM analysis failed, using heuristic fallback")
+            return self._heuristic_requirements_analysis(requirements_text)
+
+    async def assess_risk_with_llm(
+        self,
+        test_plan: Dict[str, Any],
+        discovery_data: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Assess risks in the test plan using LLM intelligence.
+
+        Args:
+            test_plan: The test plan to assess
+            discovery_data: Optional discovery data for context
+
+        Returns:
+            Dict with risk assessment details
+        """
+        self.logger.info("Assessing risks with LLM...")
+
+        prompt = f"""Analyze the following test plan and assess potential risks.
+
+## Test Plan:
+{json.dumps(test_plan, indent=2, default=str)[:3000]}
+
+Provide a risk assessment in JSON format:
+{{
+    "risk_assessment_complete": true,
+    "overall_risk_level": "<low|medium|high|critical>",
+    "high_risk_areas": [<list of specific high-risk areas>],
+    "risk_factors": [
+        {{"area": "<area name>", "risk": "<description>", "severity": "<low|medium|high>", "mitigation": "<suggestion>"}}
+    ],
+    "mitigation_strategies": [<list of recommended mitigations>],
+    "testing_gaps": [<areas that may need additional testing>],
+    "confidence_score": <float 0.0-1.0 indicating confidence in assessment>
+}}
+
+Consider:
+1. Authentication and authorization flows
+2. Data handling and validation
+3. External integrations and dependencies
+4. Performance under load
+5. Error handling and edge cases
+6. Security vulnerabilities
+
+Return ONLY valid JSON."""
+
+        response = await self.generate_llm_response(
+            prompt=prompt,
+            response_format="json",
+            temperature=0.3
+        )
+
+        if response.get("success") and isinstance(response.get("response"), dict):
+            result = response["response"]
+            result["analysis_method"] = "llm_powered"
+            return result
+        else:
+            # Fallback
+            return {
+                "risk_assessment_complete": True,
+                "overall_risk_level": "medium",
+                "high_risk_areas": ["authentication", "data_validation"],
+                "mitigation_strategies": ["comprehensive_testing", "security_review"],
+                "analysis_method": "heuristic_fallback"
+            }
+
+    def _summarize_elements(self, elements: Any) -> str:
+        """Summarize discovered elements for context"""
+        if isinstance(elements, dict):
+            element_list = elements.get("elements", [])
+        elif isinstance(elements, list):
+            element_list = elements
+        else:
+            return "unknown"
+
+        types = {}
+        for elem in element_list[:50]:  # Sample first 50
+            if isinstance(elem, dict):
+                elem_type = elem.get("type", elem.get("category", "unknown"))
+                types[elem_type] = types.get(elem_type, 0) + 1
+
+        return ", ".join([f"{k}:{v}" for k, v in types.items()])
+
+    def _heuristic_requirements_analysis(self, requirements_text: str) -> Dict[str, Any]:
+        """Fallback heuristic analysis when LLM is unavailable"""
+        text_lower = requirements_text.lower()
+
+        # Calculate complexity based on keywords
+        complexity_keywords = {
+            "authentication": 0.15, "login": 0.1, "payment": 0.2,
+            "integration": 0.15, "api": 0.1, "database": 0.15,
+            "security": 0.15, "validation": 0.1, "upload": 0.1,
+            "real-time": 0.15, "concurrent": 0.15, "multi-tenant": 0.2
+        }
+
+        complexity = 0.3  # Base complexity
+        for keyword, weight in complexity_keywords.items():
+            if keyword in text_lower:
+                complexity += weight
+
+        complexity = min(complexity, 1.0)
+
+        # Estimate effort based on text length and complexity
+        word_count = len(requirements_text.split())
+        base_hours = max(4, word_count // 50)
+        estimated_hours = int(base_hours * (1 + complexity))
+
+        # Determine risk level
+        high_risk_keywords = ["payment", "authentication", "security", "sensitive", "pii"]
+        risk_count = sum(1 for k in high_risk_keywords if k in text_lower)
+
+        if risk_count >= 3:
+            risk_level = "high"
+        elif risk_count >= 1:
+            risk_level = "medium"
+        else:
+            risk_level = "low"
+
+        return {
+            "requirements_analyzed": True,
+            "complexity_score": round(complexity, 2),
+            "estimated_effort_hours": estimated_hours,
+            "risk_level": risk_level,
+            "analysis_method": "heuristic_fallback",
+            "key_features": ["Extracted from requirements text"],
+            "test_types_needed": ["functional", "integration"]
+        }
     
     async def process_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process planning tasks"""
@@ -114,38 +341,72 @@ Be thorough, analytical, and strategic in your planning approach.
             raise
     
     async def _create_test_plan(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Create a comprehensive test plan"""
+        """
+        Create a comprehensive test plan with LLM-powered intelligence.
+
+        Enhanced to integrate with discovery data for context-aware planning.
+        """
         requirements = task_data.get("requirements", {})
         test_files = task_data.get("test_files", [])
-        
+        discovery_data = task_data.get("discovery_data", {})  # NEW: Discovery integration
+
         self.logger.info(f"Creating test plan for {len(test_files)} test files")
-        
+
+        # Extract requirements text for LLM analysis
+        requirements_text = ""
+        if isinstance(requirements, str):
+            requirements_text = requirements
+        elif isinstance(requirements, dict):
+            requirements_text = requirements.get("description", "") or json.dumps(requirements, indent=2)
+
+        # Use LLM to analyze requirements with discovery context
+        requirements_analysis = await self.analyze_requirements_with_llm(
+            requirements_text,
+            discovery_data=discovery_data
+        )
+
         # Analyze each test file
         test_scenarios = []
         for test_file in test_files:
             scenario = await self._analyze_test_file(test_file)
             test_scenarios.append(scenario)
-        
+
+        # Generate test cases from discovery data if available
+        if discovery_data:
+            discovered_test_cases = await self._generate_test_cases_from_discovery(
+                discovery_data, requirements_analysis
+            )
+            test_scenarios.extend(discovered_test_cases)
+
+        # Assess risk with LLM
+        risk_assessment = await self.assess_risk_with_llm(
+            {"scenarios": test_scenarios, "requirements": requirements_analysis},
+            discovery_data=discovery_data
+        )
+
         # Create comprehensive test plan
         test_plan = {
             "plan_id": f"plan_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "created_at": datetime.now().isoformat(),
             "requirements_summary": requirements,
+            "requirements_analysis": requirements_analysis,  # NEW: LLM analysis
             "test_scenarios": test_scenarios,
-            "risk_assessment": self._assess_overall_risk(test_scenarios),
+            "risk_assessment": risk_assessment,  # NEW: LLM-powered risk assessment
             "resource_estimation": self._estimate_resources(test_scenarios),
             "execution_strategy": self._recommend_execution_strategy(test_scenarios),
             "quality_gates": self._define_quality_gates(test_scenarios),
             "timeline": self._create_timeline(test_scenarios),
+            "discovery_integrated": bool(discovery_data),  # NEW: Track discovery usage
+            "llm_powered": True  # NEW: Flag for LLM usage
         }
-        
+
         # Save the test plan
         plan_file = self.save_work_artifact(
             f"test_plan_{test_plan['plan_id']}.json",
             test_plan,
             "json"
         )
-        
+
         return {
             "status": "success",
             "test_plan": test_plan,
@@ -153,10 +414,85 @@ Be thorough, analytical, and strategic in your planning approach.
             "summary": {
                 "total_scenarios": len(test_scenarios),
                 "estimated_hours": test_plan["resource_estimation"]["total_hours"],
-                "risk_level": test_plan["risk_assessment"]["overall_risk"],
-                "recommended_framework": test_plan["execution_strategy"]["framework"]
+                "risk_level": risk_assessment.get("overall_risk_level", "medium"),
+                "recommended_framework": test_plan["execution_strategy"]["framework"],
+                "discovery_integrated": bool(discovery_data),
+                "analysis_method": requirements_analysis.get("analysis_method", "unknown")
             }
         }
+
+    async def _generate_test_cases_from_discovery(
+        self,
+        discovery_data: Dict[str, Any],
+        requirements_analysis: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate test case scenarios from discovery data using LLM.
+
+        This creates intelligent test cases based on discovered application elements.
+        """
+        self.logger.info("Generating test cases from discovery data...")
+
+        pages = discovery_data.get("discovered_pages", [])
+        elements = discovery_data.get("discovered_elements", {})
+        base_url = discovery_data.get("base_url", "")
+
+        if not pages and not elements:
+            return []
+
+        # Prepare discovery summary for LLM
+        discovery_summary = {
+            "pages": [{"url": p.get("url"), "title": p.get("title", "")} for p in pages[:10]],
+            "element_types": self._summarize_elements(elements),
+            "base_url": base_url
+        }
+
+        prompt = f"""Based on the discovered application structure, generate test case scenarios.
+
+## Discovery Data:
+{json.dumps(discovery_summary, indent=2)}
+
+## Requirements Analysis:
+- Key Features: {requirements_analysis.get('key_features', [])}
+- Test Types Needed: {requirements_analysis.get('test_types_needed', [])}
+- Priority Areas: {requirements_analysis.get('priority_areas', [])}
+
+Generate test scenarios in JSON format:
+{{
+    "test_cases": [
+        {{
+            "name": "<descriptive test name>",
+            "description": "<what the test validates>",
+            "priority": "<High|Medium|Low>",
+            "test_type": "<functional|integration|ui|api>",
+            "steps": [<list of test steps>],
+            "expected_results": [<list of expected outcomes>],
+            "required_framework": "<playwright|selenium|requests>",
+            "uses_discovery_selectors": true
+        }}
+    ]
+}}
+
+Generate 3-5 high-value test cases based on the discovered elements.
+Return ONLY valid JSON."""
+
+        response = await self.generate_llm_response(
+            prompt=prompt,
+            response_format="json",
+            temperature=0.4
+        )
+
+        if response.get("success") and isinstance(response.get("response"), dict):
+            test_cases = response["response"].get("test_cases", [])
+            # Mark as discovery-generated
+            for tc in test_cases:
+                tc["generated_from"] = "discovery_data"
+                tc["llm_generated"] = True
+            self.logger.info(f"Generated {len(test_cases)} test cases from discovery")
+            return test_cases
+        else:
+            self.logger.warning("Failed to generate test cases from discovery")
+            return []
     
     async def _analyze_test_file(self, test_file: Dict[str, Any]) -> Dict[str, Any]:
         """Analyze a single test file and create scenario details"""

@@ -1,70 +1,146 @@
 """
 Base Agent class for AutoGen Test Automation Framework
 Enhanced with Local AI Provider integration for enterprise deployment
+
+This module provides the foundation for all AI-powered agents in the test automation
+framework. It includes:
+- Unified LLM response generation (local and external)
+- Response caching for performance optimization
+- Retry logic with exponential backoff
+- Proper error handling and metrics tracking
 """
 
 import asyncio
 import json
 import logging
+import hashlib
+import time
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from functools import lru_cache
 
-import autogen_agentchat as autogen
-from autogen_agentchat.agents import AssistantAgent as ConversableAgent, UserProxyAgent
+# Try to import AutoGen - make it optional
+try:
+    import autogen_agentchat as autogen
+    from autogen_agentchat.agents import AssistantAgent as ConversableAgent, UserProxyAgent
+    AUTOGEN_AVAILABLE = True
+except ImportError:
+    autogen = None
+    ConversableAgent = None
+    UserProxyAgent = None
+    AUTOGEN_AVAILABLE = False
+
 from config.settings import settings, AgentRole, LLMProvider
 from models.local_ai_provider import LocalAIProvider, ModelType
 
+# Try to import external LLM libraries
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+except ImportError:
+    openai = None
+    OPENAI_AVAILABLE = False
+
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    anthropic = None
+    ANTHROPIC_AVAILABLE = False
+
 
 class BaseTestAgent(ABC):
-    """Base class for all test automation agents"""
-    
+    """
+    Base class for all test automation agents.
+
+    Provides unified LLM access with support for:
+    - Local AI (Ollama) for enterprise/offline deployment
+    - External LLMs (OpenAI, Anthropic) for cloud deployment
+    - Response caching for repeated queries
+    - Retry logic with exponential backoff
+    - Comprehensive error handling and metrics
+    """
+
+    # Class-level response cache for performance
+    _response_cache: Dict[str, Dict[str, Any]] = {}
+    _cache_max_size: int = 100
+    _cache_ttl_seconds: int = 3600  # 1 hour default TTL
+
     def __init__(
-        self, 
+        self,
         role: AgentRole,
         name: Optional[str] = None,
         system_message: Optional[str] = None,
         llm_provider: Optional[LLMProvider] = None,
         local_ai_provider: Optional[LocalAIProvider] = None,
+        enable_caching: bool = True,
+        max_retries: int = 3,
         **kwargs
     ):
         self.role = role
         self.name = name or f"{role.value}_agent"
         self.llm_provider = llm_provider or settings.default_llm_provider
         self.logger = logging.getLogger(f"agent.{self.name}")
-        
+
+        # LLM configuration
+        self.enable_caching = enable_caching
+        self.max_retries = max_retries
+
         # Initialize local AI provider for enterprise deployment
         self.local_ai_provider = local_ai_provider or LocalAIProvider()
         self.model_type = self._get_model_type_for_role(role)
-        
+
         # Check if local AI is available, fallback to external if needed
         self.use_local_ai = self.local_ai_provider.is_available()
         if self.use_local_ai:
             self.logger.info(f"Using local AI models for {self.name}")
         else:
-            self.logger.warning(f"Local AI not available for {self.name}, using external LLM")
-        
+            self.logger.info(f"Local AI not available for {self.name}, will use external LLM")
+
+        # Initialize OpenAI client if available
+        self._openai_client = None
+        if OPENAI_AVAILABLE:
+            llm_config = settings.get_llm_config(LLMProvider.OPENAI)
+            api_key = llm_config.get("api_key")
+            if api_key:
+                self._openai_client = openai.AsyncOpenAI(api_key=api_key)
+                self.logger.info(f"OpenAI client initialized for {self.name}")
+
+        # Initialize Anthropic client if available
+        self._anthropic_client = None
+        if ANTHROPIC_AVAILABLE:
+            llm_config = settings.get_llm_config(LLMProvider.ANTHROPIC)
+            api_key = llm_config.get("api_key")
+            if api_key:
+                self._anthropic_client = anthropic.AsyncAnthropic(api_key=api_key)
+                self.logger.info(f"Anthropic client initialized for {self.name}")
+
         # Get agent configuration
         self.config = settings.get_agent_config(role)
         if system_message:
             self.config["system_message"] = system_message
-        
+
         # Update config with any additional kwargs
         self.config.update(kwargs)
-        
-        # Initialize the AutoGen agent
+
+        # Initialize the AutoGen agent (optional, for backward compatibility)
         self.agent = self._create_autogen_agent()
-        
+
         # Agent state and metrics
         self.state = {
             "status": "initialized",
             "tasks_completed": 0,
             "errors": 0,
+            "llm_calls": 0,
+            "cache_hits": 0,
+            "total_tokens": 0,
             "last_activity": datetime.now(),
             "local_ai_enabled": self.use_local_ai,
-            "model_type": self.model_type.value if self.model_type else None
+            "model_type": self.model_type.value if self.model_type else None,
+            "llm_provider": self.llm_provider.value if self.llm_provider else None
         }
-        
+
         self.logger.info(f"Initialized {self.name} with role {role.value}")
     
     def _get_model_type_for_role(self, role: AgentRole) -> Optional[ModelType]:
@@ -144,7 +220,316 @@ class BaseTestAgent(ABC):
     def get_capabilities(self) -> List[str]:
         """Get list of capabilities this agent provides"""
         pass
-    
+
+    # =========================================================================
+    # LLM Integration Methods - Core Intelligence Layer
+    # =========================================================================
+
+    def _get_cache_key(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Generate cache key from prompt and system prompt"""
+        content = f"{system_prompt or self.config.get('system_message', '')}:{prompt}"
+        return hashlib.md5(content.encode()).hexdigest()
+
+    def _check_cache(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """Check if response is cached and still valid"""
+        if not self.enable_caching:
+            return None
+
+        if cache_key in self._response_cache:
+            cached = self._response_cache[cache_key]
+            cache_age = time.time() - cached.get("timestamp", 0)
+            if cache_age < self._cache_ttl_seconds:
+                self.state["cache_hits"] += 1
+                self.logger.debug(f"Cache hit for key {cache_key[:8]}...")
+                return cached.get("response")
+            else:
+                # Cache expired, remove it
+                del self._response_cache[cache_key]
+
+        return None
+
+    def _store_cache(self, cache_key: str, response: Dict[str, Any]):
+        """Store response in cache"""
+        if not self.enable_caching:
+            return
+
+        # Implement simple LRU by removing oldest if at capacity
+        if len(self._response_cache) >= self._cache_max_size:
+            oldest_key = min(
+                self._response_cache.keys(),
+                key=lambda k: self._response_cache[k].get("timestamp", 0)
+            )
+            del self._response_cache[oldest_key]
+
+        self._response_cache[cache_key] = {
+            "response": response,
+            "timestamp": time.time()
+        }
+
+    async def generate_llm_response(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        response_format: str = "text",
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        use_cache: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Generate response using configured LLM provider.
+
+        This is the primary method for agents to get LLM-powered responses.
+        It automatically handles:
+        - Provider selection (Local AI -> OpenAI -> Anthropic)
+        - Response caching
+        - Retry logic with exponential backoff
+        - Error handling and metrics tracking
+
+        Args:
+            prompt: The user prompt/question
+            system_prompt: Optional system prompt (uses agent config if not provided)
+            response_format: "text" or "json"
+            temperature: Override default temperature
+            max_tokens: Override default max tokens
+            use_cache: Whether to use response caching
+
+        Returns:
+            Dict with:
+                - success: bool
+                - response: str or dict (parsed JSON if response_format="json")
+                - provider: str (which LLM was used)
+                - tokens: int (approximate token count)
+                - cached: bool
+                - error: str (if success=False)
+        """
+        self.state["llm_calls"] += 1
+        effective_system_prompt = system_prompt or self.config.get("system_message", "")
+
+        # Check cache first
+        if use_cache and self.enable_caching:
+            cache_key = self._get_cache_key(prompt, effective_system_prompt)
+            cached_response = self._check_cache(cache_key)
+            if cached_response:
+                return {**cached_response, "cached": True}
+
+        # Try providers in order of preference
+        last_error = None
+
+        for attempt in range(self.max_retries):
+            try:
+                # 1. Try Local AI first (if available)
+                if self.use_local_ai and self.local_ai_provider.is_available():
+                    response = await self._call_local_ai(
+                        prompt, effective_system_prompt, temperature, max_tokens
+                    )
+                    if response.get("success"):
+                        result = self._process_llm_response(response, "local_ai", response_format)
+                        if use_cache and self.enable_caching:
+                            self._store_cache(cache_key, result)
+                        return result
+
+                # 2. Try OpenAI
+                if self._openai_client:
+                    response = await self._call_openai(
+                        prompt, effective_system_prompt, temperature, max_tokens, response_format
+                    )
+                    if response.get("success"):
+                        result = self._process_llm_response(response, "openai", response_format)
+                        if use_cache and self.enable_caching:
+                            self._store_cache(cache_key, result)
+                        return result
+
+                # 3. Try Anthropic
+                if self._anthropic_client:
+                    response = await self._call_anthropic(
+                        prompt, effective_system_prompt, temperature, max_tokens
+                    )
+                    if response.get("success"):
+                        result = self._process_llm_response(response, "anthropic", response_format)
+                        if use_cache and self.enable_caching:
+                            self._store_cache(cache_key, result)
+                        return result
+
+                # No provider available
+                raise RuntimeError("No LLM provider available. Configure OpenAI, Anthropic, or Local AI.")
+
+            except Exception as e:
+                last_error = str(e)
+                self.logger.warning(f"LLM call attempt {attempt + 1} failed: {e}")
+                if attempt < self.max_retries - 1:
+                    # Exponential backoff
+                    await asyncio.sleep(2 ** attempt)
+
+        # All retries failed
+        self.state["errors"] += 1
+        return {
+            "success": False,
+            "error": f"All LLM providers failed after {self.max_retries} attempts. Last error: {last_error}",
+            "cached": False
+        }
+
+    async def _call_local_ai(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: Optional[float],
+        max_tokens: Optional[int]
+    ) -> Dict[str, Any]:
+        """Call local AI (Ollama) provider"""
+        try:
+            result = await self.local_ai_provider.generate_response_async(
+                prompt=prompt,
+                model_type=self.model_type,
+                system_prompt=system_prompt
+            )
+            return result
+        except Exception as e:
+            self.logger.error(f"Local AI call failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def _call_openai(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: Optional[float],
+        max_tokens: Optional[int],
+        response_format: str
+    ) -> Dict[str, Any]:
+        """Call OpenAI API"""
+        if not self._openai_client:
+            return {"success": False, "error": "OpenAI client not initialized"}
+
+        try:
+            llm_config = settings.get_llm_config(LLMProvider.OPENAI)
+            model = llm_config.get("model", "gpt-4o")
+            temp = temperature if temperature is not None else llm_config.get("temperature", 0.1)
+            tokens = max_tokens if max_tokens is not None else llm_config.get("max_tokens", 4000)
+
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt}
+            ]
+
+            # Add JSON mode if requested
+            kwargs = {}
+            if response_format == "json":
+                kwargs["response_format"] = {"type": "json_object"}
+
+            response = await self._openai_client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temp,
+                max_tokens=tokens,
+                **kwargs
+            )
+
+            content = response.choices[0].message.content
+            usage = response.usage
+
+            self.state["total_tokens"] += usage.total_tokens if usage else 0
+
+            return {
+                "success": True,
+                "response": content,
+                "tokens": usage.total_tokens if usage else 0,
+                "model": model
+            }
+
+        except Exception as e:
+            self.logger.error(f"OpenAI call failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def _call_anthropic(
+        self,
+        prompt: str,
+        system_prompt: str,
+        temperature: Optional[float],
+        max_tokens: Optional[int]
+    ) -> Dict[str, Any]:
+        """Call Anthropic API"""
+        if not self._anthropic_client:
+            return {"success": False, "error": "Anthropic client not initialized"}
+
+        try:
+            llm_config = settings.get_llm_config(LLMProvider.ANTHROPIC)
+            model = llm_config.get("model", "claude-3-5-sonnet-20241022")
+            temp = temperature if temperature is not None else llm_config.get("temperature", 0.1)
+            tokens = max_tokens if max_tokens is not None else llm_config.get("max_tokens", 4000)
+
+            response = await self._anthropic_client.messages.create(
+                model=model,
+                max_tokens=tokens,
+                temperature=temp,
+                system=system_prompt,
+                messages=[{"role": "user", "content": prompt}]
+            )
+
+            content = response.content[0].text
+            usage_tokens = response.usage.input_tokens + response.usage.output_tokens
+
+            self.state["total_tokens"] += usage_tokens
+
+            return {
+                "success": True,
+                "response": content,
+                "tokens": usage_tokens,
+                "model": model
+            }
+
+        except Exception as e:
+            self.logger.error(f"Anthropic call failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    def _process_llm_response(
+        self,
+        response: Dict[str, Any],
+        provider: str,
+        response_format: str
+    ) -> Dict[str, Any]:
+        """Process and format LLM response"""
+        content = response.get("response", "")
+
+        # Parse JSON if requested
+        if response_format == "json" and isinstance(content, str):
+            try:
+                # Try to extract JSON from response
+                content = content.strip()
+                if content.startswith("```json"):
+                    content = content[7:]
+                if content.startswith("```"):
+                    content = content[3:]
+                if content.endswith("```"):
+                    content = content[:-3]
+                content = json.loads(content.strip())
+            except json.JSONDecodeError:
+                # Return as-is if JSON parsing fails
+                self.logger.warning("Failed to parse JSON response, returning as text")
+
+        return {
+            "success": True,
+            "response": content,
+            "provider": provider,
+            "tokens": response.get("tokens", 0),
+            "model": response.get("model", "unknown"),
+            "cached": False
+        }
+
+    def generate_llm_response_sync(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        response_format: str = "text",
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Synchronous wrapper for generate_llm_response"""
+        return asyncio.get_event_loop().run_until_complete(
+            self.generate_llm_response(prompt, system_prompt, response_format, **kwargs)
+        )
+
+    # =========================================================================
+    # End of LLM Integration Methods
+    # =========================================================================
+
     def update_state(self, status: str, **kwargs):
         """Update agent state"""
         self.state.update({
@@ -159,17 +544,26 @@ class BaseTestAgent(ABC):
         return self.state.copy()
     
     def get_metrics(self) -> Dict[str, Any]:
-        """Get agent performance metrics"""
+        """Get agent performance metrics including LLM usage"""
         return {
             "name": self.name,
             "role": self.role.value,
             "tasks_completed": self.state["tasks_completed"],
             "errors": self.state["errors"],
             "success_rate": (
-                (self.state["tasks_completed"] - self.state["errors"]) / 
+                (self.state["tasks_completed"] - self.state["errors"]) /
                 max(self.state["tasks_completed"], 1)
             ),
             "last_activity": self.state["last_activity"],
+            # LLM metrics
+            "llm_calls": self.state.get("llm_calls", 0),
+            "cache_hits": self.state.get("cache_hits", 0),
+            "total_tokens": self.state.get("total_tokens", 0),
+            "cache_hit_rate": (
+                self.state.get("cache_hits", 0) /
+                max(self.state.get("llm_calls", 0), 1)
+            ),
+            "llm_provider": self.state.get("llm_provider", "unknown"),
         }
     
     async def send_message(

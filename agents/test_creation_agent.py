@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+"""
+Enhanced Test Creation Agent
+===========================
+This enhanced version generates real working test code using LLM intelligence,
+integrating properly with Discovery Agent data for context-aware test generation.
+
+Key Features:
+- LLM-powered test step generation
+- Discovery data integration for real selectors
+- Intelligent assertion generation
+- Multiple framework support (Playwright, Selenium, API)
+"""
 
 # Real Browser Discovery Integration
 from playwright.async_api import async_playwright
@@ -5,20 +18,10 @@ import json
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
-#!/usr/bin/env python3
-"""
-Enhanced Test Creation Agent
-===========================
-This enhanced version generates real working test code instead of templates,
-integrating properly with Discovery Agent data.
-"""
-
 import asyncio
-import json
 import logging
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from agents.base_agent import BaseTestAgent
@@ -77,30 +80,282 @@ class EnhancedTestCreationAgent(BaseTestAgent):
             "playwright_tests",
             "selenium_tests",
             "api_tests",
-            "assertions_and_validations"
+            "assertions_and_validations",
+            "llm_powered_generation"
         ]
+
+    # =========================================================================
+    # LLM-Powered Test Generation Methods
+    # =========================================================================
+
+    async def generate_test_with_llm(
+        self,
+        test_case: Dict[str, Any],
+        discovery_data: Dict[str, Any],
+        framework: str = "playwright"
+    ) -> Dict[str, Any]:
+        """
+        Generate a complete test file using LLM with discovered selectors.
+
+        This is the primary method for intelligent test generation that:
+        1. Uses actual selectors from discovery
+        2. Generates contextual assertions
+        3. Creates maintainable, well-structured code
+
+        Args:
+            test_case: Test case specification with name, steps, etc.
+            discovery_data: Discovery results with real selectors
+            framework: Target framework (playwright, selenium, requests)
+
+        Returns:
+            Dict with generated test file path and metadata
+        """
+        self.logger.info(f"Generating test with LLM: {test_case.get('name', 'unnamed')}")
+
+        # Extract relevant selectors from discovery
+        selectors = self._extract_relevant_selectors(test_case, discovery_data)
+        base_url = discovery_data.get("base_url", "https://example.com")
+
+        test_name = test_case.get("name", "test_case")
+        description = test_case.get("description", "Generated test case")
+        steps = test_case.get("steps", [])
+
+        prompt = f"""Generate a complete {framework} test file for the following test case.
+
+## Test Case:
+- Name: {test_name}
+- Description: {description}
+- Steps: {json.dumps(steps, indent=2)}
+
+## Available Selectors (from live discovery):
+{json.dumps(selectors, indent=2)}
+
+## Base URL: {base_url}
+
+Generate a complete, executable Python test file that:
+1. Uses the EXACT selectors provided above (from discovery)
+2. Includes proper imports and fixtures
+3. Has meaningful assertions for each step
+4. Follows {framework} best practices
+5. Uses page object pattern if appropriate
+6. Includes error handling and logging
+
+Return the complete Python code wrapped in ```python``` markers.
+Do NOT use placeholder selectors - use the real ones from discovery."""
+
+        response = await self.generate_llm_response(
+            prompt=prompt,
+            response_format="text",
+            temperature=0.2  # Low temperature for consistent code
+        )
+
+        if response.get("success"):
+            code = self._extract_code_from_response(response.get("response", ""))
+            if code:
+                # Save the generated test
+                clean_name = test_name.lower().replace(" ", "_").replace("-", "_")
+                test_file_path = Path("./tests") / f"test_{clean_name}.py"
+                test_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+                with open(test_file_path, 'w') as f:
+                    f.write(code)
+
+                self.logger.info(f"Generated LLM test: {test_file_path}")
+
+                return {
+                    "status": "success",
+                    "type": "test",
+                    "framework": framework,
+                    "path": str(test_file_path),
+                    "name": f"test_{clean_name}.py",
+                    "selectors_used": list(selectors.keys()),
+                    "llm_generated": True,
+                    "provider": response.get("provider", "unknown")
+                }
+
+        # Fallback to template-based generation
+        self.logger.warning("LLM generation failed, using template fallback")
+        return await self._create_playwright_test(
+            test_case,
+            {"base_url": base_url},
+            discovery_data.get("discovered_pages", []),
+            discovery_data.get("discovered_elements", {})
+        )
+
+    def _extract_relevant_selectors(
+        self,
+        test_case: Dict[str, Any],
+        discovery_data: Dict[str, Any]
+    ) -> Dict[str, str]:
+        """
+        Extract selectors relevant to the test case from discovery data.
+
+        Maps test steps to actual discovered selectors.
+        """
+        selectors = {}
+        elements = discovery_data.get("discovered_elements", {})
+
+        # Handle different element structures
+        element_list = []
+        if isinstance(elements, dict):
+            element_list = elements.get("elements", [])
+            # Also check for login_elements, form_elements, etc.
+            for key in ["login_elements", "form_elements", "interactive_elements"]:
+                if key in elements:
+                    element_list.extend(elements[key])
+        elif isinstance(elements, list):
+            element_list = elements
+
+        # Map elements to standard selector names
+        for elem in element_list:
+            if not isinstance(elem, dict):
+                continue
+
+            elem_type = elem.get("type", "").lower()
+            elem_name = elem.get("name", "").lower()
+            elem_selectors = elem.get("selectors", {})
+
+            # Get best available selector
+            best_selector = (
+                elem_selectors.get("id") or
+                elem_selectors.get("name") or
+                elem_selectors.get("css") or
+                elem_selectors.get("class") or
+                elem_selectors.get("text")
+            )
+
+            if not best_selector:
+                continue
+
+            # Map to standard names
+            if "username" in elem_type or "username" in elem_name:
+                selectors["username_input"] = best_selector
+            elif elem_type == "password" or "password" in elem_name:
+                selectors["password_input"] = best_selector
+            elif "login" in elem_name or "login" in elem_type or "submit" in elem_type:
+                if "button" in elem.get("category", "").lower() or "button" in elem_type:
+                    selectors["login_button"] = best_selector
+            elif "email" in elem_name:
+                selectors["email_input"] = best_selector
+
+        # Add selectors from pages if available
+        pages = discovery_data.get("discovered_pages", [])
+        if pages:
+            for page in pages:
+                page_elements = page.get("elements", [])
+                for elem in page_elements:
+                    if isinstance(elem, dict):
+                        elem_name = elem.get("name", "").lower()
+                        elem_selectors = elem.get("selectors", {})
+                        best_selector = (
+                            elem_selectors.get("name") or
+                            elem_selectors.get("id") or
+                            elem_selectors.get("css")
+                        )
+                        if best_selector and elem_name:
+                            selectors[f"{elem_name}_selector"] = best_selector
+
+        return selectors
+
+    def _extract_code_from_response(self, response: str) -> Optional[str]:
+        """Extract Python code from LLM response"""
+        if "```python" in response:
+            parts = response.split("```python")
+            if len(parts) > 1:
+                code = parts[1].split("```")[0]
+                return code.strip()
+        elif "```" in response:
+            parts = response.split("```")
+            if len(parts) > 1:
+                code = parts[1]
+                if code.startswith("python\n"):
+                    code = code[7:]
+                return code.strip()
+        # Return as-is if no code blocks
+        return response.strip() if response.strip().startswith("import") else None
+
+    async def generate_assertions_with_llm(
+        self,
+        step: str,
+        context: Dict[str, Any]
+    ) -> List[str]:
+        """Generate meaningful assertions for a test step using LLM"""
+
+        prompt = f"""Generate pytest assertions for this test step:
+
+Step: {step}
+Context: {json.dumps(context, indent=2)}
+
+Return a JSON array of assertion code strings. Examples:
+["assert page.url.endswith('/dashboard')", "assert element.is_visible()"]
+
+Return ONLY the JSON array."""
+
+        response = await self.generate_llm_response(
+            prompt=prompt,
+            response_format="json",
+            temperature=0.2
+        )
+
+        if response.get("success"):
+            result = response.get("response")
+            if isinstance(result, list):
+                return result
+            elif isinstance(result, dict) and "assertions" in result:
+                return result["assertions"]
+
+        # Fallback assertions
+        return ["assert page.url is not None, 'Page should be loaded'"]
     
     async def _generate_real_test_code(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate real executable test code"""
+        """
+        Generate real executable test code with LLM intelligence.
+
+        Enhanced to use LLM for intelligent test generation when available,
+        with fallback to template-based generation.
+        """
         try:
             self.update_state("processing")
-            
+
             test_plan = task_data.get("test_plan", {})
             application_data = task_data.get("application_data", {})
-            
+            discovery_data = task_data.get("discovery_data", application_data)  # Support both keys
+
             # Extract real data from Discovery Agent
-            discovered_pages = application_data.get("discovered_pages", [])
-            discovered_elements = application_data.get("discovered_elements", {})
-            user_workflows = application_data.get("user_workflows", [])
-            base_url = application_data.get("base_url", "https://example.com")
-            
+            discovered_pages = discovery_data.get("discovered_pages", [])
+            discovered_elements = discovery_data.get("discovered_elements", {})
+            user_workflows = discovery_data.get("user_workflows", [])
+            base_url = discovery_data.get("base_url", application_data.get("base_url", "https://example.com"))
+
             generated_files = []
-            
+            llm_generated_count = 0
+            template_generated_count = 0
+
             # Generate test cases from test plan
             test_cases = test_plan.get("test_cases", [])
             framework = test_plan.get("framework", "playwright")
-            
+
+            # Prepare discovery data for LLM
+            llm_discovery_data = {
+                "discovered_pages": discovered_pages,
+                "discovered_elements": discovered_elements,
+                "base_url": base_url
+            }
+
             for test_case in test_cases:
+                # Try LLM-powered generation first
+                if discovered_pages or discovered_elements:
+                    test_file = await self.generate_test_with_llm(
+                        test_case=test_case,
+                        discovery_data=llm_discovery_data,
+                        framework=framework
+                    )
+                    if test_file.get("llm_generated"):
+                        llm_generated_count += 1
+                        generated_files.append(test_file)
+                        continue
+
+                # Fallback to template-based generation
                 if framework == "playwright":
                     test_file = await self._create_playwright_test(
                         test_case, application_data, discovered_pages, discovered_elements
@@ -113,34 +368,38 @@ class EnhancedTestCreationAgent(BaseTestAgent):
                     test_file = await self._create_api_test(
                         test_case, application_data
                     )
-                
+
                 if test_file:
+                    template_generated_count += 1
                     generated_files.append(test_file)
-            
+
             # Generate page objects if we have discovered pages
             if discovered_pages:
                 page_objects = await self._create_page_objects_from_discovery(
                     discovered_pages, discovered_elements, framework
                 )
                 generated_files.extend(page_objects)
-            
+
             # Generate configuration and utilities
             config_files = await self._create_configuration_files(
                 framework, base_url, application_data
             )
             generated_files.extend(config_files)
-            
+
             self.update_state("completed")
-            
+
             return {
                 "status": "completed",
                 "generated_files": generated_files,
                 "framework": framework,
                 "total_tests": len(test_cases),
                 "base_url": base_url,
-                "discovery_integration": "enabled" if discovered_pages else "disabled"
+                "discovery_integration": "enabled" if discovered_pages else "disabled",
+                "llm_generated_tests": llm_generated_count,
+                "template_generated_tests": template_generated_count,
+                "generation_method": "llm_powered" if llm_generated_count > 0 else "template"
             }
-            
+
         except Exception as e:
             self.logger.error(f"Enhanced test generation failed: {str(e)}")
             self.update_state("error")
