@@ -71,7 +71,7 @@ class EnhancedTestCreationAgent(BaseTestAgent):
             }
     
     def get_capabilities(self) -> List[str]:
-        """Get enhanced capabilities"""
+        """Get enhanced capabilities including LLM-powered generation"""
         return [
             "real_code_generation",
             "discovery_integration",
@@ -81,7 +81,10 @@ class EnhancedTestCreationAgent(BaseTestAgent):
             "selenium_tests",
             "api_tests",
             "assertions_and_validations",
-            "llm_powered_generation"
+            "llm_powered_generation",
+            "selenium_webdriver_tests",
+            "api_requests_tests",
+            "multi_framework_support"
         ]
 
     # =========================================================================
@@ -510,30 +513,37 @@ class Test{clean_class_name}:
     def _generate_real_playwright_step(self, step: str, elements: Dict, step_num: int) -> str:
         """Generate real Playwright code for a test step using page objects"""
         step_lower = step.lower()
-        
+
         if "navigate" in step_lower or "go to" in step_lower:
             return "            # Navigate using page object\n            page_obj.navigate()"
-        
+
         elif "click" in step_lower and "login" in step_lower:
             return '''            # Click login button using page object
             page_obj.click_login()
             page.wait_for_timeout(500)'''
-        
+
         elif "enter" in step_lower and "username" in step_lower:
-            return '''            # Enter username using page object
-            page_obj.fill_username("Admin")
+            return '''            # Enter username using page object - uses environment variable
+            import os
+            test_username = os.environ.get("TEST_USERNAME", "testuser")
+            page_obj.fill_username(test_username)
             page.wait_for_timeout(200)'''
-        
+
         elif "enter" in step_lower and "password" in step_lower:
-            return '''            # Enter password using page object
-            page_obj.fill_password("admin123")
+            return '''            # Enter password using page object - uses environment variable
+            import os
+            test_password = os.environ.get("TEST_PASSWORD", "testpass")
+            page_obj.fill_password(test_password)
             page.wait_for_timeout(200)'''
-        
+
         elif "login" in step_lower and ("valid" in step_lower or "complete" in step_lower):
-            return '''            # Perform complete login using page object
-            page_obj.login("Admin", "admin123")
+            return '''            # Perform complete login using page object - uses environment variables
+            import os
+            test_username = os.environ.get("TEST_USERNAME", "testuser")
+            test_password = os.environ.get("TEST_PASSWORD", "testpass")
+            page_obj.login(test_username, test_password)
             page.wait_for_timeout(1000)'''
-        
+
         elif "login" in step_lower and "invalid" in step_lower:
             return '''            # Perform invalid login using page object
             page_obj.login("invalid_user", "invalid_pass")
@@ -1594,20 +1604,4 @@ requests>=2.31.0
             "discovery_type": "enhanced_mock",
             "timestamp": int(time.time())
         }
-
-    def get_capabilities(self) -> List[str]:
-        """Get enhanced capabilities including Selenium and API"""
-        return [
-            "real_code_generation",
-            "discovery_integration",
-            "page_object_models",
-            "test_utilities",
-            "playwright_tests",
-            "selenium_tests",
-            "api_tests",
-            "assertions_and_validations",
-            "selenium_webdriver_tests",
-            "api_requests_tests",
-            "multi_framework_support"
-        ]
 

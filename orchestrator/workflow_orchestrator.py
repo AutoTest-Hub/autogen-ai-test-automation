@@ -1,12 +1,18 @@
 """
 Workflow Orchestrator for AutoGen Test Automation Framework
 Manages complex multi-agent workflows and coordination
+
+Key Features:
+- Workflow step execution with dependency management
+- Review-refinement loops for iterative test improvement
+- Self-healing integration for automatic test repair
+- Message-based agent coordination via AgentMessageBus
 """
 
 import asyncio
 import logging
 import json
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, TYPE_CHECKING
 from datetime import datetime, timedelta
 from enum import Enum
 from dataclasses import dataclass, asdict
@@ -14,6 +20,21 @@ import uuid
 
 from config.settings import settings, AgentRole
 from parsers.unified_parser import UnifiedTestFileParser, ParsedTestFile
+
+# Import message protocol for agent communication
+from .agent_protocol import (
+    AgentMessageBus,
+    AgentMessage,
+    MessageType,
+    MessagePriority,
+    ReviewFeedback,
+    HealingRequest,
+    create_review_request,
+    create_review_feedback,
+    create_healing_request,
+    create_task_request,
+    create_status_update,
+)
 
 
 class WorkflowStatus(str, Enum):
@@ -72,29 +93,59 @@ class WorkflowExecution:
 
 class WorkflowOrchestrator:
     """Orchestrates complex multi-agent workflows for test automation"""
-    
+
     def __init__(self):
         self.logger = logging.getLogger("orchestrator.workflow")
         self.parser = UnifiedTestFileParser()
-        
+
         # Workflow management
         self.active_workflows: Dict[str, WorkflowExecution] = {}
         self.workflow_history: List[WorkflowExecution] = []
-        
+
         # Agent management
         self.available_agents: Dict[AgentRole, Any] = {}
         self.agent_workloads: Dict[AgentRole, int] = {}
-        
+
+        # Message bus for agent communication
+        self.message_bus = AgentMessageBus()
+
+        # Review-refinement configuration
+        self.review_config = {
+            "min_approval_score": 7.0,  # Minimum score (1-10) to pass review
+            "max_refinement_iterations": 3,  # Maximum refinement attempts
+            "require_all_issues_resolved": False,  # Must all issues be resolved
+            "auto_approve_score": 9.0,  # Score to auto-approve without changes
+        }
+
+        # Self-healing configuration
+        self.healing_config = {
+            "enabled": True,
+            "max_healing_attempts": 3,
+            "auto_heal_selector_errors": True,
+            "auto_heal_timeout_errors": True,
+        }
+
         # Workflow templates
         self.workflow_templates = self._initialize_workflow_templates()
-        
+
         # Execution statistics
         self.execution_stats = {
             "total_workflows": 0,
             "successful_workflows": 0,
             "failed_workflows": 0,
             "average_duration": 0.0,
-            "agent_utilization": {}
+            "agent_utilization": {},
+            "refinement_stats": {
+                "total_refinements": 0,
+                "successful_refinements": 0,
+                "average_iterations": 0.0,
+            },
+            "healing_stats": {
+                "total_healing_requests": 0,
+                "successful_heals": 0,
+                "selector_fixes": 0,
+                "timeout_fixes": 0,
+            },
         }
     
     def _initialize_workflow_templates(self) -> Dict[str, Dict[str, Any]]:
@@ -236,6 +287,60 @@ class WorkflowOrchestrator:
                         "dependencies": ["quality_analysis"]
                     }
                 ]
+            },
+            "iterative_test_generation": {
+                "name": "Iterative Test Generation with Review-Refinement",
+                "description": "AI-powered test generation with iterative review and refinement loops",
+                "steps": [
+                    {
+                        "id": "discover_application",
+                        "name": "Discover Application Elements",
+                        "agent_role": AgentRole.DISCOVERY,
+                        "task_type": "discover_elements",
+                        "dependencies": []
+                    },
+                    {
+                        "id": "analyze_and_plan",
+                        "name": "Analyze and Create Test Plan",
+                        "agent_role": AgentRole.PLANNING,
+                        "task_type": "create_plan_with_discovery",
+                        "dependencies": ["discover_application"]
+                    },
+                    {
+                        "id": "generate_tests",
+                        "name": "Generate Test Code",
+                        "agent_role": AgentRole.TEST_CREATION,
+                        "task_type": "generate_tests",
+                        "dependencies": ["analyze_and_plan"]
+                    },
+                    {
+                        "id": "review_and_refine",
+                        "name": "Review and Refine Tests",
+                        "agent_role": AgentRole.ORCHESTRATOR,
+                        "task_type": "review_refinement_loop",
+                        "dependencies": ["generate_tests"]
+                    },
+                    {
+                        "id": "execute_tests",
+                        "name": "Execute Tests with Self-Healing",
+                        "agent_role": AgentRole.EXECUTION,
+                        "task_type": "execute_with_healing",
+                        "dependencies": ["review_and_refine"]
+                    },
+                    {
+                        "id": "generate_report",
+                        "name": "Generate Comprehensive Report",
+                        "agent_role": AgentRole.REPORTING,
+                        "task_type": "generate_report",
+                        "dependencies": ["execute_tests"]
+                    }
+                ],
+                "config": {
+                    "enable_refinement_loop": True,
+                    "enable_self_healing": True,
+                    "max_refinement_iterations": 3,
+                    "min_approval_score": 7.0
+                }
             }
         }
     
@@ -470,6 +575,23 @@ class WorkflowOrchestrator:
                     "type": "generate_report",
                     **input_data
                 })
+            elif step.task_type == "review_refinement_loop":
+                # Special handling for review-refinement loop
+                result = await self._execute_review_refinement_loop(input_data)
+            elif step.task_type == "execute_with_healing":
+                # Special handling for execution with self-healing
+                result = await self._execute_with_self_healing(input_data)
+            elif step.task_type == "discover_elements":
+                result = await agent.process_task({
+                    "type": "discover",
+                    **input_data
+                })
+            elif step.task_type == "create_plan_with_discovery":
+                result = await agent.process_task({
+                    "type": "create_plan",
+                    "use_discovery_data": True,
+                    **input_data
+                })
             else:
                 result = await agent.process_task({
                     "type": step.task_type,
@@ -532,12 +654,491 @@ class WorkflowOrchestrator:
             "total_files": len(test_files),
             "successfully_parsed": len(parsed_files)
         }
-    
+
+    # ==========================================
+    # Review-Refinement Loop Implementation
+    # ==========================================
+
+    async def _execute_review_refinement_loop(
+        self, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Execute the review-refinement loop for iterative test improvement.
+
+        This method:
+        1. Sends generated tests to ReviewAgent for review
+        2. If review score < threshold, sends feedback to TestCreationAgent
+        3. TestCreationAgent refines tests based on feedback
+        4. Loop continues until approval or max iterations reached
+
+        Args:
+            input_data: Contains generated tests and discovery data
+
+        Returns:
+            Final approved tests with review history
+        """
+        self.logger.info("Starting review-refinement loop")
+
+        # Get configuration
+        min_score = self.review_config["min_approval_score"]
+        max_iterations = self.review_config["max_refinement_iterations"]
+        auto_approve_score = self.review_config["auto_approve_score"]
+
+        # Extract test data from previous step
+        generated_tests = input_data.get("generate_tests_result", {})
+        discovery_data = input_data.get("discover_application_result", {})
+        test_plan = input_data.get("analyze_and_plan_result", {})
+
+        # Track refinement history
+        refinement_history = []
+        current_tests = generated_tests
+        iteration = 0
+        approved = False
+
+        while iteration < max_iterations and not approved:
+            iteration += 1
+            self.logger.info(f"Review-refinement iteration {iteration}/{max_iterations}")
+
+            # Step 1: Send tests to review agent
+            review_result = await self._request_review(current_tests, iteration)
+
+            review_score = review_result.get("overall_score", 0)
+            issues = review_result.get("review_results", {}).get("reviews", [{}])[0].get("issues", [])
+            recommendations = review_result.get("review_results", {}).get("recommendations", [])
+
+            self.logger.info(f"Review score: {review_score}/10, Issues: {len(issues)}")
+
+            # Record this iteration
+            refinement_history.append({
+                "iteration": iteration,
+                "review_score": review_score,
+                "issues_count": len(issues),
+                "issues": issues,
+                "recommendations": recommendations,
+                "timestamp": datetime.now().isoformat(),
+            })
+
+            # Step 2: Check if approved
+            if review_score >= auto_approve_score:
+                self.logger.info(f"Tests auto-approved with score {review_score}")
+                approved = True
+                break
+            elif review_score >= min_score and len(issues) == 0:
+                self.logger.info(f"Tests approved with score {review_score}")
+                approved = True
+                break
+            elif iteration >= max_iterations:
+                self.logger.warning(
+                    f"Max refinement iterations reached. Final score: {review_score}"
+                )
+                break
+
+            # Step 3: Request refinement from TestCreationAgent
+            self.logger.info(f"Requesting refinement based on {len(issues)} issues")
+
+            refinement_feedback = ReviewFeedback(
+                approved=False,
+                score=review_score / 10.0,  # Normalize to 0-1
+                issues=[{"description": issue} for issue in issues],
+                suggestions=recommendations,
+                requires_changes=True,
+                change_requests=[
+                    {"type": "fix_issue", "details": issue} for issue in issues
+                ],
+                review_notes=f"Iteration {iteration}: Score {review_score}/10. Please address the identified issues.",
+            )
+
+            current_tests = await self._request_refinement(
+                current_tests=current_tests,
+                feedback=refinement_feedback,
+                discovery_data=discovery_data,
+                test_plan=test_plan,
+                iteration=iteration,
+            )
+
+        # Update statistics
+        self.execution_stats["refinement_stats"]["total_refinements"] += 1
+        if approved:
+            self.execution_stats["refinement_stats"]["successful_refinements"] += 1
+
+        # Update average iterations
+        current_avg = self.execution_stats["refinement_stats"]["average_iterations"]
+        total = self.execution_stats["refinement_stats"]["total_refinements"]
+        self.execution_stats["refinement_stats"]["average_iterations"] = (
+            (current_avg * (total - 1) + iteration) / total
+        )
+
+        return {
+            "status": "approved" if approved else "max_iterations_reached",
+            "final_tests": current_tests,
+            "final_score": refinement_history[-1]["review_score"] if refinement_history else 0,
+            "total_iterations": iteration,
+            "refinement_history": refinement_history,
+            "approved": approved,
+        }
+
+    async def _request_review(
+        self, tests: Dict[str, Any], iteration: int
+    ) -> Dict[str, Any]:
+        """
+        Request a review from the ReviewAgent.
+
+        Uses message bus for structured communication if available,
+        falls back to direct agent call.
+        """
+        review_agent = self.available_agents.get(AgentRole.REVIEW)
+        if not review_agent:
+            raise ValueError("No review agent available")
+
+        # Prepare test files for review
+        test_files = tests.get("generated_test_files", [])
+        test_code = tests.get("test_code", "")
+
+        # Create review request message
+        review_message = create_review_request(
+            sender="orchestrator",
+            recipient="review_agent",
+            items_to_review=[
+                {
+                    "type": "test_code",
+                    "files": test_files,
+                    "code": test_code,
+                    "iteration": iteration,
+                }
+            ],
+            review_type="test_code_review",
+            context={"iteration": iteration, "source": "refinement_loop"},
+        )
+
+        # Try message bus first
+        if "review_agent" in self.message_bus.message_handlers:
+            response = await self.message_bus.send_message(
+                review_message, wait_for_response=True, timeout=60.0
+            )
+            if response and response.payload:
+                return response.payload
+
+        # Fallback to direct agent call
+        return await review_agent.process_task({
+            "type": "review_code",
+            "test_files": test_files,
+            "test_code": test_code,
+            "iteration": iteration,
+        })
+
+    async def _request_refinement(
+        self,
+        current_tests: Dict[str, Any],
+        feedback: ReviewFeedback,
+        discovery_data: Dict[str, Any],
+        test_plan: Dict[str, Any],
+        iteration: int,
+    ) -> Dict[str, Any]:
+        """
+        Request test refinement from TestCreationAgent based on review feedback.
+        """
+        test_creation_agent = self.available_agents.get(AgentRole.TEST_CREATION)
+        if not test_creation_agent:
+            raise ValueError("No test creation agent available")
+
+        # Create refinement request
+        refinement_request = create_task_request(
+            sender="orchestrator",
+            recipient="test_creation_agent",
+            task_type="refine_tests",
+            task_data={
+                "current_tests": current_tests,
+                "feedback": feedback.to_dict(),
+                "discovery_data": discovery_data,
+                "test_plan": test_plan,
+                "iteration": iteration,
+            },
+            priority=MessagePriority.HIGH,
+        )
+
+        # Try message bus first
+        if "test_creation_agent" in self.message_bus.message_handlers:
+            response = await self.message_bus.send_message(
+                refinement_request, wait_for_response=True, timeout=120.0
+            )
+            if response and response.payload:
+                return response.payload.get("refined_tests", current_tests)
+
+        # Fallback to direct agent call
+        result = await test_creation_agent.process_task({
+            "type": "refine_tests",
+            "current_tests": current_tests,
+            "feedback": feedback.to_dict(),
+            "discovery_data": discovery_data,
+            "test_plan": test_plan,
+            "iteration": iteration,
+        })
+
+        return result.get("refined_tests", result)
+
+    # ==========================================
+    # Self-Healing Execution Implementation
+    # ==========================================
+
+    async def _execute_with_self_healing(
+        self, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Execute tests with automatic self-healing for failures.
+
+        This method:
+        1. Executes tests via ExecutionAgent
+        2. On selector/timeout failures, invokes SelfHealingAgent
+        3. SelfHealingAgent fixes the test using discovery data
+        4. Re-executes the fixed test
+        5. Continues until all tests pass or max attempts reached
+
+        Args:
+            input_data: Contains approved tests and discovery data
+
+        Returns:
+            Execution results with healing history
+        """
+        if not self.healing_config["enabled"]:
+            # Self-healing disabled, run normal execution
+            return await self._execute_tests_normal(input_data)
+
+        self.logger.info("Starting test execution with self-healing")
+
+        # Get agents
+        execution_agent = self.available_agents.get(AgentRole.EXECUTION)
+        healing_agent = self.available_agents.get(AgentRole.SELF_HEALING)
+
+        if not execution_agent:
+            raise ValueError("No execution agent available")
+
+        # Extract test data
+        approved_tests = input_data.get("review_and_refine_result", {})
+        final_tests = approved_tests.get("final_tests", {})
+        discovery_data = input_data.get("discover_application_result", {})
+
+        max_attempts = self.healing_config["max_healing_attempts"]
+        healing_history = []
+        execution_results = []
+
+        # Get list of test files to execute
+        test_files = final_tests.get("generated_test_files", [])
+
+        for test_file in test_files:
+            attempt = 0
+            test_passed = False
+            current_test = test_file
+
+            while attempt < max_attempts and not test_passed:
+                attempt += 1
+                self.logger.info(f"Executing test {test_file}, attempt {attempt}/{max_attempts}")
+
+                # Execute the test
+                result = await execution_agent.process_task({
+                    "type": "execute_single_test",
+                    "test_file": current_test,
+                    "attempt": attempt,
+                })
+
+                execution_results.append({
+                    "test_file": current_test,
+                    "attempt": attempt,
+                    "result": result,
+                })
+
+                if result.get("status") == "passed":
+                    test_passed = True
+                    self.logger.info(f"Test {test_file} passed on attempt {attempt}")
+                    break
+
+                # Check if we can heal this error
+                error_type = result.get("error_type", "")
+                error_message = result.get("error_message", "")
+
+                can_heal = self._can_heal_error(error_type)
+
+                if not can_heal or not healing_agent or attempt >= max_attempts:
+                    self.logger.warning(
+                        f"Cannot heal error for {test_file}: {error_type}"
+                    )
+                    break
+
+                # Request healing
+                self.logger.info(f"Requesting healing for {test_file}: {error_type}")
+
+                healing_request = HealingRequest(
+                    test_file_path=current_test,
+                    error_type=error_type,
+                    error_message=error_message,
+                    stack_trace=result.get("stack_trace", ""),
+                    failed_selector=result.get("failed_selector"),
+                    discovery_data=discovery_data,
+                    max_attempts=max_attempts,
+                    current_attempt=attempt,
+                )
+
+                healing_result = await self._request_healing(healing_request)
+
+                healing_history.append({
+                    "test_file": test_file,
+                    "attempt": attempt,
+                    "error_type": error_type,
+                    "healing_result": healing_result,
+                    "timestamp": datetime.now().isoformat(),
+                })
+
+                if healing_result.get("status") == "healed":
+                    current_test = healing_result.get("healed_test_file", current_test)
+                    self._update_healing_stats(error_type, success=True)
+                else:
+                    self._update_healing_stats(error_type, success=False)
+                    break
+
+        # Calculate final results
+        total_tests = len(test_files)
+        passed_tests = sum(
+            1 for r in execution_results
+            if r["result"].get("status") == "passed"
+        )
+
+        return {
+            "status": "completed",
+            "total_tests": total_tests,
+            "passed_tests": passed_tests,
+            "failed_tests": total_tests - passed_tests,
+            "pass_rate": (passed_tests / total_tests * 100) if total_tests > 0 else 0,
+            "execution_results": execution_results,
+            "healing_history": healing_history,
+            "healing_attempts": len(healing_history),
+        }
+
+    def _can_heal_error(self, error_type: str) -> bool:
+        """Check if an error type can be healed automatically."""
+        healable_selector_errors = [
+            "element_not_found",
+            "selector_timeout",
+            "stale_element",
+            "element_not_visible",
+            "element_not_interactable",
+        ]
+        healable_timeout_errors = [
+            "timeout",
+            "navigation_timeout",
+            "wait_timeout",
+        ]
+
+        error_lower = error_type.lower()
+
+        if self.healing_config["auto_heal_selector_errors"]:
+            if any(err in error_lower for err in healable_selector_errors):
+                return True
+
+        if self.healing_config["auto_heal_timeout_errors"]:
+            if any(err in error_lower for err in healable_timeout_errors):
+                return True
+
+        return False
+
+    async def _request_healing(
+        self, healing_request: HealingRequest
+    ) -> Dict[str, Any]:
+        """
+        Request test healing from SelfHealingAgent.
+        """
+        healing_agent = self.available_agents.get(AgentRole.SELF_HEALING)
+        if not healing_agent:
+            return {"status": "no_healing_agent", "healed": False}
+
+        # Create healing message
+        healing_message = create_healing_request(
+            sender="orchestrator",
+            recipient="self_healing_agent",
+            request=healing_request,
+        )
+
+        # Try message bus first
+        if "self_healing_agent" in self.message_bus.message_handlers:
+            response = await self.message_bus.send_message(
+                healing_message, wait_for_response=True, timeout=60.0
+            )
+            if response and response.payload:
+                return response.payload
+
+        # Fallback to direct agent call
+        return await healing_agent.process_task({
+            "type": "heal_test",
+            **healing_request.to_dict(),
+        })
+
+    async def _execute_tests_normal(
+        self, input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Execute tests without self-healing (fallback)."""
+        execution_agent = self.available_agents.get(AgentRole.EXECUTION)
+        if not execution_agent:
+            raise ValueError("No execution agent available")
+
+        approved_tests = input_data.get("review_and_refine_result", {})
+        final_tests = approved_tests.get("final_tests", {})
+
+        return await execution_agent.process_task({
+            "type": "execute_tests",
+            "test_files": final_tests.get("generated_test_files", []),
+        })
+
+    def _update_healing_stats(self, error_type: str, success: bool):
+        """Update healing statistics."""
+        stats = self.execution_stats["healing_stats"]
+        stats["total_healing_requests"] += 1
+
+        if success:
+            stats["successful_heals"] += 1
+
+        error_lower = error_type.lower()
+        if "selector" in error_lower or "element" in error_lower:
+            stats["selector_fixes"] += 1 if success else 0
+        elif "timeout" in error_lower:
+            stats["timeout_fixes"] += 1 if success else 0
+
+    # ==========================================
+    # Agent Registration with Message Bus
+    # ==========================================
+
     def register_agent(self, agent_role: AgentRole, agent_instance: Any):
-        """Register an agent for workflow execution"""
+        """Register an agent for workflow execution and message bus communication."""
         self.available_agents[agent_role] = agent_instance
         self.agent_workloads[agent_role] = 0
+
+        # Register with message bus if agent has handle_message method
+        agent_name = self._get_agent_bus_name(agent_role)
+        if hasattr(agent_instance, "handle_message"):
+            self.message_bus.register_agent(agent_name, agent_instance.handle_message)
+            self.logger.info(f"Registered agent {agent_name} with message bus")
+
         self.logger.info(f"Registered agent for role {agent_role}")
+
+    def _get_agent_bus_name(self, agent_role: AgentRole) -> str:
+        """Get the message bus name for an agent role."""
+        role_to_name = {
+            AgentRole.DISCOVERY: "discovery_agent",
+            AgentRole.PLANNING: "planning_agent",
+            AgentRole.TEST_CREATION: "test_creation_agent",
+            AgentRole.REVIEW: "review_agent",
+            AgentRole.EXECUTION: "execution_agent",
+            AgentRole.SELF_HEALING: "self_healing_agent",
+            AgentRole.REPORTING: "reporting_agent",
+            AgentRole.ORCHESTRATOR: "orchestrator",
+        }
+        return role_to_name.get(agent_role, f"{agent_role.value}_agent")
+
+    def unregister_agent(self, agent_role: AgentRole):
+        """Unregister an agent from workflow execution and message bus."""
+        if agent_role in self.available_agents:
+            agent_name = self._get_agent_bus_name(agent_role)
+            self.message_bus.unregister_agent(agent_name)
+            del self.available_agents[agent_role]
+            del self.agent_workloads[agent_role]
+            self.logger.info(f"Unregistered agent for role {agent_role}")
     
     def get_workflow_status(self, workflow_id: str) -> Dict[str, Any]:
         """Get current status of a workflow"""

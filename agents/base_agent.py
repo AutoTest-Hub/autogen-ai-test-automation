@@ -530,6 +530,226 @@ class BaseTestAgent(ABC):
     # End of LLM Integration Methods
     # =========================================================================
 
+    # =========================================================================
+    # Agent Message Handling - Phase 2 Collaboration
+    # =========================================================================
+
+    async def handle_message(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """
+        Handle incoming messages from other agents.
+
+        This is the primary entry point for agent-to-agent communication.
+        Subclasses can override specific handlers for different message types.
+
+        Args:
+            message: The incoming AgentMessage
+
+        Returns:
+            Optional response message
+        """
+        from orchestrator.agent_protocol import MessageType, AgentMessage as AM
+
+        self.logger.info(f"Received message from {message.sender_agent}: {message.message_type.value}")
+
+        # Update activity timestamp
+        self.state["last_activity"] = datetime.now()
+
+        # Route to specific handlers based on message type
+        handlers = {
+            MessageType.TASK_REQUEST: self._handle_task_request,
+            MessageType.REVIEW_REQUEST: self._handle_review_request,
+            MessageType.REVIEW_FEEDBACK: self._handle_review_feedback,
+            MessageType.REFINEMENT_REQUEST: self._handle_refinement_request,
+            MessageType.STATUS_QUERY: self._handle_status_query,
+            MessageType.HEALING_REQUEST: self._handle_healing_request,
+        }
+
+        handler = handlers.get(message.message_type)
+        if handler:
+            try:
+                return await handler(message)
+            except Exception as e:
+                self.logger.error(f"Error handling message: {e}")
+                self.state["errors"] += 1
+                return message.create_response(
+                    MessageType.ERROR_REPORT,
+                    {"error": str(e), "original_message_id": message.id},
+                    self.name
+                )
+        else:
+            self.logger.warning(f"No handler for message type: {message.message_type.value}")
+            return None
+
+    async def _handle_task_request(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle a task request from another agent"""
+        from orchestrator.agent_protocol import MessageType
+
+        task_data = message.payload.get("task_data", {})
+        task_type = message.payload.get("task_type", "process")
+
+        try:
+            # Process the task using the agent's main task processor
+            result = await self.process_task({
+                "type": task_type,
+                **task_data
+            })
+
+            self.state["tasks_completed"] += 1
+
+            return message.create_response(
+                MessageType.TASK_RESPONSE,
+                {
+                    "status": "completed",
+                    "result": result
+                },
+                self.name
+            )
+        except Exception as e:
+            self.state["errors"] += 1
+            return message.create_response(
+                MessageType.TASK_FAILED,
+                {
+                    "status": "failed",
+                    "error": str(e)
+                },
+                self.name
+            )
+
+    async def _handle_review_request(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle a review request - subclasses should override for specific behavior"""
+        from orchestrator.agent_protocol import MessageType, ReviewFeedback
+
+        # Default implementation - approve everything
+        # Subclasses (like ReviewAgent) should override this
+        items = message.payload.get("items", [])
+
+        feedback = ReviewFeedback(
+            approved=True,
+            score=0.8,
+            issues=[],
+            suggestions=["Consider adding more assertions"],
+            requires_changes=False
+        )
+
+        return message.create_response(
+            MessageType.REVIEW_FEEDBACK,
+            feedback.to_dict(),
+            self.name
+        )
+
+    async def _handle_review_feedback(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle review feedback - typically used to trigger refinement"""
+        from orchestrator.agent_protocol import MessageType
+
+        feedback = message.payload
+        requires_changes = feedback.get("requires_changes", False)
+
+        if requires_changes:
+            # Trigger refinement based on feedback
+            change_requests = feedback.get("change_requests", [])
+            self.logger.info(f"Received {len(change_requests)} change requests")
+
+            # Subclasses should implement actual refinement logic
+            return message.create_response(
+                MessageType.REFINEMENT_COMPLETE,
+                {
+                    "status": "refinement_pending",
+                    "message": "Refinement logic should be implemented by subclass"
+                },
+                self.name
+            )
+
+        return None  # No response needed if approved
+
+    async def _handle_refinement_request(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle a request to refine previous work"""
+        from orchestrator.agent_protocol import MessageType
+
+        # Subclasses should override this with specific refinement logic
+        original_work = message.payload.get("original_work", {})
+        feedback = message.payload.get("feedback", {})
+
+        return message.create_response(
+            MessageType.REFINEMENT_COMPLETE,
+            {
+                "status": "completed",
+                "refined_work": original_work,  # Default: return unchanged
+                "changes_made": []
+            },
+            self.name
+        )
+
+    async def _handle_status_query(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle a status query"""
+        from orchestrator.agent_protocol import MessageType
+
+        return message.create_response(
+            MessageType.STATUS_RESPONSE,
+            {
+                "agent_name": self.name,
+                "status": self.state.get("status", "unknown"),
+                "metrics": self.get_metrics(),
+                "capabilities": self.get_capabilities()
+            },
+            self.name
+        )
+
+    async def _handle_healing_request(self, message: 'AgentMessage') -> Optional['AgentMessage']:
+        """Handle a self-healing request - SelfHealingAgent should override"""
+        from orchestrator.agent_protocol import MessageType
+
+        # Default: cannot heal, subclasses should override
+        return message.create_response(
+            MessageType.HEALING_FAILED,
+            {
+                "status": "not_supported",
+                "message": f"{self.name} does not support self-healing"
+            },
+            self.name
+        )
+
+    async def send_to_agent(
+        self,
+        recipient_name: str,
+        message_type: 'MessageType',
+        payload: Dict[str, Any],
+        wait_for_response: bool = True,
+        message_bus: Optional['AgentMessageBus'] = None
+    ) -> Optional['AgentMessage']:
+        """
+        Send a message to another agent via the message bus.
+
+        Args:
+            recipient_name: Name of the recipient agent
+            message_type: Type of message to send
+            payload: Message payload
+            wait_for_response: Whether to wait for a response
+            message_bus: Optional message bus (uses shared instance if not provided)
+
+        Returns:
+            Response message if wait_for_response is True
+        """
+        from orchestrator.agent_protocol import AgentMessage as AM
+
+        message = AM(
+            message_type=message_type,
+            sender_agent=self.name,
+            recipient_agent=recipient_name,
+            payload=payload,
+            requires_response=wait_for_response
+        )
+
+        if message_bus:
+            return await message_bus.send_message(message, wait_for_response=wait_for_response)
+
+        # If no message bus provided, log warning
+        self.logger.warning("No message bus available for agent communication")
+        return None
+
+    # =========================================================================
+    # End of Agent Message Handling
+    # =========================================================================
+
     def update_state(self, status: str, **kwargs):
         """Update agent state"""
         self.state.update({
