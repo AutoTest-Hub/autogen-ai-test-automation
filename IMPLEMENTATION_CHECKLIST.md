@@ -15,6 +15,74 @@
 
 ---
 
+## Phase 0: Application Context & Onboarding (FOUNDATIONAL)
+
+**Target**: Before Phase 3
+**Goal**: Enable agents to understand customer applications (the "onboarding" problem)
+
+### 0.1 Application Knowledge Base
+
+| Status | Task | File(s) | Notes |
+|--------|------|---------|-------|
+| 🔴 | [ ] Create ApplicationContext class | `context/application_context.py` (new) | Per-customer app knowledge |
+| 🔴 | [ ] Implement knowledge ingestion from docs | `context/knowledge_ingester.py` (new) | Parse Confluence, README, etc. |
+| 🔴 | [ ] Add API spec ingestion (OpenAPI/Swagger) | `context/api_ingester.py` (new) | Auto-parse API documentation |
+| 🔴 | [ ] Create domain glossary storage | `context/application_context.py` | Store business terminology |
+| 🔴 | [ ] Implement business rules storage | `context/application_context.py` | Explicit rules for testing |
+
+### 0.2 Context Injection
+
+| Status | Task | File(s) | Notes |
+|--------|------|---------|-------|
+| 🔴 | [ ] Add context injection to LLM prompts | `agents/base_agent.py` | Enhance generate_llm_response() |
+| 🔴 | [ ] Pass app context to PlanningAgent | `agents/planning_agent.py` | Context-aware planning |
+| 🔴 | [ ] Pass app context to TestCreationAgent | `agents/test_creation_agent.py` | Context-aware test generation |
+| 🔴 | [ ] Add context to discovery agent | `agents/discovery_agent.py` | Know what to look for |
+
+### 0.3 Tool Integrations
+
+| Status | Task | File(s) | Notes |
+|--------|------|---------|-------|
+| 🔴 | [ ] Create integration framework | `integrations/base_integration.py` (new) | Abstract integration class |
+| 🔴 | [ ] Implement GitHub integration | `integrations/github_integration.py` (new) | Read repos, PRs, issues |
+| 🔴 | [ ] Implement Jira integration | `integrations/jira_integration.py` (new) | Read tickets, requirements |
+| 🔴 | [ ] Implement Confluence integration | `integrations/confluence_integration.py` (new) | Read documentation |
+
+### 0.4 Onboarding Flow
+
+| Status | Task | File(s) | Notes |
+|--------|------|---------|-------|
+| 🔴 | [ ] Create onboarding wizard API | `api/routers/onboarding.py` (new) | Step-by-step setup |
+| 🔴 | [ ] Add environment configuration | `context/environment_config.py` (new) | Dev/Staging/Prod URLs |
+| 🔴 | [ ] Implement credential vault | `context/credential_vault.py` (new) | Secure credential storage |
+| 🔴 | [ ] Add existing test import | `context/test_importer.py` (new) | Learn from existing tests |
+
+### 0.5 Phase 0 Validation
+
+| Status | Task | Notes |
+|--------|------|-------|
+| 🔴 | [ ] Agents receive application context | Context appears in prompts |
+| 🔴 | [ ] Business rules affect test generation | Tests respect stated rules |
+| 🔴 | [ ] API specs used for API testing | Auto-generate from OpenAPI |
+| 🔴 | [ ] Onboarding wizard works end-to-end | New app can be onboarded |
+
+---
+
+## Pre-Implementation Validation
+
+### Code Validation (2025-12-01)
+
+| Status | Check | Result |
+|--------|-------|--------|
+| 🟢 | [x] Core imports work | All 8 modules import correctly |
+| 🟢 | [x] Agents can be instantiated | PlanningAgent, ReviewAgent, TestCreationAgent work |
+| 🟢 | [x] WorkflowOrchestrator loads | 4 workflow templates available |
+| 🟢 | [x] Message protocol works | AgentMessageBus, message creation verified |
+| 🟢 | [x] Python requirements documented | Created requirements-python.txt |
+| 🟢 | [x] TestCreationAgent alias added | Both names now work |
+
+---
+
 ## Phase 1: Core Intelligence (CRITICAL)
 
 **Target**: Weeks 1-2
@@ -332,14 +400,25 @@
 
 | Phase | Total Tasks | Completed | Percentage |
 |-------|-------------|-----------|------------|
+| **Phase 0: Application Context** | 22 | 0 | 0% |
 | Phase 1: Core Intelligence | 26 | 23 | 88% |
 | Phase 2: Agent Collaboration | 25 | 24 | 96% |
 | Phase 3: Agent Personalities | 13 | 0 | 0% |
 | Phase 4: Marketplace & Billing | 17 | 0 | 0% |
 | Phase 5: AI-Native Storage | 12 | 0 | 0% |
 | Phase 6: Consolidation | 14 | 0 | 0% |
+| Pre-Validation | 6 | 6 | 100% |
 | Bug Fixes | 6 | 6 | 100% |
-| **TOTAL** | **113** | **53** | **47%** |
+| **TOTAL** | **141** | **59** | **42%** |
+
+### Priority Order (Revised)
+
+1. ✅ **Bug Fixes** - Complete
+2. ✅ **Pre-Validation** - Code runs, agents instantiate
+3. 🟡 **Phase 1 & 2** - Core functionality nearly complete
+4. 🔴 **Phase 0** - CRITICAL: Application context needed before Phase 3
+5. 🔴 **Phase 3** - Agent personalities (depends on Phase 0)
+6. 🔴 **Phase 4-6** - Future enhancements
 
 ---
 

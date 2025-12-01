@@ -1605,3 +1605,7 @@ requests>=2.31.0
             "timestamp": int(time.time())
         }
 
+
+# Alias for backward compatibility
+TestCreationAgent = EnhancedTestCreationAgent
+
