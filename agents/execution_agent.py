@@ -360,8 +360,10 @@ You are the Execution Agent, an expert in test execution and test environment ma
         file_path = Path(test_file)
         
         if file_path.suffix == '.py':
-            # Python test file
-            if 'pytest' in open(test_file).read():
+            # Python test file - check if it uses pytest
+            with open(test_file, 'r') as f:
+                file_content = f.read()
+            if 'pytest' in file_content:
                 # Pytest-based test
                 cmd = ["python", "-m", "pytest", test_file]
                 if config.get("verbose", False):

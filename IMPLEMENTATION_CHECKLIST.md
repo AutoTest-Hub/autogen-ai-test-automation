@@ -319,12 +319,12 @@
 
 | Status | Bug | File | Line | Notes |
 |--------|-----|------|------|-------|
-| 🔴 | [ ] Fix invalid Playwright selector syntax | `agents/real_browser_discovery_agent.py` | 719 | Regex in has-text invalid |
-| 🔴 | [ ] Fix unclosed file handles | `agents/execution_agent.py` | 363 | Use context manager |
+| 🟢 | [x] Fix invalid Playwright selector syntax | `agents/real_browser_discovery_agent.py` | 719 | Replaced regex with valid selectors (2025-12-01) |
+| 🟢 | [x] Fix unclosed file handles | `agents/execution_agent.py` | 363 | Added context manager (2025-12-01) |
 | 🟢 | [x] Remove hardcoded test credentials | `agents/test_creation_agent.py` | 527-537 | Now uses env vars (2025-11-30) |
 | 🟢 | [x] Fix shebang order issue | `agents/test_creation_agent.py` | 1-8 | Fixed 2025-11-29 |
 | 🟢 | [x] Fix duplicate get_capabilities() | `agents/test_creation_agent.py` | 73,1598 | Removed duplicate (2025-11-30) |
-| 🔴 | [ ] Add missing DISCOVERY role config | `config/settings.py` | 176 | Role not configured |
+| 🟢 | [x] Add missing DISCOVERY role config | `config/settings.py` | 176 | Added DISCOVERY + SELF_HEALING (2025-12-01) |
 
 ---
 
@@ -338,8 +338,8 @@
 | Phase 4: Marketplace & Billing | 17 | 0 | 0% |
 | Phase 5: AI-Native Storage | 12 | 0 | 0% |
 | Phase 6: Consolidation | 14 | 0 | 0% |
-| Bug Fixes | 6 | 3 | 50% |
-| **TOTAL** | **113** | **50** | **44%** |
+| Bug Fixes | 6 | 6 | 100% |
+| **TOTAL** | **113** | **53** | **47%** |
 
 ---
 
@@ -364,6 +364,9 @@
 | 2025-11-30 | Implement review-refinement loop | 2.4 | Claude | Phase 2 commit |
 | 2025-11-30 | Implement self-healing execution | 2.5 | Claude | Phase 2 commit |
 | 2025-11-30 | Add iterative_test_generation workflow | 2.4 | Claude | Phase 2 commit |
+| 2025-12-01 | Fix Playwright selector syntax | Bug Fix | Claude | Bug fixes commit |
+| 2025-12-01 | Fix unclosed file handles | Bug Fix | Claude | Bug fixes commit |
+| 2025-12-01 | Add DISCOVERY + SELF_HEALING role configs | Bug Fix | Claude | Bug fixes commit |
 
 ---
 
@@ -383,4 +386,4 @@
 
 ---
 
-*Last Updated: 2025-11-30*
+*Last Updated: 2025-12-01*

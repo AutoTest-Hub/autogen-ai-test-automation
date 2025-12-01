@@ -34,6 +34,7 @@ class AgentRole(str, Enum):
     EXECUTION = "execution"
     REPORTING = "reporting"
     DISCOVERY = "discovery"
+    SELF_HEALING = "self_healing"
 
 
 class AutoGenTestFrameworkSettings(BaseSettings):
@@ -198,6 +199,14 @@ class AutoGenTestFrameworkSettings(BaseSettings):
             AgentRole.REPORTING: {
                 "name": "reporting_agent",
                 "system_message": "You are the Reporting Agent responsible for analyzing results and generating insights.",
+            },
+            AgentRole.DISCOVERY: {
+                "name": "discovery_agent",
+                "system_message": "You are the Discovery Agent responsible for exploring web applications, identifying UI elements, and mapping page structures for test automation.",
+            },
+            AgentRole.SELF_HEALING: {
+                "name": "self_healing_agent",
+                "system_message": "You are the Self-Healing Agent responsible for automatically fixing broken tests by updating selectors and adapting to UI changes.",
             },
         }
         

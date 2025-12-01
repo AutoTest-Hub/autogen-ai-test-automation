@@ -717,7 +717,9 @@ class RealBrowserDiscoveryAgent(BaseTestAgent):
         if "login" in desc_lower or "sign in" in desc_lower:
             if "button" in desc_lower:
                 search_patterns.extend([
-                    "button:has-text(/login|sign in/i)",
+                    "button:has-text('Login')",
+                    "button:has-text('Sign in')",
+                    "button:has-text('Log in')",
                     "input[type='submit'][value*='Login' i]",
                     "[data-testid*='login' i]",
                     "#login, .login-btn, .signin-btn"
