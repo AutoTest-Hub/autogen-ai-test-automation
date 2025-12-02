@@ -29,6 +29,12 @@ from .knowledge_ingester import (
     IngestionSource,
 )
 
+from .context_persistence import (
+    ContextStore,
+    ContextSyncManager,
+    ContextArtifactGenerator,
+)
+
 __all__ = [
     # Application Context
     "ApplicationContext",
@@ -50,4 +56,8 @@ __all__ = [
     "TechStackDetector",
     "IngestionResult",
     "IngestionSource",
+    # Persistence & Sync
+    "ContextStore",
+    "ContextSyncManager",
+    "ContextArtifactGenerator",
 ]
