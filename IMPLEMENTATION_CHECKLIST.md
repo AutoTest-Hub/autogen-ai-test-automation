@@ -43,10 +43,10 @@
 
 | Status | Task | File(s) | Notes |
 |--------|------|---------|-------|
-| 🔴 | [ ] Create integration framework | `integrations/base_integration.py` (new) | Abstract integration class |
-| 🔴 | [ ] Implement GitHub integration | `integrations/github_integration.py` (new) | Read repos, PRs, issues |
-| 🔴 | [ ] Implement Jira integration | `integrations/jira_integration.py` (new) | Read tickets, requirements |
-| 🔴 | [ ] Implement Confluence integration | `integrations/confluence_integration.py` (new) | Read documentation |
+| 🟢 | [x] Create integration framework | `integrations/base_integration.py` | BaseIntegration, IntegrationManager (2025-12-02) |
+| 🟢 | [x] Implement GitHub integration | `integrations/github_integration.py` | Read repos, PRs, issues, commits (2025-12-02) |
+| 🟢 | [x] Implement Jira integration | `integrations/jira_integration.py` | Read tickets, sprints, comments (2025-12-02) |
+| 🟢 | [x] Implement Confluence integration | `integrations/confluence_integration.py` | Read pages, spaces, search (2025-12-02) |
 
 ### 0.4 Onboarding Flow
 
