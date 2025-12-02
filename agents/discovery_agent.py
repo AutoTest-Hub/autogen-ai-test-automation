@@ -21,13 +21,14 @@ from agents.base_agent import BaseTestAgent
 class DiscoveryAgent(BaseTestAgent):
     """Agent that discovers and analyzes web application structure"""
     
-    def __init__(self, local_ai_provider=None):
+    def __init__(self, local_ai_provider=None, application_context=None):
         from config.settings import AgentRole
         super().__init__(
             role=AgentRole.DISCOVERY,
             name="DiscoveryAgent",
             system_message="You are a Discovery Agent that analyzes web applications to understand their structure, elements, and workflows for intelligent test generation.",
-            local_ai_provider=local_ai_provider
+            local_ai_provider=local_ai_provider,
+            application_context=application_context
         )
         
         # Discovery capabilities

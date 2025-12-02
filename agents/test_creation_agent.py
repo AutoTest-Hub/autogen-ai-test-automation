@@ -33,12 +33,13 @@ logger = logging.getLogger(__name__)
 class EnhancedTestCreationAgent(BaseTestAgent):
     """Enhanced Test Creation Agent that generates real working code"""
     
-    def __init__(self, local_ai_provider=None):
+    def __init__(self, local_ai_provider=None, application_context=None):
         super().__init__(
             role=AgentRole.TEST_CREATION,
             name="EnhancedTestCreationAgent",
             system_message="You are an Enhanced Test Creation Agent that generates real, executable test code using discovered application data and best practices.",
-            local_ai_provider=local_ai_provider
+            local_ai_provider=local_ai_provider,
+            application_context=application_context
         )
         
         # Work directory for saving artifacts

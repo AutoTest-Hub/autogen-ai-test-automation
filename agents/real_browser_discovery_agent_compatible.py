@@ -23,12 +23,13 @@ logger = logging.getLogger(__name__)
 class RealBrowserDiscoveryAgent(BaseTestAgent):
     """Agent that uses real browser automation to discover page elements"""
     
-    def __init__(self, local_ai_provider=None):
+    def __init__(self, local_ai_provider=None, application_context=None):
         super().__init__(
             role=AgentRole.DISCOVERY,
             name="RealBrowserDiscoveryAgent",
             system_message="You are a Real Browser Discovery Agent that uses browser automation to analyze web applications and discover actual DOM elements for test automation.",
-            local_ai_provider=local_ai_provider
+            local_ai_provider=local_ai_provider,
+            application_context=application_context
         )
         
         # Work directory for saving artifacts
