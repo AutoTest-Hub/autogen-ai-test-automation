@@ -35,6 +35,13 @@ from .context_persistence import (
     ContextArtifactGenerator,
 )
 
+from .credential_vault import (
+    CredentialVault,
+    CredentialType,
+    CredentialMetadata,
+    CredentialReference,
+)
+
 __all__ = [
     # Application Context
     "ApplicationContext",
@@ -60,4 +67,9 @@ __all__ = [
     "ContextStore",
     "ContextSyncManager",
     "ContextArtifactGenerator",
+    # Credential Vault
+    "CredentialVault",
+    "CredentialType",
+    "CredentialMetadata",
+    "CredentialReference",
 ]
