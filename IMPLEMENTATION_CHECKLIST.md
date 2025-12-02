@@ -25,8 +25,8 @@
 | Status | Task | File(s) | Notes |
 |--------|------|---------|-------|
 | 🟢 | [x] Create ApplicationContext class | `context/application_context.py` | Per-customer app knowledge (2025-12-01) |
-| 🔴 | [ ] Implement knowledge ingestion from docs | `context/knowledge_ingester.py` (new) | Parse Confluence, README, etc. |
-| 🔴 | [ ] Add API spec ingestion (OpenAPI/Swagger) | `context/api_ingester.py` (new) | Auto-parse API documentation |
+| 🟢 | [x] Implement knowledge ingestion from docs | `context/knowledge_ingester.py` | ReadmeIngester, TechStackDetector (2025-12-02) |
+| 🟢 | [x] Add API spec ingestion (OpenAPI/Swagger) | `context/knowledge_ingester.py` | OpenAPIIngester, TestPatternIngester (2025-12-02) |
 | 🟢 | [x] Create domain glossary storage | `context/application_context.py` | DomainTerm dataclass (2025-12-01) |
 | 🟢 | [x] Implement business rules storage | `context/application_context.py` | BusinessRule dataclass (2025-12-01) |
 

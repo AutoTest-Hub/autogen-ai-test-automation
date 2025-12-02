@@ -19,7 +19,18 @@ from .application_context import (
     create_application_context,
 )
 
+from .knowledge_ingester import (
+    KnowledgeIngester,
+    OpenAPIIngester,
+    ReadmeIngester,
+    TestPatternIngester,
+    TechStackDetector,
+    IngestionResult,
+    IngestionSource,
+)
+
 __all__ = [
+    # Application Context
     "ApplicationContext",
     "TechStackInfo",
     "BusinessRule",
@@ -31,4 +42,12 @@ __all__ = [
     "DomainTerm",
     "APIEndpoint",
     "create_application_context",
+    # Knowledge Ingestion
+    "KnowledgeIngester",
+    "OpenAPIIngester",
+    "ReadmeIngester",
+    "TestPatternIngester",
+    "TechStackDetector",
+    "IngestionResult",
+    "IngestionSource",
 ]
