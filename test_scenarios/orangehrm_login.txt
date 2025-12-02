@@ -1,0 +1,66 @@
+Test Name: OrangeHRM Login Functionality
+Target: https://opensource-demo.orangehrmlive.com
+Priority: Critical
+Tags: login, authentication, smoke
+
+Description:
+Validate that users can successfully log into the OrangeHRM system
+using valid credentials and appropriate error messages are shown
+for invalid login attempts.
+
+Test Steps:
+1. Navigate to the login page
+2. Enter username "Admin"
+3. Enter password "admin123"
+4. Click the Login button
+5. Verify the dashboard is displayed
+
+Expected Results:
+- User is successfully logged in
+- Dashboard page loads with user information
+- Navigation menu is visible
+
+---
+
+Test Name: Invalid Login Error Message
+Target: https://opensource-demo.orangehrmlive.com
+Priority: High
+Tags: login, negative-test, error-handling
+
+Description:
+Verify that appropriate error messages are displayed when
+users attempt to login with invalid credentials.
+
+Test Steps:
+1. Navigate to the login page
+2. Enter username "InvalidUser"
+3. Enter password "wrongpassword"
+4. Click the Login button
+5. Verify error message is displayed
+
+Expected Results:
+- Login fails
+- Error message "Invalid credentials" is shown
+- User remains on login page
+
+---
+
+Test Name: Empty Username Validation
+Target: https://opensource-demo.orangehrmlive.com
+Priority: Medium
+Tags: login, validation, form-validation
+
+Description:
+Verify that required field validation works when username is empty.
+
+Test Steps:
+1. Navigate to the login page
+2. Leave username field empty
+3. Enter password "admin123"
+4. Click the Login button
+5. Verify validation error is shown
+
+Expected Results:
+- Form submission is prevented or error shown
+- "Required" validation message appears
+- Username field is highlighted
