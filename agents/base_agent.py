@@ -74,6 +74,7 @@ class BaseTestAgent(ABC):
         system_message: Optional[str] = None,
         llm_provider: Optional[LLMProvider] = None,
         local_ai_provider: Optional[LocalAIProvider] = None,
+        application_context: Optional['ApplicationContext'] = None,
         enable_caching: bool = True,
         max_retries: int = 3,
         **kwargs
@@ -82,6 +83,9 @@ class BaseTestAgent(ABC):
         self.name = name or f"{role.value}_agent"
         self.llm_provider = llm_provider or settings.default_llm_provider
         self.logger = logging.getLogger(f"agent.{self.name}")
+
+        # Application context for domain awareness
+        self.application_context = application_context
 
         # LLM configuration
         self.enable_caching = enable_caching
@@ -266,6 +270,56 @@ class BaseTestAgent(ABC):
             "timestamp": time.time()
         }
 
+    def _inject_application_context(self, prompt: str, max_context_tokens: int = 1500) -> str:
+        """
+        Inject application context into the prompt if available.
+
+        This enables agents to have domain awareness similar to how a human
+        QA engineer understands an application after onboarding.
+
+        Args:
+            prompt: The original user prompt
+            max_context_tokens: Maximum tokens to use for context
+
+        Returns:
+            Enhanced prompt with application context prepended
+        """
+        if not self.application_context:
+            return prompt
+
+        try:
+            # Get role-specific context
+            context = self.application_context.get_context_for_agent(
+                agent_role=self.role.value,
+                max_tokens=max_context_tokens
+            )
+
+            if context:
+                enhanced_prompt = f"""
+{context}
+
+---
+YOUR TASK:
+{prompt}
+"""
+                self.logger.debug(f"Injected application context ({len(context)} chars) into prompt")
+                return enhanced_prompt
+
+        except Exception as e:
+            self.logger.warning(f"Failed to inject application context: {e}")
+
+        return prompt
+
+    def set_application_context(self, context: 'ApplicationContext') -> None:
+        """
+        Set or update the application context for this agent.
+
+        Args:
+            context: The ApplicationContext to use
+        """
+        self.application_context = context
+        self.logger.info(f"Application context set: {context.app_name}")
+
     async def generate_llm_response(
         self,
         prompt: str,
@@ -305,7 +359,10 @@ class BaseTestAgent(ABC):
         self.state["llm_calls"] += 1
         effective_system_prompt = system_prompt or self.config.get("system_message", "")
 
-        # Check cache first
+        # Inject application context if available
+        enhanced_prompt = self._inject_application_context(prompt)
+
+        # Check cache first (use enhanced prompt for cache key)
         if use_cache and self.enable_caching:
             cache_key = self._get_cache_key(prompt, effective_system_prompt)
             cached_response = self._check_cache(cache_key)
@@ -320,7 +377,7 @@ class BaseTestAgent(ABC):
                 # 1. Try Local AI first (if available)
                 if self.use_local_ai and self.local_ai_provider.is_available():
                     response = await self._call_local_ai(
-                        prompt, effective_system_prompt, temperature, max_tokens
+                        enhanced_prompt, effective_system_prompt, temperature, max_tokens
                     )
                     if response.get("success"):
                         result = self._process_llm_response(response, "local_ai", response_format)
@@ -331,7 +388,7 @@ class BaseTestAgent(ABC):
                 # 2. Try OpenAI
                 if self._openai_client:
                     response = await self._call_openai(
-                        prompt, effective_system_prompt, temperature, max_tokens, response_format
+                        enhanced_prompt, effective_system_prompt, temperature, max_tokens, response_format
                     )
                     if response.get("success"):
                         result = self._process_llm_response(response, "openai", response_format)
@@ -342,7 +399,7 @@ class BaseTestAgent(ABC):
                 # 3. Try Anthropic
                 if self._anthropic_client:
                     response = await self._call_anthropic(
-                        prompt, effective_system_prompt, temperature, max_tokens
+                        enhanced_prompt, effective_system_prompt, temperature, max_tokens
                     )
                     if response.get("success"):
                         result = self._process_llm_response(response, "anthropic", response_format)

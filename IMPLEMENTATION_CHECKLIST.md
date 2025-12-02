@@ -24,20 +24,20 @@
 
 | Status | Task | File(s) | Notes |
 |--------|------|---------|-------|
-| 🔴 | [ ] Create ApplicationContext class | `context/application_context.py` (new) | Per-customer app knowledge |
+| 🟢 | [x] Create ApplicationContext class | `context/application_context.py` | Per-customer app knowledge (2025-12-01) |
 | 🔴 | [ ] Implement knowledge ingestion from docs | `context/knowledge_ingester.py` (new) | Parse Confluence, README, etc. |
 | 🔴 | [ ] Add API spec ingestion (OpenAPI/Swagger) | `context/api_ingester.py` (new) | Auto-parse API documentation |
-| 🔴 | [ ] Create domain glossary storage | `context/application_context.py` | Store business terminology |
-| 🔴 | [ ] Implement business rules storage | `context/application_context.py` | Explicit rules for testing |
+| 🟢 | [x] Create domain glossary storage | `context/application_context.py` | DomainTerm dataclass (2025-12-01) |
+| 🟢 | [x] Implement business rules storage | `context/application_context.py` | BusinessRule dataclass (2025-12-01) |
 
 ### 0.2 Context Injection
 
 | Status | Task | File(s) | Notes |
 |--------|------|---------|-------|
-| 🔴 | [ ] Add context injection to LLM prompts | `agents/base_agent.py` | Enhance generate_llm_response() |
-| 🔴 | [ ] Pass app context to PlanningAgent | `agents/planning_agent.py` | Context-aware planning |
-| 🔴 | [ ] Pass app context to TestCreationAgent | `agents/test_creation_agent.py` | Context-aware test generation |
-| 🔴 | [ ] Add context to discovery agent | `agents/discovery_agent.py` | Know what to look for |
+| 🟢 | [x] Add context injection to LLM prompts | `agents/base_agent.py` | _inject_application_context() (2025-12-01) |
+| 🟢 | [x] Pass app context to PlanningAgent | `agents/base_agent.py` | Via application_context param (2025-12-01) |
+| 🟢 | [x] Pass app context to TestCreationAgent | `agents/base_agent.py` | Via application_context param (2025-12-01) |
+| 🟢 | [x] Add context to discovery agent | `agents/base_agent.py` | Via application_context param (2025-12-01) |
 
 ### 0.3 Tool Integrations
 
